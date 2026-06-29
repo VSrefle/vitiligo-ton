@@ -5,248 +5,390 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>vitiligo.ton</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<!-- TON Connect UI -->
 <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500&family=Space+Grotesk:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --purple: #7c3aed;
-    --purple-light: #a78bfa;
-    --purple-dim: rgba(124,58,237,0.18);
-    --bg: #0a0a0f;
-    --bg2: #111827;
-    --surface: rgba(255,255,255,0.05);
-    --border: rgba(255,255,255,0.1);
-    --text: #ffffff;
-    --muted: rgba(255,255,255,0.45);
-    --green: #4ade80;
-    --radius: 16px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  html, body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif; min-height: 100vh; overflow-x: hidden; }
+:root{
+  --purple:#9333ea;--purple-light:#c084fc;--purple-dim:rgba(147,51,234,.15);
+  --bg:#06030f;--surface:rgba(255,255,255,.03);--border:rgba(255,255,255,.08);
+  --text:#f5f0ff;--muted:rgba(192,132,252,.4);--green:#34d399;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{
+  background:var(--bg);color:var(--text);
+  font-family:'Space Grotesk',sans-serif;
+  min-height:100vh;overflow-x:hidden;
+}
 
-  .nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(10,10,15,0.97); backdrop-filter: blur(12px); border-top: 0.5px solid var(--border); display: flex; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
-  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0 8px; cursor: pointer; color: var(--muted); font-size: 10px; letter-spacing: 0.04em; transition: color 0.2s; border: none; background: transparent; -webkit-appearance: none; }
-  .nav-item svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-  .nav-item.active { color: var(--purple-light); }
+/* STARFIELD */
+#starfield{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
 
-  .page { display: none; min-height: 100vh; padding-bottom: 80px; }
-  .page.active { display: block; }
+/* WELCOME */
+.welcome{
+  position:fixed;inset:0;z-index:50;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:36px 28px;text-align:center;
+  transition:opacity .6s ease;
+}
+.welcome.fade{opacity:0;pointer-events:none}
+.welcome-glow{
+  width:130px;height:130px;border-radius:50%;
+  background:radial-gradient(circle,rgba(168,85,247,.3) 0%,rgba(168,85,247,.04) 65%,transparent 100%);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:28px;animation:wg 3s ease-in-out infinite;
+}
+@keyframes wg{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+.welcome-star{font-size:52px;line-height:1}
+.welcome-title{
+  font-family:'Outfit',sans-serif;font-size:28px;font-weight:300;
+  color:#fff;line-height:1.2;margin-bottom:12px;letter-spacing:-.02em;
+}
+.welcome-title span{color:#c084fc}
+.welcome-body{font-size:14px;color:rgba(220,200,255,.45);line-height:1.7;margin-bottom:36px}
+.welcome-btn{
+  width:100%;background:var(--purple);color:#fff;border:none;
+  border-radius:40px;padding:16px;font-size:15px;font-weight:500;
+  cursor:pointer;font-family:'Space Grotesk',sans-serif;
+  box-shadow:0 0 36px rgba(147,51,234,.45);transition:all .2s;
+}
+.welcome-btn:active{transform:scale(.97)}
+.welcome-skip{margin-top:14px;font-size:12px;color:rgba(255,255,255,.22);cursor:pointer}
 
-  /* HOME */
-  .canvas-wrap { position: relative; width: 100%; height: 220px; overflow: hidden; }
-  .pixel-grid { display: grid; grid-template-columns: repeat(14, 1fr); gap: 3px; padding: 3px; height: 100%; }
-  .px { border-radius: 5px; transition: transform 0.3s; }
-  .px:active { transform: scale(1.3); }
-  .canvas-fade { position: absolute; bottom: 0; left: 0; right: 0; height: 80px; background: linear-gradient(transparent, var(--bg)); pointer-events: none; }
+/* LAYOUT */
+.page{display:none;min-height:100vh;padding-bottom:72px;position:relative;z-index:1}
+.page.active{display:block}
 
-  .home-content { padding: 0 16px; display: flex; flex-direction: column; align-items: center; text-align: center; }
-  .domain-pill { display: inline-flex; align-items: center; gap: 6px; background: var(--purple-dim); border: 0.5px solid rgba(124,58,237,0.5); color: #c4b5fd; border-radius: 40px; padding: 5px 14px; font-size: 12px; margin-bottom: 14px; margin-top: -10px; }
-  .pulse { width: 6px; height: 6px; border-radius: 50%; background: #a78bfa; animation: pulse 2s ease infinite; }
-  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }
+/* HOME */
+.home{padding:0 18px}
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 0 0;padding-top:max(16px,env(safe-area-inset-top));
+}
+.logo{
+  font-family:'Outfit',sans-serif;font-size:13px;letter-spacing:.16em;
+  color:rgba(192,132,252,.38);text-transform:uppercase;font-weight:300;
+}
 
-  .headline { font-size: 26px; font-weight: 300; line-height: 1.25; margin-bottom: 6px; letter-spacing: -0.02em; }
-  .headline em { font-style: normal; color: #c4b5fd; }
-  .sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; letter-spacing: 0.05em; }
+/* TON CONNECT button */
+#ton-connect-btn::part(button){
+  background:rgba(147,51,234,.18);
+  border:.5px solid rgba(147,51,234,.4);
+  border-radius:40px;height:34px;padding:0 14px;
+  font-size:11px;color:#c084fc;font-family:'Space Grotesk',sans-serif;
+}
+.wallet-chip{
+  display:none;align-items:center;gap:6px;
+  background:rgba(52,211,153,.1);border:.5px solid rgba(52,211,153,.28);
+  border-radius:40px;padding:6px 12px;font-size:11px;color:var(--green);cursor:pointer;
+}
+.wallet-chip.show{display:flex}
+.wdot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:ld 2s ease infinite}
 
-  .counter-box { background: var(--surface); border: 0.5px solid var(--border); border-radius: 20px; padding: 16px 32px; margin-bottom: 20px; width: 100%; max-width: 300px; }
-  .counter-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
-  .counter-num { font-size: 48px; font-weight: 200; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
-  .counter-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+/* PIXEL CANVAS */
+.canvas-wrap{
+  margin:18px 0 16px;border-radius:18px;overflow:hidden;
+  border:.5px solid rgba(147,51,234,.2);position:relative;
+}
+#pixelCanvas{display:block;width:100%;image-rendering:pixelated}
+.canvas-label{
+  position:absolute;bottom:8px;right:10px;
+  font-size:9px;color:rgba(192,132,252,.35);letter-spacing:.08em;
+}
 
-  /* WALLET CONNECT BUTTON — стиль под TON Connect UI */
-  #ton-connect-btn { width: 100%; max-width: 300px; margin-bottom: 10px; }
-  #ton-connect-btn::part(button) {
-    width: 100%;
-    background: var(--purple);
-    border-radius: 40px;
-    font-size: 15px;
-    font-weight: 500;
-    height: 50px;
-    border: none;
-  }
+/* COUNTER */
+.counter-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.cnum{
+  font-family:'Outfit',sans-serif;font-size:44px;font-weight:200;
+  letter-spacing:-.04em;color:#fff;line-height:1;
+  font-variant-numeric:tabular-nums;transition:text-shadow .5s;
+}
+.cnum.flash{text-shadow:0 0 30px rgba(192,132,252,.9),0 0 60px rgba(147,51,234,.4)}
+.counter-meta{display:flex;flex-direction:column;gap:4px}
+.clabel{font-size:9px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+.live-row{display:none;align-items:center;gap:4px;font-size:9px;color:rgba(52,211,153,.55)}
+.live-row.show{display:flex}
+@keyframes ld{0%,100%{opacity:1}50%{opacity:.2}}
 
-  .btn-main { width: 100%; max-width: 300px; background: var(--purple); color: #fff; border: none; border-radius: 40px; padding: 15px 24px; font-size: 15px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; margin-bottom: 10px; font-family: inherit; }
-  .btn-main:active { transform: scale(0.97); background: #6d28d9; }
-  .btn-main:disabled { opacity: 0.4; cursor: not-allowed; }
-  .btn-main.done { background: #15803d; }
+.headline{
+  font-family:'Outfit',sans-serif;font-size:22px;font-weight:300;
+  line-height:1.25;color:#f5f0ff;margin-bottom:5px;letter-spacing:-.02em;
+}
+.headline em{font-style:normal;color:#c084fc}
+.sub{font-size:11px;color:rgba(192,132,252,.32);letter-spacing:.07em;margin-bottom:20px}
 
-  .btn-ghost { background: transparent; border: 0.5px solid var(--border); color: var(--muted); border-radius: 40px; padding: 12px 24px; font-size: 14px; cursor: pointer; font-family: inherit; width: 100%; max-width: 300px; transition: all 0.2s; }
-  .btn-ghost:active { border-color: rgba(255,255,255,0.4); color: #fff; }
+.btn-main{
+  width:100%;background:var(--purple);color:#fff;border:none;
+  border-radius:40px;padding:14px 20px;font-size:14px;font-weight:500;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  font-family:'Space Grotesk',sans-serif;margin-bottom:10px;
+  box-shadow:0 0 24px rgba(147,51,234,.32);transition:all .2s;
+}
+.btn-main:disabled{opacity:.32;box-shadow:none;cursor:not-allowed}
+.btn-main.done{background:#059669;box-shadow:0 0 20px rgba(5,150,105,.3)}
+.btn-main:not(:disabled):active{transform:scale(.97)}
+.btn-ghost{
+  width:100%;background:transparent;border:.5px solid rgba(255,255,255,.09);
+  color:rgba(255,255,255,.28);border-radius:40px;padding:12px;
+  font-size:13px;cursor:pointer;font-family:'Space Grotesk',sans-serif;
+  transition:all .2s;
+}
+.btn-ghost:active{border-color:rgba(255,255,255,.25);color:rgba(255,255,255,.5)}
 
-  .wallet-info { display: none; background: rgba(74,222,128,0.08); border: 0.5px solid rgba(74,222,128,0.25); border-radius: 12px; padding: 10px 14px; width: 100%; max-width: 300px; margin-bottom: 12px; }
-  .wallet-info.show { display: flex; align-items: center; gap: 10px; }
-  .wallet-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
-  .wallet-addr { font-size: 13px; color: var(--green); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .wallet-disc { font-size: 11px; color: rgba(74,222,128,0.6); cursor: pointer; }
+/* STARS PAGE */
+.stars-page{padding:0 18px}
+.page-title{
+  font-family:'Outfit',sans-serif;font-size:22px;font-weight:300;
+  color:#f5f0ff;padding:20px 0 4px;
+}
+.page-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
 
-  .stars-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 20px; }
-  .star-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px 12px; text-align: center; cursor: pointer; transition: all 0.2s; }
-  .star-card:active { transform: scale(0.97); }
-  .star-card .icon { font-size: 22px; margin-bottom: 6px; }
-  .star-card .title { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
-  .star-card .desc { font-size: 11px; color: var(--muted); line-height: 1.4; }
+.process-steps{display:flex;gap:0;margin-bottom:16px;position:relative}
+.process-steps::before{
+  content:'';position:absolute;top:5px;left:5px;right:5px;height:.5px;
+  background:rgba(147,51,234,.2);z-index:0;
+}
+.pstep{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;position:relative;z-index:1}
+.pstep-dot{width:10px;height:10px;border-radius:50%;background:rgba(147,51,234,.2);transition:all .4s;border:.5px solid rgba(147,51,234,.3)}
+.pstep.active .pstep-dot{background:#9333ea;box-shadow:0 0 10px rgba(147,51,234,.7);border-color:#9333ea}
+.pstep-label{font-size:9px;color:rgba(192,132,252,.3);letter-spacing:.05em;text-align:center;transition:color .4s}
+.pstep.active .pstep-label{color:#c084fc}
 
-  /* MAP */
-  .section-title { font-size: 20px; font-weight: 300; padding: 20px 16px 4px; }
-  .section-sub { font-size: 13px; color: var(--muted); padding: 0 16px 16px; }
-  .map-wrap { padding: 0 16px; margin-bottom: 16px; }
-  .map-svg { width: 100%; border-radius: var(--radius); }
-  .city-list { padding: 0 16px; display: flex; flex-direction: column; gap: 8px; }
-  .city-row { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 0.5px solid var(--border); border-radius: 12px; padding: 12px 14px; }
-  .city-dot-sm { width: 8px; height: 8px; border-radius: 50%; background: #a78bfa; flex-shrink: 0; }
-  .city-name { flex: 1; font-size: 14px; }
-  .city-count { font-size: 13px; color: var(--muted); }
-  .city-bar-wrap { width: 60px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; }
-  .city-bar { height: 100%; border-radius: 2px; background: var(--purple-light); }
+.upload-area{
+  border:1.5px dashed rgba(147,51,234,.28);border-radius:18px;
+  min-height:180px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  text-align:center;cursor:pointer;transition:all .2s;
+  background:rgba(147,51,234,.03);margin-bottom:12px;padding:24px;
+}
+.upload-area:active{background:rgba(147,51,234,.08);border-color:rgba(147,51,234,.6)}
+.upload-icon{font-size:30px;color:rgba(168,85,247,.4);margin-bottom:10px}
+.upload-text{font-size:13px;color:rgba(192,132,252,.45);line-height:1.6}
+.upload-hint{font-size:11px;color:rgba(192,132,252,.25);margin-top:6px}
+#fileInput{display:none}
 
-  /* GALLERY */
-  .filter-row { display: flex; gap: 8px; padding: 0 16px 16px; overflow-x: auto; scrollbar-width: none; }
-  .filter-row::-webkit-scrollbar { display: none; }
-  .filter-chip { flex-shrink: 0; background: var(--surface); border: 0.5px solid var(--border); color: var(--muted); border-radius: 40px; padding: 7px 14px; font-size: 12px; cursor: pointer; transition: all 0.2s; white-space: nowrap; font-family: inherit; }
-  .filter-chip.active { background: var(--purple-dim); border-color: rgba(124,58,237,0.5); color: #c4b5fd; }
-  .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; padding: 16px; }
-  .g-cell { aspect-ratio: 1; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s; position: relative; overflow: hidden; }
-  .g-cell:active { transform: scale(0.95); }
-  .g-stars { position: absolute; top: 4px; right: 4px; font-size: 8px; }
+.result-wrap{
+  display:none;border-radius:18px;overflow:hidden;
+  border:.5px solid rgba(147,51,234,.25);margin-bottom:12px;
+  background:#020110;
+}
+#resultCanvas{width:100%;display:block}
 
-  /* PROFILE */
-  .profile-header { display: flex; flex-direction: column; align-items: center; padding: 24px 16px 16px; text-align: center; }
-  .avatar { width: 72px; height: 72px; border-radius: 50%; background: var(--purple-dim); border: 2px solid rgba(124,58,237,0.4); display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 12px; position: relative; }
-  .avatar-badge { position: absolute; bottom: -2px; right: -2px; background: var(--bg); border-radius: 50%; padding: 2px; font-size: 14px; line-height: 1; }
-  .profile-name { font-size: 20px; font-weight: 400; margin-bottom: 4px; }
-  .profile-handle { font-size: 13px; color: var(--muted); }
-  .form-section { padding: 0 16px; }
-  .form-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 8px; margin-top: 16px; display: block; }
-  .form-input { width: 100%; background: var(--surface); border: 0.5px solid var(--border); border-radius: 12px; padding: 13px 14px; font-size: 15px; color: var(--text); font-family: inherit; outline: none; transition: border-color 0.2s; }
-  .form-input:focus { border-color: rgba(124,58,237,0.5); }
-  .form-input::placeholder { color: rgba(255,255,255,0.2); }
-  .nft-section { padding: 16px 16px 0; }
-  .nft-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-  .nft-card { aspect-ratio: 1; border-radius: 12px; position: relative; overflow: hidden; cursor: pointer; }
-  .nft-card-inner { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 11px; color: rgba(255,255,255,0.6); flex-direction: column; gap: 4px; }
-  .nft-add { border: 1.5px dashed rgba(255,255,255,0.2); border-radius: 12px; cursor: pointer; }
-  .nft-badge { position: absolute; bottom: 4px; left: 4px; background: rgba(0,0,0,0.6); border-radius: 6px; font-size: 10px; padding: 2px 6px; color: #c4b5fd; }
+.const-info{
+  display:none;background:rgba(147,51,234,.08);
+  border:.5px solid rgba(147,51,234,.2);border-radius:14px;
+  padding:12px 16px;margin-bottom:12px;
+}
+.const-name{font-size:14px;color:#c084fc;font-weight:500;margin-bottom:4px;letter-spacing:.04em}
+.const-desc{font-size:12px;color:rgba(192,132,252,.45);line-height:1.5}
 
-  /* MODALS */
-  .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200; align-items: flex-end; justify-content: center; }
-  .modal-backdrop.open { display: flex; }
-  .modal { background: #1a1a2e; border-radius: 24px 24px 0 0; padding: 20px 20px calc(20px + env(safe-area-inset-bottom)); width: 100%; max-width: 480px; animation: slideUp 0.25s ease; }
-  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-  .modal-handle { width: 36px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.15); margin: 0 auto 18px; }
-  .modal-title { font-size: 18px; font-weight: 400; margin-bottom: 8px; }
-  .modal-desc { font-size: 14px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
-  .ton-amount { font-size: 36px; font-weight: 200; text-align: center; color: #a78bfa; margin: 12px 0; }
-  .modal-btn { width: 100%; background: var(--purple); color: #fff; border: none; border-radius: 40px; padding: 14px; font-size: 15px; font-weight: 500; cursor: pointer; font-family: inherit; margin-bottom: 8px; transition: all 0.2s; }
-  .modal-btn:active { background: #6d28d9; }
-  .modal-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .modal-btn.secondary { background: transparent; border: 0.5px solid var(--border); color: var(--muted); }
+/* MAP PAGE */
+.map-page{padding:0 18px}
+#mapCanvas{width:100%;border-radius:16px;display:block;margin-bottom:12px}
+.city-item{
+  display:flex;align-items:center;gap:12px;
+  background:var(--surface);border:.5px solid var(--border);
+  border-radius:12px;padding:11px 14px;margin-bottom:8px;
+}
+.cdot{width:7px;height:7px;border-radius:50%;background:#a855f7;flex-shrink:0;box-shadow:0 0 6px rgba(168,85,247,.6)}
+.cname{flex:1;font-size:13px;color:#ede8ff}
+.cbar-wrap{width:52px;height:2.5px;background:rgba(255,255,255,.08);border-radius:2px}
+.cbar{height:100%;border-radius:2px;background:var(--purple)}
+.ccount{font-size:12px;color:var(--muted)}
 
-  /* TX STATUS */
-  .tx-status { display: none; text-align: center; padding: 12px; border-radius: 12px; font-size: 13px; margin-bottom: 12px; }
-  .tx-status.pending { display: block; background: rgba(234,179,8,0.1); border: 0.5px solid rgba(234,179,8,0.3); color: #fbbf24; }
-  .tx-status.success { display: block; background: rgba(74,222,128,0.1); border: 0.5px solid rgba(74,222,128,0.3); color: var(--green); }
-  .tx-status.error { display: block; background: rgba(239,68,68,0.1); border: 0.5px solid rgba(239,68,68,0.3); color: #f87171; }
+/* PROFILE PAGE */
+.profile-page{padding:0 18px}
+.profile-header{display:flex;flex-direction:column;align-items:center;padding:28px 0 20px;text-align:center}
+.avatar{
+  width:76px;height:76px;border-radius:50%;
+  background:radial-gradient(circle at 40% 40%,#4c1d95,#1e1b4b);
+  border:2px solid rgba(147,51,234,.4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;margin-bottom:12px;position:relative;
+  box-shadow:0 0 28px rgba(147,51,234,.22);
+}
+.avatar-badge{position:absolute;bottom:-2px;right:-2px;background:var(--bg);border-radius:50%;padding:2px;font-size:14px;line-height:1}
+.profile-name{font-family:'Outfit',sans-serif;font-size:20px;font-weight:300;margin-bottom:4px}
+.profile-handle{font-size:13px;color:var(--muted)}
+
+.form-label{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:8px;margin-top:16px;display:block}
+.form-input{
+  width:100%;background:var(--surface);border:.5px solid var(--border);
+  border-radius:14px;padding:13px 16px;font-size:15px;color:var(--text);
+  font-family:'Space Grotesk',sans-serif;outline:none;transition:border-color .2s;
+}
+.form-input:focus{border-color:rgba(147,51,234,.45)}
+.form-input::placeholder{color:rgba(255,255,255,.14)}
+
+.nft-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;padding-bottom:12px}
+.nft-card{aspect-ratio:1;border-radius:14px;position:relative;overflow:hidden;cursor:pointer;background:#020110}
+.nft-add{border:1.5px dashed rgba(147,51,234,.25);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px}
+.nft-add span{font-size:10px;color:rgba(192,132,252,.3)}
+.nft-badge{position:absolute;bottom:4px;left:4px;background:rgba(0,0,0,.65);border-radius:6px;font-size:10px;padding:2px 7px;color:#c084fc}
+
+/* NAV */
+.nav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:rgba(6,3,15,.97);
+  border-top:.5px solid rgba(255,255,255,.07);
+  display:flex;z-index:100;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  gap:3px;padding:10px 0 8px;cursor:pointer;
+  color:rgba(168,85,247,.28);font-size:9px;letter-spacing:.05em;
+  border:none;background:transparent;font-family:'Space Grotesk',sans-serif;
+  transition:color .2s;
+}
+.nav-item svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.nav-item.active{color:#c084fc}
+
+/* MODALS */
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;align-items:flex-end;justify-content:center;backdrop-filter:blur(8px)}
+.modal-backdrop.open{display:flex}
+.modal{
+  background:linear-gradient(180deg,#0e0920 0%,#06030f 100%);
+  border:.5px solid rgba(147,51,234,.2);border-radius:28px 28px 0 0;
+  padding:20px 22px calc(22px + env(safe-area-inset-bottom));
+  width:100%;max-width:480px;animation:su .3s cubic-bezier(.16,1,.3,1);
+}
+@keyframes su{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.1);margin:0 auto 20px}
+.modal-title{font-family:'Outfit',sans-serif;font-size:20px;font-weight:300;margin-bottom:8px;color:#f5f0ff}
+.modal-desc{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6}
+.ton-amount{font-family:'Outfit',sans-serif;font-size:42px;font-weight:200;text-align:center;color:#c084fc;margin:10px 0 18px;text-shadow:0 0 20px rgba(147,51,234,.5)}
+.modal-btn{
+  width:100%;background:var(--purple);color:#fff;border:none;border-radius:40px;
+  padding:14px;font-size:14px;font-weight:500;cursor:pointer;
+  font-family:'Space Grotesk',sans-serif;margin-bottom:8px;transition:all .2s;
+  box-shadow:0 0 20px rgba(147,51,234,.3);
+}
+.modal-btn:active{transform:scale(.97)}
+.modal-btn.secondary{background:transparent;border:.5px solid var(--border);color:var(--muted);box-shadow:none}
+.tx-status{display:none;text-align:center;padding:10px;border-radius:12px;font-size:13px;margin-bottom:12px}
+.tx-status.pending{display:block;background:rgba(251,191,36,.07);border:.5px solid rgba(251,191,36,.22);color:#fbbf24}
+.tx-status.success{display:block;background:rgba(52,211,153,.07);border:.5px solid rgba(52,211,153,.22);color:var(--green)}
+.tx-status.error{display:block;background:rgba(248,113,113,.07);border:.5px solid rgba(248,113,113,.22);color:#f87171}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(16px);
+  background:#9333ea;color:#fff;border-radius:40px;
+  padding:10px 20px;font-size:12px;font-weight:500;
+  white-space:nowrap;opacity:0;transition:all .35s;z-index:150;pointer-events:none;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
 
+<canvas id="starfield"></canvas>
+
+<!-- WELCOME -->
+<div class="welcome" id="welcome">
+  <div class="welcome-glow"><div class="welcome-star">✦</div></div>
+  <div class="welcome-title">You're one of us,<br><span>unique by design</span></div>
+  <div class="welcome-body">
+    vitiligo.ton — the first counter of people with vitiligo in the world.<br><br>
+    Every star on this canvas is a real person. Together we are a constellation.
+  </div>
+  <button class="welcome-btn" id="welcomeBtn">I'm in ✦</button>
+  <div class="welcome-skip" id="welcomeSkip">just look around first</div>
+</div>
+
 <!-- HOME -->
 <div class="page active" id="page-home">
-  <div class="canvas-wrap">
-    <div class="pixel-grid" id="pixelGrid"></div>
-    <div class="canvas-fade"></div>
-  </div>
+  <div class="home">
+    <div class="topbar">
+      <span class="logo">vitiligo.ton</span>
+      <div id="ton-connect-btn"></div>
+      <div class="wallet-chip" id="walletChip">
+        <div class="wdot"></div>
+        <span id="walletAddr"></span>
+        <span id="walletDisc" style="opacity:.4;margin-left:2px;font-size:11px">✕</span>
+      </div>
+    </div>
 
-  <div class="home-content">
-    <div class="domain-pill"><div class="pulse"></div>vitiligo.ton</div>
+    <div class="canvas-wrap">
+      <canvas id="pixelCanvas" width="304" height="140"></canvas>
+      <div class="canvas-label">tap pixel to explore</div>
+    </div>
+
+    <div class="counter-row">
+      <div class="cnum" id="cnum">14 837</div>
+      <div class="counter-meta">
+        <div class="clabel">people counted</div>
+        <div class="live-row" id="liveRow"><div class="wdot" style="background:var(--green)"></div>live</div>
+      </div>
+    </div>
+
     <h1 class="headline">People with vitiligo<br>are <em>unique by design</em></h1>
     <p class="sub">just vitiligo · just us · just beautiful</p>
 
-    <div class="counter-box">
-      <div class="counter-label">counted so far</div>
-      <div class="counter-num" id="counterNum">0</div>
-      <div class="counter-sub">humans with vitiligo</div>
+    <button class="btn-main" id="countBtn" disabled>Connect wallet to join</button>
+    <button class="btn-ghost" id="goStarsBtn">✦ Add your constellation — 1 TON</button>
+  </div>
+</div>
+
+<!-- STARS -->
+<div class="page" id="page-stars">
+  <div class="stars-page">
+    <div class="page-title">Your constellation</div>
+    <div class="page-sub">Your vitiligo becomes real stars</div>
+
+    <div class="process-steps">
+      <div class="pstep active" id="ps1"><div class="pstep-dot"></div><div class="pstep-label">Upload</div></div>
+      <div class="pstep" id="ps2"><div class="pstep-dot"></div><div class="pstep-label">Detect</div></div>
+      <div class="pstep" id="ps3"><div class="pstep-dot"></div><div class="pstep-label">Map stars</div></div>
+      <div class="pstep" id="ps4"><div class="pstep-dot"></div><div class="pstep-label">Mint NFT</div></div>
     </div>
 
-    <!-- TON Connect button -->
-    <div id="ton-connect-btn"></div>
+    <div class="upload-area" id="uploadArea">
+      <div class="upload-icon">✦</div>
+      <div class="upload-text">Tap to upload a photo<br>with your vitiligo patch</div>
+      <div class="upload-hint">Your body disappears. Only stars remain.</div>
+    </div>
+    <input type="file" id="fileInput" accept="image/*">
 
-    <!-- Wallet connected info -->
-    <div class="wallet-info" id="walletInfo">
-      <div class="wallet-dot"></div>
-      <div class="wallet-addr" id="walletAddr"></div>
-      <div class="wallet-disc" id="walletDisc">disconnect</div>
+    <div class="result-wrap" id="resultWrap">
+      <canvas id="resultCanvas"></canvas>
     </div>
 
-    <button class="btn-main" id="countBtn" disabled>
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10z"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
-      Count me in — 1 TON
-    </button>
-    <button class="btn-ghost" id="learnBtn">How it works</button>
-
-    <div class="stars-row">
-      <div class="star-card" id="star1card">
-        <div class="icon">⭐</div>
-        <div class="title">Verified</div>
-        <div class="desc">TON wallet<br>+ 1 TON payment</div>
-      </div>
-      <div class="star-card" id="star2card">
-        <div class="icon">⭐⭐</div>
-        <div class="title">Confirmed</div>
-        <div class="desc">Add a photo —<br>pixel on canvas</div>
-      </div>
+    <div class="const-info" id="constInfo">
+      <div class="const-name" id="constName"></div>
+      <div class="const-desc" id="constDesc"></div>
     </div>
+
+    <button class="btn-main" id="mintBtn" disabled>Mint NFT — 1 TON</button>
+    <button class="btn-ghost" id="resetBtn" style="display:none;margin-top:0">Try another photo</button>
   </div>
 </div>
 
 <!-- MAP -->
 <div class="page" id="page-map">
-  <div class="section-title">Where we are</div>
-  <div class="section-sub">People with vitiligo around the world</div>
-  <div class="map-wrap">
-    <svg class="map-svg" viewBox="0 0 340 180" xmlns="http://www.w3.org/2000/svg">
-      <rect width="340" height="180" fill="#111827" rx="12"/>
-      <g opacity="0.06"><circle cx="88" cy="80" r="45" fill="#7c3aed"/><circle cx="180" cy="90" r="55" fill="#7c3aed"/><circle cx="280" cy="95" r="40" fill="#7c3aed"/></g>
-      <g><circle cx="88" cy="60" r="5" fill="#a78bfa" opacity="0.9"/><circle cx="88" cy="60" r="12" fill="#7c3aed" opacity="0.2"/><text x="88" y="48" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.5)" font-family="sans-serif">London</text></g>
-      <g><circle cx="175" cy="72" r="4" fill="#a78bfa" opacity="0.9"/><circle cx="175" cy="72" r="9" fill="#7c3aed" opacity="0.2"/><text x="175" y="60" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.5)" font-family="sans-serif">Moscow</text></g>
-      <g><circle cx="280" cy="100" r="7" fill="#a78bfa" opacity="0.9"/><circle cx="280" cy="100" r="15" fill="#7c3aed" opacity="0.25"/><text x="280" y="88" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.5)" font-family="sans-serif">Mumbai</text></g>
-      <g><circle cx="55" cy="120" r="4" fill="#a78bfa" opacity="0.8"/><circle cx="55" cy="120" r="9" fill="#7c3aed" opacity="0.2"/><text x="55" y="108" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.5)" font-family="sans-serif">New York</text></g>
-      <g><circle cx="305" cy="58" r="5" fill="#a78bfa" opacity="0.9"/><circle cx="305" cy="58" r="11" fill="#7c3aed" opacity="0.2"/><text x="305" y="46" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.5)" font-family="sans-serif">Beijing</text></g>
-      <g><circle cx="210" cy="55" r="3" fill="#a78bfa" opacity="0.7"/><circle cx="210" cy="55" r="7" fill="#7c3aed" opacity="0.15"/><text x="210" y="43" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.4)" font-family="sans-serif">Almaty</text></g>
-    </svg>
+  <div class="map-page">
+    <div class="page-title">Where we are</div>
+    <div class="page-sub">People with vitiligo worldwide</div>
+    <canvas id="mapCanvas" width="304" height="155"></canvas>
+    <div class="city-item"><div class="cdot"></div><div class="cname">Mumbai, India</div><div class="cbar-wrap"><div class="cbar" style="width:100%"></div></div><div class="ccount">3,420</div></div>
+    <div class="city-item"><div class="cdot"></div><div class="cname">Moscow, Russia</div><div class="cbar-wrap"><div class="cbar" style="width:36%"></div></div><div class="ccount">1,240</div></div>
+    <div class="city-item"><div class="cdot"></div><div class="cname">London, UK</div><div class="cbar-wrap"><div class="cbar" style="width:25%"></div></div><div class="ccount">847</div></div>
+    <div class="city-item"><div class="cdot"></div><div class="cname">Beijing, China</div><div class="cbar-wrap"><div class="cbar" style="width:61%"></div></div><div class="ccount">2,100</div></div>
+    <div class="city-item"><div class="cdot"></div><div class="cname">New York, USA</div><div class="cbar-wrap"><div class="cbar" style="width:18%"></div></div><div class="ccount">612</div></div>
+    <div class="city-item"><div class="cdot"></div><div class="cname">Almaty, Kazakhstan</div><div class="cbar-wrap"><div class="cbar" style="width:6%"></div></div><div class="ccount">188</div></div>
   </div>
-  <div class="city-list">
-    <div class="city-row"><div class="city-dot-sm"></div><div class="city-name">Mumbai, India</div><div class="city-bar-wrap"><div class="city-bar" style="width:100%"></div></div><div class="city-count">3,420</div></div>
-    <div class="city-row"><div class="city-dot-sm"></div><div class="city-name">Moscow, Russia</div><div class="city-bar-wrap"><div class="city-bar" style="width:36%"></div></div><div class="city-count">1,240</div></div>
-    <div class="city-row"><div class="city-dot-sm"></div><div class="city-name">London, UK</div><div class="city-bar-wrap"><div class="city-bar" style="width:25%"></div></div><div class="city-count">847</div></div>
-    <div class="city-row"><div class="city-dot-sm"></div><div class="city-name">Beijing, China</div><div class="city-bar-wrap"><div class="city-bar" style="width:61%"></div></div><div class="city-count">2,100</div></div>
-    <div class="city-row"><div class="city-dot-sm"></div><div class="city-name">New York, USA</div><div class="city-bar-wrap"><div class="city-bar" style="width:18%"></div></div><div class="city-count">612</div></div>
-    <div class="city-row"><div class="city-dot-sm"></div><div class="city-name">Almaty, Kazakhstan</div><div class="city-bar-wrap"><div class="city-bar" style="width:6%"></div></div><div class="city-count">188</div></div>
-  </div>
-</div>
-
-<!-- GALLERY -->
-<div class="page" id="page-gallery">
-  <div class="section-title">Canvas</div>
-  <div class="section-sub">All confirmed vitiligo photos as NFT pixels</div>
-  <div class="filter-row">
-    <button class="filter-chip active">All</button>
-    <button class="filter-chip">⭐⭐ Confirmed</button>
-    <button class="filter-chip">Recent</button>
-    <button class="filter-chip">18+</button>
-    <button class="filter-chip">My city</button>
-  </div>
-  <div class="gallery-grid" id="galleryGrid"></div>
 </div>
 
 <!-- PROFILE -->
 <div class="page" id="page-profile">
-  <div class="profile-header">
-    <div class="avatar">🌟<div class="avatar-badge" id="profileBadge">⭐</div></div>
-    <div class="profile-name" id="profileName">Your name</div>
-    <div class="profile-handle" id="profileHandle">@telegram_user</div>
-  </div>
-  <div class="form-section">
+  <div class="profile-page">
+    <div class="profile-header">
+      <div class="avatar">🌟<div class="avatar-badge" id="profileBadge">⭐</div></div>
+      <div class="profile-name" id="profileName">Your name</div>
+      <div class="profile-handle" id="profileHandle">@telegram_user</div>
+    </div>
     <label class="form-label">Name</label>
     <input type="text" class="form-input" id="fieldName" placeholder="Your name">
     <label class="form-label">Country</label>
@@ -255,291 +397,550 @@
     <input type="text" class="form-input" id="fieldCity" placeholder="City">
     <label class="form-label">Age</label>
     <input type="number" class="form-input" id="fieldAge" placeholder="Age" min="1" max="120">
-    <label class="form-label" style="margin-top:20px">My NFT collection</label>
-  </div>
-  <div class="nft-section">
+    <label class="form-label">My constellation NFTs</label>
     <div class="nft-grid" id="nftGrid">
       <div class="nft-card nft-add" id="addNftBtn">
-        <div class="nft-card-inner">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          <span style="font-size:10px;color:rgba(255,255,255,0.3)">Add photo<br>1 TON</span>
-        </div>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(192,132,252,.3)" stroke-width="1.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>Add photo · 1 TON</span>
       </div>
     </div>
-  </div>
-  <div style="padding: 20px 16px;">
-    <button class="btn-main" id="saveProfileBtn">Save profile</button>
+    <button class="btn-main" id="saveBtn" style="margin-top:20px;margin-bottom:32px">Save profile</button>
   </div>
 </div>
 
 <!-- NAV -->
 <nav class="nav">
-  <button class="nav-item active" data-page="home"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home</button>
-  <button class="nav-item" data-page="map"><svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.4 7.4 12.5 7.7 12.8a.5.5 0 0 0 .6 0C12.6 22.5 20 15.4 20 10a8 8 0 0 0-8-8z"/></svg>Map</button>
-  <button class="nav-item" data-page="gallery"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Canvas</button>
-  <button class="nav-item" data-page="profile"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</button>
+  <button class="nav-item active" data-page="home">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home
+  </button>
+  <button class="nav-item" data-page="stars">
+    <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Stars
+  </button>
+  <button class="nav-item" data-page="map">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.4 7.4 12.5 7.7 12.8a.5.5 0 0 0 .6 0C12.6 22.5 20 15.4 20 10a8 8 0 0 0-8-8z"/></svg>Map
+  </button>
+  <button class="nav-item" data-page="profile">
+    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile
+  </button>
 </nav>
 
-<!-- MODAL: HOW IT WORKS -->
-<div class="modal-backdrop" id="modalHow">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">How it works</div>
-    <div class="modal-desc">
-      1. Connect your TON wallet — proves you're a real human, not a bot.<br><br>
-      2. Send 1 TON — you're counted. Your ⭐ appears on the canvas.<br><br>
-      3. Add a photo with vitiligo — it becomes an NFT pixel on the global canvas. You get ⭐⭐ confirmed status.<br><br>
-      The collection can't be bought. Only people with vitiligo can join.
-    </div>
-    <button class="modal-btn" id="modalHowClose">Got it</button>
-  </div>
-</div>
-
-<!-- MODAL: COUNT ME IN -->
+<!-- MODAL: COUNT -->
 <div class="modal-backdrop" id="modalCount">
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title">Join the count</div>
     <div class="ton-amount">1 TON</div>
-    <div class="modal-desc">Send 1 TON to the vitiligo.ton counter. Your pixel appears on the canvas instantly.</div>
-    <div class="tx-status" id="txStatus"></div>
-    <button class="modal-btn" id="modalCountConfirm">Send 1 TON & get counted</button>
+    <div class="modal-desc">Send 1 TON — you're verified as a real human with vitiligo. Your star lights up on the canvas.</div>
+    <div class="tx-status" id="txCount"></div>
+    <button class="modal-btn" id="modalCountConfirm">Send 1 TON & be counted</button>
     <button class="modal-btn secondary" id="modalCountClose">Cancel</button>
   </div>
 </div>
 
-<!-- MODAL: ADD PHOTO -->
-<div class="modal-backdrop" id="modalPhoto">
+<!-- MODAL: MINT -->
+<div class="modal-backdrop" id="modalMint">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">Add photo — get ⭐⭐</div>
-    <div class="modal-desc">Your photo with vitiligo becomes an NFT pixel on the global canvas.<br><br><strong style="color:#c4b5fd">1 photo = 1 TON.</strong> Each additional photo costs +1 TON.</div>
-    <div class="tx-status" id="txStatusPhoto"></div>
-    <button class="modal-btn" id="modalPhotoConfirm">Choose photo — 1 TON</button>
-    <button class="modal-btn secondary" id="modalPhotoClose">Cancel</button>
+    <div class="modal-title">Mint your constellation</div>
+    <div class="ton-amount">1 TON</div>
+    <div class="modal-desc">Your vitiligo patch becomes a unique constellation NFT — forever on the TON blockchain. No one can buy it. Only you can own it.</div>
+    <div class="tx-status" id="txMint"></div>
+    <button class="modal-btn" id="modalMintConfirm">Mint NFT — 1 TON</button>
+    <button class="modal-btn secondary" id="modalMintClose">Cancel</button>
   </div>
 </div>
 
-<script>
-// ─── CONFIG ───────────────────────────────────────────────
-// ЗАМЕНИ на адрес своего смарт-контракта когда задеплоишь
-const CONTRACT_ADDRESS = 'EQD_REPLACE_WITH_YOUR_CONTRACT_ADDRESS';
-const TON_AMOUNT = '1000000000'; // 1 TON в наноТОН
+<div class="toast" id="toast"></div>
 
-// ─── TELEGRAM ─────────────────────────────────────────────
+<script>
+const CONTRACT_ADDRESS = 'EQD_REPLACE_WITH_YOUR_CONTRACT_ADDRESS';
+const TON_AMOUNT = '1000000000';
+
+/* ── TELEGRAM ── */
 const tg = window.Telegram?.WebApp;
 if (tg) {
-  tg.ready();
-  tg.expand();
-  tg.setHeaderColor('#0a0a0f');
-  tg.setBackgroundColor('#0a0a0f');
-  const user = tg.initDataUnsafe?.user;
-  if (user) {
-    const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ');
-    document.getElementById('profileName').textContent = fullName || 'Your name';
-    document.getElementById('profileHandle').textContent = '@' + (user.username || 'you');
-    document.getElementById('fieldName').value = fullName;
+  tg.ready(); tg.expand();
+  tg.setHeaderColor('#06030f');
+  tg.setBackgroundColor('#06030f');
+  const u = tg.initDataUnsafe?.user;
+  if (u) {
+    const n = [u.first_name, u.last_name].filter(Boolean).join(' ');
+    document.getElementById('profileName').textContent = n || 'Your name';
+    document.getElementById('profileHandle').textContent = '@' + (u.username || 'you');
+    document.getElementById('fieldName').value = n;
   }
 }
 
-// ─── TON CONNECT ──────────────────────────────────────────
-const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-  manifestUrl: 'https://vsrefle.github.io/vitiligo-ton/tonconnect-manifest.json',
-  buttonRootId: 'ton-connect-btn',
-  uiPreferences: {
-    theme: 'DARK',
-    colorsSet: {
-      [TON_CONNECT_UI.THEME.DARK]: {
-        connectButton: {
-          background: '#7c3aed',
-          foreground: '#ffffff',
-        }
-      }
+/* ── STARFIELD ── */
+const sfC = document.getElementById('starfield');
+const sfX = sfC.getContext('2d');
+function resizeSF() { sfC.width = window.innerWidth; sfC.height = window.innerHeight; }
+resizeSF(); window.addEventListener('resize', resizeSF);
+const bgStars = Array.from({length:120}, () => ({
+  x: Math.random()*window.innerWidth, y: Math.random()*window.innerHeight,
+  r: Math.random()<.65?.4:Math.random()<.6?.8:1.5,
+  a: Math.random()*Math.PI*2, sp: .004+Math.random()*.01,
+  min: .03+Math.random()*.07, max: .22+Math.random()*.5
+}));
+const nebulas = [
+  {x:.15,y:.12,r:.35,c:'rgba(147,51,234,.08)'},{x:.8,y:.5,r:.28,c:'rgba(88,28,135,.1)'},
+  {x:.1,y:.75,r:.22,c:'rgba(126,34,206,.06)'},{x:.75,y:.2,r:.2,c:'rgba(192,132,252,.04)'}
+];
+function drawSF() {
+  const W=sfC.width, H=sfC.height;
+  sfX.clearRect(0,0,W,H);
+  nebulas.forEach(n => {
+    const g=sfX.createRadialGradient(n.x*W,n.y*H,0,n.x*W,n.y*H,n.r*W);
+    g.addColorStop(0,n.c); g.addColorStop(1,'transparent');
+    sfX.fillStyle=g; sfX.beginPath(); sfX.arc(n.x*W,n.y*H,n.r*W,0,Math.PI*2); sfX.fill();
+  });
+  bgStars.forEach(s => {
+    s.a+=s.sp;
+    const op=s.min+(s.max-s.min)*(Math.sin(s.a)+1)/2;
+    sfX.beginPath(); sfX.arc(s.x,s.y,s.r,0,Math.PI*2);
+    sfX.fillStyle=`rgba(220,210,255,${op.toFixed(2)})`; sfX.fill();
+  });
+  requestAnimationFrame(drawSF);
+}
+drawSF();
+
+/* ── PIXEL CANVAS ── */
+const PC = document.getElementById('pixelCanvas');
+const PX = PC.getContext('2d');
+const COLS=38, ROWS=18, PW=8, PH=8;
+PC.width=COLS*PW; PC.height=ROWS*PH;
+const pixels = [];
+const purples = ['#3b0764','#4c1d95','#5b21b6','#6d28d9','#7c3aed','#8b5cf6','#a78bfa','#2e1065','#1e1b4b'];
+for (let i=0;i<COLS*ROWS;i++) {
+  pixels[i] = Math.random()<.52 ? {color:purples[Math.floor(Math.random()*purples.length)],op:.12+Math.random()*.5,isNFT:false} : null;
+}
+function drawPixels() {
+  PX.clearRect(0,0,PC.width,PC.height);
+  pixels.forEach((p,i) => {
+    if (!p) return;
+    const x=(i%COLS)*PW, y=Math.floor(i/COLS)*PH;
+    PX.globalAlpha=p.op; PX.fillStyle=p.color;
+    PX.fillRect(x+.5,y+.5,PW-1,PH-1);
+    if (p.isNFT) {
+      PX.globalAlpha=1; PX.fillStyle='rgba(255,255,255,.7)';
+      PX.fillRect(x+PW-2,y,2,2);
     }
-  }
+  });
+  PX.globalAlpha=1;
+}
+drawPixels();
+
+function addPixelToCanvas(color, isNFT) {
+  const empty = [];
+  pixels.forEach((p,i) => { if (!p) empty.push(i); });
+  if (!empty.length) return;
+  const idx = empty[Math.floor(Math.random()*empty.length)];
+  pixels[idx] = {color, op:1, isNFT};
+  drawPixels();
+  const x=(idx%COLS)*PW, y=Math.floor(idx/COLS)*PH;
+  let f=0;
+  const fl=setInterval(()=>{
+    f++; PX.globalAlpha=f%2===0?.3:1;
+    PX.fillStyle=color; PX.fillRect(x+.5,y+.5,PW-1,PH-1);
+    PX.globalAlpha=1;
+    if(f>7){clearInterval(fl);drawPixels();}
+  },110);
+}
+
+/* ── COUNTER (only when wallet connected) ── */
+let count=14837, connected=false, tickTimer=null;
+const numEl=document.getElementById('cnum');
+const liveRow=document.getElementById('liveRow');
+function fmt(n){return n.toLocaleString('ru-RU')}
+numEl.textContent=fmt(count);
+function startTick(){
+  if(tickTimer)return; liveRow.classList.add('show');
+  function next(){
+    tickTimer=setTimeout(()=>{
+      count++; numEl.textContent=fmt(count);
+      numEl.classList.add('flash'); setTimeout(()=>numEl.classList.remove('flash'),600);
+      next();
+    },8000+Math.random()*14000);
+  } next();
+}
+function stopTick(){clearTimeout(tickTimer);tickTimer=null;liveRow.classList.remove('show');}
+
+/* ── TON CONNECT ── */
+const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+  manifestUrl: 'https://YOUR_GITHUB_USERNAME.github.io/vitiligo-ton/tonconnect-manifest.json',
+  buttonRootId: 'ton-connect-btn',
+  uiPreferences:{theme:'DARK'}
 });
 
-// Слушаем изменения статуса кошелька
 tonConnectUI.onStatusChange(wallet => {
-  const countBtn = document.getElementById('countBtn');
-  const walletInfo = document.getElementById('walletInfo');
-  const walletAddr = document.getElementById('walletAddr');
-
+  const chip=document.getElementById('walletChip');
+  const tcBtn=document.getElementById('ton-connect-btn');
+  const btn=document.getElementById('countBtn');
   if (wallet) {
-    // Кошелёк подключён
-    const addr = wallet.account.address;
-    const shortAddr = addr.slice(0, 6) + '...' + addr.slice(-4);
-    walletAddr.textContent = shortAddr;
-    walletInfo.classList.add('show');
-    countBtn.disabled = false;
-    countBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10z"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>Count me in — 1 TON`;
-    if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    const addr=wallet.account.address;
+    document.getElementById('walletAddr').textContent=addr.slice(0,5)+'…'+addr.slice(-4);
+    chip.classList.add('show'); tcBtn.style.display='none';
+    connected=true; btn.disabled=false; btn.textContent='Count me in — 1 TON';
+    startTick();
+    if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
   } else {
-    // Кошелёк отключён
-    walletInfo.classList.remove('show');
-    countBtn.disabled = true;
-    countBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10z"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>Connect wallet first`;
+    chip.classList.remove('show'); tcBtn.style.display='';
+    connected=false; btn.disabled=true; btn.textContent='Connect wallet to join';
+    stopTick();
   }
 });
+document.getElementById('walletDisc').addEventListener('click',()=>tonConnectUI.disconnect());
 
-// Disconnect
-document.getElementById('walletDisc').addEventListener('click', () => {
-  tonConnectUI.disconnect();
-});
-
-// ─── SEND TRANSACTION ─────────────────────────────────────
-async function sendTon(statusElId, onSuccess) {
-  const statusEl = document.getElementById(statusElId);
-
-  if (!tonConnectUI.connected) {
-    await tonConnectUI.openModal();
-    return;
-  }
-
-  statusEl.className = 'tx-status pending';
-  statusEl.textContent = '⏳ Sending transaction...';
-
+/* ── SEND TX ── */
+async function sendTon(statusId, onSuccess) {
+  const el=document.getElementById(statusId);
+  if(!tonConnectUI.connected){tonConnectUI.openModal();return;}
+  el.className='tx-status pending'; el.textContent='⏳ Waiting for confirmation…';
   try {
-    const tx = {
-      validUntil: Math.floor(Date.now() / 1000) + 300, // 5 минут
-      messages: [
-        {
-          address: CONTRACT_ADDRESS,
-          amount: TON_AMOUNT,
-          // payload можно добавить потом для передачи данных контракту
-        }
-      ]
-    };
-
-    const result = await tonConnectUI.sendTransaction(tx);
-    statusEl.className = 'tx-status success';
-    statusEl.textContent = '✓ Transaction sent!';
-    if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-    setTimeout(() => {
-      statusEl.className = 'tx-status';
-      closeModal('modalCount');
-      closeModal('modalPhoto');
-      onSuccess();
-    }, 1500);
-  } catch (err) {
-    statusEl.className = 'tx-status error';
-    statusEl.textContent = err.message?.includes('cancel') ? '✕ Cancelled' : '✕ Error. Try again.';
-    if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+    await tonConnectUI.sendTransaction({
+      validUntil:Math.floor(Date.now()/1000)+300,
+      messages:[{address:CONTRACT_ADDRESS,amount:TON_AMOUNT}]
+    });
+    el.className='tx-status success'; el.textContent='✓ Transaction confirmed!';
+    if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    setTimeout(()=>{el.className='tx-status';onSuccess();},1400);
+  } catch(e) {
+    el.className='tx-status error';
+    el.textContent=e.message?.includes('cancel')?'✕ Cancelled':'✕ Failed. Try again.';
+    if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
   }
 }
 
-// ─── PIXEL CANVAS ─────────────────────────────────────────
-const colors = ['#7c3aed','#6d28d9','#5b21b6','#8b5cf6','#a78bfa','#c4b5fd','#2563eb','#1d4ed8','#312e81','#3730a3','#4338ca','#701a75','#86198f','#0e7490','#0f172a','#1e293b','#334155'];
-const grid = document.getElementById('pixelGrid');
-for (let i = 0; i < 98; i++) {
-  const el = document.createElement('div');
-  el.className = 'px';
-  el.style.background = colors[Math.floor(Math.random() * colors.length)];
-  el.style.opacity = (0.25 + Math.random() * 0.75).toFixed(2);
-  grid.appendChild(el);
+/* ── WELCOME ── */
+function closeWelcome(){
+  document.getElementById('welcome').classList.add('fade');
+  setTimeout(()=>{document.getElementById('welcome').style.display='none';},600);
 }
+document.getElementById('welcomeBtn').addEventListener('click',closeWelcome);
+document.getElementById('welcomeSkip').addEventListener('click',closeWelcome);
 
-// ─── COUNTER ──────────────────────────────────────────────
-let count = 14837;
-const numEl = document.getElementById('counterNum');
-let cur = 0;
-const iv = setInterval(() => {
-  cur = Math.min(cur + Math.ceil(count / 60), count);
-  numEl.textContent = cur.toLocaleString();
-  if (cur >= count) clearInterval(iv);
-}, 20);
-
-// ─── GALLERY ──────────────────────────────────────────────
-const galleryColors = [...colors, '#15803d','#166534','#854d0e','#713f12'];
-const gGrid = document.getElementById('galleryGrid');
-for (let i = 0; i < 30; i++) {
-  const el = document.createElement('div');
-  el.className = 'g-cell';
-  el.style.background = galleryColors[Math.floor(Math.random() * galleryColors.length)];
-  if (Math.random() > 0.5) {
-    const s = document.createElement('div');
-    s.className = 'g-stars';
-    s.textContent = Math.random() > 0.5 ? '⭐⭐' : '⭐';
-    el.appendChild(s);
-  }
-  gGrid.appendChild(el);
-}
-
-// ─── NAV ──────────────────────────────────────────────────
-document.querySelectorAll('.nav-item').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.page').forEach(pg => pg.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-    document.getElementById('page-' + btn.dataset.page).classList.add('active');
+/* ── NAV ── */
+document.querySelectorAll('.nav-item').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const p=btn.dataset.page;
+    document.querySelectorAll('.page').forEach(pg=>pg.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+    document.getElementById('page-'+p).classList.add('active');
     btn.classList.add('active');
-    window.scrollTo(0, 0);
+    window.scrollTo(0,0);
   });
 });
-
-document.querySelectorAll('.filter-chip').forEach(chip => {
-  chip.addEventListener('click', () => {
-    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-    chip.classList.add('active');
-  });
+document.getElementById('goStarsBtn').addEventListener('click',()=>{
+  document.querySelector('[data-page="stars"]').click();
+});
+document.getElementById('addNftBtn').addEventListener('click',()=>{
+  document.querySelector('[data-page="stars"]').click();
 });
 
-// ─── MODALS ───────────────────────────────────────────────
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-document.getElementById('learnBtn').addEventListener('click', () => openModal('modalHow'));
-document.getElementById('modalHowClose').addEventListener('click', () => closeModal('modalHow'));
-document.getElementById('modalCountClose').addEventListener('click', () => closeModal('modalCount'));
-document.getElementById('modalPhotoClose').addEventListener('click', () => closeModal('modalPhoto'));
-document.getElementById('star1card').addEventListener('click', () => openModal('modalCount'));
-document.getElementById('star2card').addEventListener('click', () => openModal('modalPhoto'));
-document.getElementById('addNftBtn').addEventListener('click', () => openModal('modalPhoto'));
-
-document.getElementById('countBtn').addEventListener('click', () => {
-  if (!tonConnectUI.connected) { tonConnectUI.openModal(); return; }
+/* ── MODALS ── */
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.getElementById('countBtn').addEventListener('click',()=>{
+  if(!connected){tonConnectUI.openModal();return;}
   openModal('modalCount');
 });
-
-let counted = false;
-document.getElementById('modalCountConfirm').addEventListener('click', () => {
-  sendTon('txStatus', () => {
-    if (!counted) {
-      counted = true;
-      count++;
-      numEl.textContent = count.toLocaleString();
-      document.getElementById('countBtn').innerHTML = '✓ Counted!';
-      document.getElementById('countBtn').classList.add('done');
-      const pxs = document.querySelectorAll('.px');
-      pxs[Math.floor(Math.random() * pxs.length)].style.background = '#a78bfa';
-      pxs[Math.floor(Math.random() * pxs.length)].style.opacity = '1';
+document.getElementById('modalCountClose').addEventListener('click',()=>closeModal('modalCount'));
+document.getElementById('modalMintClose').addEventListener('click',()=>closeModal('modalMint'));
+let counted=false;
+document.getElementById('modalCountConfirm').addEventListener('click',()=>{
+  sendTon('txCount',()=>{
+    closeModal('modalCount');
+    if(!counted){
+      counted=true; count++;
+      numEl.textContent=fmt(count);
+      numEl.classList.add('flash'); setTimeout(()=>numEl.classList.remove('flash'),700);
+      const btn=document.getElementById('countBtn');
+      btn.textContent='✓ Counted!'; btn.classList.add('done'); btn.disabled=true;
+      addPixelToCanvas('#9333ea',false);
+      showToast('Your star is on the canvas ✦');
     }
   });
 });
 
-let nftCount = 0;
-document.getElementById('modalPhotoConfirm').addEventListener('click', () => {
-  sendTon('txStatusPhoto', () => {
+document.querySelectorAll('.modal-backdrop').forEach(bd=>{
+  bd.addEventListener('click',e=>{if(e.target===bd)bd.classList.remove('open');});
+});
+
+/* ── TOAST ── */
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+/* ── CONSTELLATION DATA ── */
+const CONSTS=[
+  {name:'Orion · The Hunter',
+   desc:'One of the most recognised constellations — your vitiligo now lives in it',
+   stars:[{x:.28,y:.35},{x:.42,y:.2},{x:.62,y:.28},{x:.7,y:.46},{x:.58,y:.63},{x:.38,y:.71},{x:.23,y:.56},{x:.5,y:.44},{x:.74,y:.3},{x:.48,y:.22}],
+   lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0],[7,3],[1,9],[9,2]]},
+  {name:'Cassiopeia · The Queen',
+   desc:'A timeless W-shape in the northern sky — your patch is its crown',
+   stars:[{x:.12,y:.58},{x:.28,y:.28},{x:.5,y:.52},{x:.72,y:.26},{x:.88,y:.55},{x:.5,y:.75},{x:.35,y:.68}],
+   lines:[[0,1],[1,2],[2,3],[3,4],[2,5],[5,6],[6,0]]},
+  {name:'Cygnus · The Swan',
+   desc:'The Northern Cross soaring through the Milky Way',
+   stars:[{x:.5,y:.12},{x:.5,y:.38},{x:.5,y:.64},{x:.5,y:.88},{x:.18,y:.38},{x:.82,y:.38},{x:.33,y:.54},{x:.67,y:.54}],
+   lines:[[0,1],[1,2],[2,3],[4,1],[1,5],[2,6],[2,7]]},
+  {name:'Lyra · The Lyre',
+   desc:'Home to Vega, one of the brightest stars — your patch shines here',
+   stars:[{x:.5,y:.1},{x:.3,y:.38},{x:.7,y:.38},{x:.25,y:.62},{x:.75,y:.62},{x:.5,y:.85},{x:.45,y:.5},{x:.55,y:.5}],
+   lines:[[0,1],[0,2],[1,2],[1,3],[2,4],[3,5],[4,5],[1,6],[2,7]]},
+  {name:'Perseus · The Hero',
+   desc:'Guardian of the night sky — your pattern is his constellation',
+   stars:[{x:.5,y:.14},{x:.36,y:.3},{x:.64,y:.26},{x:.28,y:.5},{x:.56,y:.48},{x:.72,y:.4},{x:.22,y:.7},{x:.46,y:.68},{x:.7,y:.65},{x:.5,y:.85}],
+   lines:[[0,1],[0,2],[1,3],[2,5],[3,6],[4,5],[4,7],[7,8],[7,9],[1,4]]},
+];
+
+/* ── PHOTO → CONSTELLATION ── */
+const fileInput=document.getElementById('fileInput');
+const uploadArea=document.getElementById('uploadArea');
+const resultWrap=document.getElementById('resultWrap');
+const resultCanvas=document.getElementById('resultCanvas');
+const constInfo=document.getElementById('constInfo');
+const mintBtn=document.getElementById('mintBtn');
+const resetBtn=document.getElementById('resetBtn');
+
+let chosenConst=null, nftPixelColor=null;
+
+function setStep(n){for(let i=1;i<=4;i++) document.getElementById('ps'+i).classList.toggle('active',i<=n);}
+
+uploadArea.addEventListener('click',()=>fileInput.click());
+
+fileInput.addEventListener('change',e=>{
+  const file=e.target.files[0]; if(!file)return;
+  setStep(1);
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const img=new Image();
+    img.onload=()=>{
+      setStep(2);
+      setTimeout(()=>{buildConstellation(img);},350);
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+function buildConstellation(img){
+  const W=320, H=320;
+  // offscreen — sample photo for vitiligo patches
+  const off=document.createElement('canvas'); off.width=W; off.height=H;
+  const ox=off.getContext('2d');
+  const scale=Math.max(W/img.width,H/img.height);
+  ox.drawImage(img,(W-img.width*scale)/2,(H-img.height*scale)/2,img.width*scale,img.height*scale);
+  const data=ox.getImageData(0,0,W,H).data;
+
+  // Find vitiligo — bright, low-saturation pixels
+  const patches=[];
+  const step=5;
+  for(let y=step;y<H-step;y+=step){
+    for(let x=step;x<W-step;x+=step){
+      const i=(y*W+x)*4;
+      const r=data[i],g=data[i+1],b=data[i+2],a=data[i+3];
+      if(a<10)continue;
+      const bright=(r+g+b)/3;
+      const sat=Math.max(r,g,b)-Math.min(r,g,b);
+      if(bright>175&&sat<45) patches.push({x:x/W,y:y/H,bright});
+    }
+  }
+
+  setStep(3);
+  chosenConst=CONSTS[Math.floor(Math.random()*CONSTS.length)];
+  const tmpl=chosenConst.stars;
+
+  // Blend real patches with constellation template
+  let finalStars;
+  if(patches.length>=tmpl.length){
+    const step2=Math.floor(patches.length/tmpl.length);
+    finalStars=tmpl.map((cs,i)=>{
+      const p=patches[i*step2];
+      return {x:p.x*.55+cs.x*.45, y:p.y*.55+cs.y*.45};
+    });
+  } else {
+    finalStars=tmpl.map(cs=>({x:cs.x+(Math.random()-.5)*.05,y:cs.y+(Math.random()-.5)*.05}));
+  }
+
+  // Draw result canvas — pure cosmos
+  resultCanvas.width=W; resultCanvas.height=H;
+  const rx=resultCanvas.getContext('2d');
+
+  // Deep space
+  rx.fillStyle='#020110'; rx.fillRect(0,0,W,H);
+
+  // Nebula where body was
+  const ng=rx.createRadialGradient(W/2,H/2,0,W/2,H/2,W*.45);
+  ng.addColorStop(0,'rgba(76,29,149,.22)'); ng.addColorStop(.5,'rgba(55,20,120,.1)'); ng.addColorStop(1,'transparent');
+  rx.fillStyle=ng; rx.beginPath(); rx.arc(W/2,H/2,W*.45,0,Math.PI*2); rx.fill();
+
+  // A second nebula off-center for depth
+  const ng2=rx.createRadialGradient(W*.7,H*.3,0,W*.7,H*.3,W*.3);
+  ng2.addColorStop(0,'rgba(88,28,135,.12)'); ng2.addColorStop(1,'transparent');
+  rx.fillStyle=ng2; rx.beginPath(); rx.arc(W*.7,H*.3,W*.3,0,Math.PI*2); rx.fill();
+
+  // Background micro-stars
+  for(let i=0;i<90;i++){
+    const bx=Math.random()*W, by=Math.random()*H;
+    const br=Math.random()<.6?.35:.65;
+    rx.fillStyle=`rgba(210,200,255,${(.02+Math.random()*.12).toFixed(2)})`;
+    rx.beginPath(); rx.arc(bx,by,br,0,Math.PI*2); rx.fill();
+  }
+
+  // Constellation lines — delicate dashes
+  rx.save();
+  rx.strokeStyle='rgba(168,85,247,.28)'; rx.lineWidth=.75; rx.setLineDash([3,5]);
+  chosenConst.lines.forEach(([a,b])=>{
+    const sa=finalStars[a],sb=finalStars[b];
+    if(!sa||!sb)return;
+    rx.beginPath(); rx.moveTo(sa.x*W,sa.y*H); rx.lineTo(sb.x*W,sb.y*H); rx.stroke();
+  });
+  rx.setLineDash([]); rx.restore();
+
+  // Stars — glow + core + sparkle cross
+  finalStars.forEach((star,i)=>{
+    const sx=star.x*W, sy=star.y*H;
+    const isMain=i===0||i===2||i===4;
+    const sz=isMain?4.8:2+Math.random()*.9;
+
+    // outer soft glow
+    const og=rx.createRadialGradient(sx,sy,0,sx,sy,sz*7);
+    og.addColorStop(0,`rgba(200,170,255,${isMain?.38:.22})`);
+    og.addColorStop(.35,'rgba(147,51,234,.1)'); og.addColorStop(1,'transparent');
+    rx.fillStyle=og; rx.beginPath(); rx.arc(sx,sy,sz*7,0,Math.PI*2); rx.fill();
+
+    // inner glow
+    const ig=rx.createRadialGradient(sx,sy,0,sx,sy,sz*2.2);
+    ig.addColorStop(0,'rgba(255,248,255,.92)'); ig.addColorStop(1,'rgba(192,132,252,.15)');
+    rx.fillStyle=ig; rx.beginPath(); rx.arc(sx,sy,sz*2.2,0,Math.PI*2); rx.fill();
+
+    // core
+    rx.fillStyle='rgba(255,252,255,.98)';
+    rx.beginPath(); rx.arc(sx,sy,sz,0,Math.PI*2); rx.fill();
+
+    // sparkle cross
+    if(isMain){
+      rx.strokeStyle=`rgba(230,215,255,${isMain?.55:.35})`; rx.lineWidth=.65;
+      const arms=isMain?sz*3.2:sz*2;
+      [[arms,0],[-arms,0],[0,arms],[0,-arms]].forEach(([dx,dy])=>{
+        rx.beginPath(); rx.moveTo(sx,sy); rx.lineTo(sx+dx,sy+dy); rx.stroke();
+      });
+    }
+  });
+
+  // Constellation name overlay (subtle, bottom)
+  rx.fillStyle='rgba(192,132,252,.35)';
+  rx.font='11px Space Grotesk,sans-serif';
+  rx.textAlign='center';
+  rx.fillText(chosenConst.name.split('·')[0].trim(),W/2,H-12);
+
+  // Show
+  resultWrap.style.display='block';
+  constInfo.style.display='block';
+  uploadArea.style.display='none';
+  document.getElementById('constName').textContent='✦ '+chosenConst.name;
+  document.getElementById('constDesc').textContent=
+    `${patches.length>10?`Detected ${Math.min(patches.length,99)}+ vitiligo patches → `:''}mapped to ${tmpl.length} stars. Your constellation is ready.`;
+
+  mintBtn.disabled=false;
+  resetBtn.style.display='block';
+  setStep(4);
+
+  // NFT pixel color
+  nftPixelColor=['#6d28d9','#7c3aed','#9333ea','#8b5cf6','#a855f7'][Math.floor(Math.random()*5)];
+}
+
+/* ── MINT ── */
+mintBtn.addEventListener('click',()=>{
+  if(!tonConnectUI.connected){
+    if(tg) tg.showAlert('Connect your TON wallet first.');
+    else alert('Connect your TON wallet first.');
+    return;
+  }
+  openModal('modalMint');
+});
+
+let nftCount=0;
+document.getElementById('modalMintConfirm').addEventListener('click',()=>{
+  sendTon('txMint',()=>{
+    closeModal('modalMint');
     nftCount++;
-    const nftGrid = document.getElementById('nftGrid');
-    const card = document.createElement('div');
-    card.className = 'nft-card';
-    card.style.background = colors[Math.floor(Math.random() * 7)];
-    card.innerHTML = `<div class="nft-badge">⭐⭐ #${nftCount}</div>`;
-    nftGrid.insertBefore(card, document.getElementById('addNftBtn'));
-    document.getElementById('profileBadge').textContent = '⭐⭐';
+    mintBtn.textContent='✓ Minted!'; mintBtn.classList.add('done'); mintBtn.disabled=true;
+    document.getElementById('profileBadge').textContent='⭐⭐';
+
+    // Add mini NFT to profile grid
+    const grid=document.getElementById('nftGrid');
+    const mc=document.createElement('canvas'); mc.width=80; mc.height=80;
+    mc.style.cssText='width:100%;height:100%;display:block';
+    const mctx=mc.getContext('2d');
+    // mini copy of constellation
+    mctx.fillStyle='#020110'; mctx.fillRect(0,0,80,80);
+    const ng=mctx.createRadialGradient(40,40,0,40,40,38);
+    ng.addColorStop(0,'rgba(76,29,149,.3)'); ng.addColorStop(1,'transparent');
+    mctx.fillStyle=ng; mctx.beginPath(); mctx.arc(40,40,38,0,Math.PI*2); mctx.fill();
+    (chosenConst||CONSTS[0]).stars.forEach((s,i)=>{
+      const sx=s.x*80, sy=s.y*80, sz=i===0?3:1.5;
+      const g=mctx.createRadialGradient(sx,sy,0,sx,sy,sz*4);
+      g.addColorStop(0,'rgba(200,170,255,.5)'); g.addColorStop(1,'transparent');
+      mctx.fillStyle=g; mctx.beginPath(); mctx.arc(sx,sy,sz*4,0,Math.PI*2); mctx.fill();
+      mctx.fillStyle='rgba(255,252,255,.95)'; mctx.beginPath(); mctx.arc(sx,sy,sz,0,Math.PI*2); mctx.fill();
+    });
+    const card=document.createElement('div'); card.className='nft-card';
+    card.appendChild(mc);
+    const badge=document.createElement('div'); badge.className='nft-badge';
+    badge.textContent='⭐⭐ #'+nftCount; card.appendChild(badge);
+    grid.insertBefore(card,document.getElementById('addNftBtn'));
+
+    // Switch to home and add pixel to canvas
+    setTimeout(()=>{
+      document.querySelector('[data-page="home"]').click();
+      setTimeout(()=>{
+        addPixelToCanvas(nftPixelColor,true);
+        count++; numEl.textContent=fmt(count);
+        numEl.classList.add('flash'); setTimeout(()=>numEl.classList.remove('flash'),600);
+        showToast('✦ Your constellation is on the canvas');
+        if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+      },350);
+    },900);
   });
 });
 
-document.getElementById('saveProfileBtn').addEventListener('click', () => {
-  const name = document.getElementById('fieldName').value;
-  if (name) document.getElementById('profileName').textContent = name;
-  if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-  if (tg) tg.showAlert('Profile saved!');
-  else alert('Profile saved!');
+/* ── RESET STARS ── */
+resetBtn.addEventListener('click',()=>{
+  uploadArea.style.display=''; resultWrap.style.display='none';
+  constInfo.style.display='none'; mintBtn.disabled=true;
+  mintBtn.textContent='Mint NFT — 1 TON'; mintBtn.classList.remove('done');
+  resetBtn.style.display='none'; fileInput.value=''; setStep(1);
+  chosenConst=null; nftPixelColor=null;
 });
 
-document.querySelectorAll('.modal-backdrop').forEach(bd => {
-  bd.addEventListener('click', e => { if (e.target === bd) bd.classList.remove('open'); });
+/* ── SAVE PROFILE ── */
+document.getElementById('saveBtn').addEventListener('click',()=>{
+  const n=document.getElementById('fieldName').value;
+  if(n) document.getElementById('profileName').textContent=n;
+  if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+  if(tg) tg.showAlert('Profile saved!'); else alert('Profile saved!');
+});
+
+/* ── MAP ── */
+const mapC=document.getElementById('mapCanvas');
+const mX=mapC.getContext('2d');
+mapC.width=304; mapC.height=155;
+mX.fillStyle='#030112';
+mX.beginPath(); if(mX.roundRect)mX.roundRect(0,0,304,155,14); else mX.rect(0,0,304,155); mX.fill();
+[{x:88,y:56,r:4,l:'London'},{x:160,y:60,r:4,l:'Moscow'},{x:248,y:92,r:7.5,l:'Mumbai'},
+ {x:42,y:106,r:3.5,l:'New York'},{x:266,y:46,r:5.5,l:'Beijing'},{x:210,y:52,r:3,l:'Almaty'}]
+.forEach(c=>{
+  const g=mX.createRadialGradient(c.x,c.y,0,c.x,c.y,c.r*3.5);
+  g.addColorStop(0,'rgba(147,51,234,.28)'); g.addColorStop(1,'transparent');
+  mX.fillStyle=g; mX.beginPath(); mX.arc(c.x,c.y,c.r*3.5,0,Math.PI*2); mX.fill();
+  mX.fillStyle='rgba(192,132,252,.88)'; mX.beginPath(); mX.arc(c.x,c.y,c.r,0,Math.PI*2); mX.fill();
+  mX.fillStyle='rgba(210,195,255,.42)'; mX.font='7px sans-serif';
+  mX.textAlign='center'; mX.fillText(c.l,c.x,c.y-c.r-4);
 });
 </script>
 </body>
