@@ -6,12 +6,18 @@
 <title>vitiligo.ton</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+<script type="module">
+  import { beginCell } from "https://esm.sh/@ton/core@0.56.0";
+  window.TonCore = { beginCell };
+  window.dispatchEvent(new Event('toncore-ready'));
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500&family=Space+Grotesk:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Space+Grotesk:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root{
   --purple:#9333ea;--purple-light:#c084fc;--purple-dim:rgba(147,51,234,.15);
+  --gold:#fbbf24;--gold-dim:rgba(251,191,36,.18);
   --bg:#06030f;--surface:rgba(255,255,255,.03);--border:rgba(255,255,255,.08);
   --text:#f5f0ff;--muted:rgba(192,132,252,.4);--green:#34d399;
 }
@@ -56,6 +62,28 @@ html,body{
 .welcome-btn:active{transform:scale(.97)}
 .welcome-skip{margin-top:14px;font-size:12px;color:rgba(255,255,255,.22);cursor:pointer}
 
+/* SOCIAL TOAST */
+.social-toast{
+  position:fixed;top:16px;left:16px;right:16px;z-index:60;
+  background:rgba(147,51,234,.15);
+  border:.5px solid rgba(147,51,234,.4);
+  border-radius:16px;padding:11px 14px;
+  display:flex;align-items:center;gap:10px;
+  backdrop-filter:blur(12px);
+  transform:translateY(-100px);opacity:0;
+  transition:all .5s cubic-bezier(.16,1,.3,1);
+  max-width:480px;margin:0 auto;
+}
+.social-toast.show{transform:translateY(0);opacity:1}
+.social-toast-avatar{
+  width:28px;height:28px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#c084fc,#7c3aed);
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-size:13px;
+}
+.social-toast-text{font-size:12px;color:#ede8ff;line-height:1.4}
+.social-toast-text b{color:#c084fc;font-weight:500}
+
 /* LAYOUT */
 .page{display:none;min-height:100vh;padding-bottom:72px;position:relative;z-index:1}
 .page.active{display:block}
@@ -70,8 +98,6 @@ html,body{
   font-family:'Outfit',sans-serif;font-size:13px;letter-spacing:.16em;
   color:rgba(192,132,252,.38);text-transform:uppercase;font-weight:300;
 }
-
-/* TON CONNECT button */
 #ton-connect-btn::part(button){
   background:rgba(147,51,234,.18);
   border:.5px solid rgba(147,51,234,.4);
@@ -86,7 +112,6 @@ html,body{
 .wallet-chip.show{display:flex}
 .wdot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:ld 2s ease infinite}
 
-/* PIXEL CANVAS */
 .canvas-wrap{
   margin:18px 0 16px;border-radius:18px;overflow:hidden;
   border:.5px solid rgba(147,51,234,.2);position:relative;
@@ -97,8 +122,29 @@ html,body{
   font-size:9px;color:rgba(192,132,252,.35);letter-spacing:.08em;
 }
 
-/* COUNTER */
 .counter-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.dual-counter{
+  display:flex;align-items:center;justify-content:center;
+  gap:18px;margin-bottom:14px;padding:18px 10px;
+  background:rgba(255,255,255,.02);border:.5px solid rgba(147,51,234,.12);
+  border-radius:20px;
+}
+.counter-block{text-align:center;flex:1}
+.counter-divider{width:.5px;height:38px;background:rgba(147,51,234,.2)}
+.cnum-gold{color:#fbbf24!important;text-shadow:none}
+.milestone-bar{margin-bottom:18px;padding:0 2px}
+.milestone-label{font-size:11px;color:var(--purple-light);letter-spacing:.04em;margin-bottom:7px;font-weight:500}
+.milestone-track{
+  width:100%;height:6px;background:rgba(255,255,255,.06);
+  border-radius:6px;overflow:hidden;position:relative;
+}
+.milestone-fill{
+  height:100%;width:0%;border-radius:6px;
+  background:linear-gradient(90deg,#7c3aed,#c084fc);
+  box-shadow:0 0 12px rgba(147,51,234,.5);
+  transition:width 1s cubic-bezier(.16,1,.3,1);
+}
+.milestone-sub{font-size:10px;color:var(--muted);margin-top:6px;text-align:right}
 .cnum{
   font-family:'Outfit',sans-serif;font-size:44px;font-weight:200;
   letter-spacing:-.04em;color:#fff;line-height:1;
@@ -171,19 +217,44 @@ html,body{
 .result-wrap{
   display:none;border-radius:18px;overflow:hidden;
   border:.5px solid rgba(147,51,234,.25);margin-bottom:12px;
-  background:#020110;
+  background:#020110;position:relative;
 }
 #resultCanvas{width:100%;display:block}
+
+.rarity-banner{
+  display:none;position:absolute;top:10px;left:10px;right:10px;
+  background:linear-gradient(135deg,rgba(251,191,36,.25),rgba(245,158,11,.15));
+  border:.5px solid rgba(251,191,36,.5);border-radius:12px;padding:8px 12px;
+  align-items:center;gap:8px;backdrop-filter:blur(6px);
+}
+.rarity-icon{font-size:16px}
+.rarity-text{font-size:11px;color:#fde68a;font-weight:500}
+.rarity-sub{font-size:9px;color:rgba(253,230,138,.6);margin-top:1px}
 
 .const-info{
   display:none;background:rgba(147,51,234,.08);
   border:.5px solid rgba(147,51,234,.2);border-radius:14px;
   padding:12px 16px;margin-bottom:12px;
 }
+.const-info.rare{background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.25)}
 .const-name{font-size:14px;color:#c084fc;font-weight:500;margin-bottom:4px;letter-spacing:.04em}
+.const-name.rare{color:#fde68a}
 .const-desc{font-size:12px;color:rgba(192,132,252,.45);line-height:1.5}
 
-/* MAP PAGE */
+.story-wrap{display:none;margin-bottom:14px}
+.story-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:8px;display:block}
+.story-input{
+  width:100%;background:rgba(255,255,255,.04);
+  border:.5px solid rgba(147,51,234,.25);border-radius:14px;
+  padding:13px 16px;font-size:13px;color:#ede8ff;
+  font-family:'Space Grotesk',sans-serif;outline:none;
+  resize:none;height:60px;line-height:1.5;
+}
+.story-input::placeholder{color:rgba(255,255,255,.18);font-style:italic}
+.story-input:focus{border-color:rgba(147,51,234,.5)}
+.story-hint{font-size:10px;color:rgba(192,132,252,.3);margin-top:6px}
+
+/* MAP */
 .map-page{padding:0 18px}
 #mapCanvas{width:100%;border-radius:16px;display:block;margin-bottom:12px}
 .city-item{
@@ -197,6 +268,76 @@ html,body{
 .cbar{height:100%;border-radius:2px;background:var(--purple)}
 .ccount{font-size:12px;color:var(--muted)}
 
+/* INVITE PAGE */
+.invite-page{padding:0 18px}
+.invite-card{
+  background:linear-gradient(160deg,rgba(147,51,234,.15),rgba(76,29,149,.08));
+  border:.5px solid rgba(147,51,234,.3);border-radius:22px;
+  padding:24px 20px;text-align:center;margin:16px 0;position:relative;overflow:hidden;
+}
+.invite-glow{
+  position:absolute;top:-30%;left:50%;transform:translateX(-50%);
+  width:200px;height:200px;border-radius:50%;
+  background:radial-gradient(circle,rgba(168,85,247,.25),transparent 70%);
+  pointer-events:none;
+}
+.invite-icon{font-size:32px;margin-bottom:10px;position:relative}
+.invite-title{font-family:'Outfit',sans-serif;font-size:16px;color:#ede8ff;margin-bottom:6px;position:relative}
+.invite-text{font-size:12px;color:rgba(192,132,252,.5);line-height:1.5;margin-bottom:18px;position:relative}
+
+.link-box{
+  background:rgba(0,0,0,.3);border:.5px solid rgba(147,51,234,.25);
+  border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;
+  margin-bottom:14px;position:relative;
+}
+.link-text{flex:1;font-size:11px;color:#c084fc;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:monospace}
+.copy-btn{
+  background:rgba(147,51,234,.25);border:.5px solid rgba(147,51,234,.5);
+  border-radius:8px;padding:6px 10px;font-size:10px;color:#ede8ff;
+  flex-shrink:0;transition:all .2s;cursor:pointer;
+}
+.copy-btn.copied{background:rgba(52,211,153,.2);border-color:rgba(52,211,153,.5);color:#34d399}
+
+.share-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:relative}
+.share-btn{
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  background:rgba(255,255,255,.04);border:.5px solid rgba(255,255,255,.1);
+  border-radius:40px;padding:12px;font-size:12px;color:#ede8ff;
+  font-family:'Space Grotesk',sans-serif;transition:all .2s;cursor:pointer;
+}
+.share-btn:active{transform:scale(.96);background:rgba(147,51,234,.15)}
+.share-btn.telegram{background:rgba(36,161,222,.15);border-color:rgba(36,161,222,.4);color:#7dd3fc}
+
+.bonus-card{
+  background:rgba(255,255,255,.025);border:.5px solid rgba(255,255,255,.08);
+  border-radius:18px;padding:16px;margin-bottom:14px;
+}
+.bonus-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.bonus-row:last-child{margin-bottom:0}
+.bonus-icon{
+  width:34px;height:34px;border-radius:50%;flex-shrink:0;
+  background:rgba(147,51,234,.15);border:.5px solid rgba(147,51,234,.35);
+  display:flex;align-items:center;justify-content:center;font-size:15px;
+}
+.bonus-text{flex:1}
+.bonus-title{font-size:12px;color:#ede8ff;margin-bottom:2px}
+.bonus-desc{font-size:10px;color:rgba(192,132,252,.4)}
+
+.invited-list-title{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px;margin-top:18px}
+.invited-row{
+  display:flex;align-items:center;gap:10px;
+  background:var(--surface);border:.5px solid var(--border);
+  border-radius:12px;padding:10px 12px;margin-bottom:7px;
+}
+.invited-avatar{
+  width:26px;height:26px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#c084fc,#7c3aed);
+  flex-shrink:0;font-size:11px;display:flex;align-items:center;justify-content:center;
+}
+.invited-name{flex:1;font-size:12px;color:#ede8ff}
+.invited-status{font-size:10px;color:rgba(52,211,153,.7)}
+.invite-empty{text-align:center;padding:30px 20px;color:rgba(192,132,252,.3);font-size:12px}
+
 /* PROFILE PAGE */
 .profile-page{padding:0 18px}
 .profile-header{display:flex;flex-direction:column;align-items:center;padding:28px 0 20px;text-align:center}
@@ -209,8 +350,21 @@ html,body{
   box-shadow:0 0 28px rgba(147,51,234,.22);
 }
 .avatar-badge{position:absolute;bottom:-2px;right:-2px;background:var(--bg);border-radius:50%;padding:2px;font-size:14px;line-height:1}
-.profile-name{font-family:'Outfit',sans-serif;font-size:20px;font-weight:300;margin-bottom:4px}
+.profile-name{font-family:'Outfit',sans-serif;font-size:20px;font-weight:300;margin-bottom:4px;color:#e9e0ff}
 .profile-handle{font-size:13px;color:var(--muted)}
+
+.sky-card{
+  background:#030112;border-radius:20px;
+  border:.5px solid rgba(147,51,234,.25);
+  aspect-ratio:1.6;position:relative;overflow:hidden;margin-bottom:18px;
+}
+#mySkyCanvas{width:100%;height:100%;display:block}
+.sky-label{position:absolute;bottom:10px;left:14px;font-size:11px;color:rgba(192,132,252,.5);letter-spacing:.05em}
+.sky-count{
+  position:absolute;top:12px;right:14px;
+  background:rgba(147,51,234,.2);border:.5px solid rgba(147,51,234,.4);
+  border-radius:40px;padding:4px 11px;font-size:11px;color:#c084fc;
+}
 
 .form-label{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:8px;margin-top:16px;display:block}
 .form-input{
@@ -222,10 +376,16 @@ html,body{
 .form-input::placeholder{color:rgba(255,255,255,.14)}
 
 .nft-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;padding-bottom:12px}
-.nft-card{aspect-ratio:1;border-radius:14px;position:relative;overflow:hidden;cursor:pointer;background:#020110}
+.nft-card{aspect-ratio:1;border-radius:14px;position:relative;overflow:hidden;cursor:pointer;background:#020110;border:.5px solid rgba(147,51,234,.15);transition:all .2s}
+.nft-card:active{transform:scale(.96)}
+.nft-card.rare{border:1px solid rgba(251,191,36,.6);box-shadow:0 0 16px rgba(251,191,36,.25)}
+.nft-rare-badge{position:absolute;top:5px;right:5px;background:linear-gradient(135deg,#fbbf24,#f59e0b);border-radius:6px;padding:2px 6px;font-size:8px;color:#1a1207;font-weight:600}
+.nft-info-bar{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:14px 6px 5px}
+.nft-name{font-size:9px;color:#ede8ff;font-weight:500}
+.nft-story{font-size:8px;color:rgba(192,132,252,.5);margin-top:1px;font-style:italic;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.gift-fab{position:absolute;bottom:6px;right:6px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:10px;border:.5px solid rgba(255,255,255,.15)}
 .nft-add{border:1.5px dashed rgba(147,51,234,.25);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px}
 .nft-add span{font-size:10px;color:rgba(192,132,252,.3)}
-.nft-badge{position:absolute;bottom:4px;left:4px;background:rgba(0,0,0,.65);border-radius:6px;font-size:10px;padding:2px 7px;color:#c084fc}
 
 /* NAV */
 .nav{
@@ -272,6 +432,24 @@ html,body{
 .tx-status.success{display:block;background:rgba(52,211,153,.07);border:.5px solid rgba(52,211,153,.22);color:var(--green)}
 .tx-status.error{display:block;background:rgba(248,113,113,.07);border:.5px solid rgba(248,113,113,.22);color:#f87171}
 
+.modal-nft-preview{width:100%;aspect-ratio:1.6;background:#020110;border-radius:16px;margin-bottom:14px;position:relative;overflow:hidden;border:.5px solid rgba(147,51,234,.3)}
+.modal-nft-preview.rare{border-color:rgba(251,191,36,.4)}
+.modal-nft-title{font-family:'Outfit',sans-serif;font-size:17px;font-weight:400;color:#c084fc;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.modal-nft-title.rare{color:#fde68a}
+.modal-nft-story{font-size:13px;color:rgba(220,200,255,.6);font-style:italic;line-height:1.5;margin-bottom:16px;padding:10px 12px;background:rgba(147,51,234,.06);border-left:2px solid rgba(147,51,234,.4);border-radius:8px}
+.modal-nft-actions{display:flex;gap:8px}
+.modal-nft-btn{flex:1;padding:12px;border-radius:40px;font-size:12px;border:.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#ede8ff;text-align:center;font-family:'Space Grotesk',sans-serif}
+.modal-nft-btn.primary{background:rgba(147,51,234,.2);border-color:rgba(147,51,234,.5);color:#c084fc}
+
+/* SHARE SHEET */
+.sheet-preview{background:rgba(0,0,0,.3);border-radius:14px;padding:14px;border:.5px solid rgba(147,51,234,.25);margin-bottom:16px;display:flex;gap:12px;align-items:center}
+.sheet-preview-icon{font-size:28px}
+.sheet-preview-title{font-size:13px;color:#ede8ff;margin-bottom:3px}
+.sheet-preview-sub{font-size:10px;color:rgba(192,132,252,.4)}
+.sheet-options{display:flex;flex-direction:column;gap:8px}
+.sheet-option{display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,255,255,.03);border:.5px solid rgba(255,255,255,.07);border-radius:14px;font-size:13px;color:#ede8ff;cursor:pointer}
+.sheet-option-icon{font-size:18px;width:24px;text-align:center}
+
 /* TOAST */
 .toast{
   position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(16px);
@@ -298,6 +476,12 @@ html,body{
   <div class="welcome-skip" id="welcomeSkip">just look around first</div>
 </div>
 
+<!-- SOCIAL TOAST -->
+<div class="social-toast" id="socialToast">
+  <div class="social-toast-avatar">✦</div>
+  <div class="social-toast-text" id="socialToastText"><b>Marina</b> from Brazil just added her constellation ✦</div>
+</div>
+
 <!-- HOME -->
 <div class="page active" id="page-home">
   <div class="home">
@@ -316,12 +500,23 @@ html,body{
       <div class="canvas-label">tap pixel to explore</div>
     </div>
 
-    <div class="counter-row">
-      <div class="cnum" id="cnum">14 837</div>
-      <div class="counter-meta">
+    <div class="dual-counter">
+      <div class="counter-block">
+        <div class="cnum" id="cnum">0</div>
         <div class="clabel">people counted</div>
         <div class="live-row" id="liveRow"><div class="wdot" style="background:var(--green)"></div>live</div>
       </div>
+      <div class="counter-divider"></div>
+      <div class="counter-block">
+        <div class="cnum cnum-gold" id="cnumPhotos">0</div>
+        <div class="clabel">constellations minted</div>
+      </div>
+    </div>
+
+    <div class="milestone-bar">
+      <div class="milestone-label" id="milestoneLabel">Goal: 100 people</div>
+      <div class="milestone-track"><div class="milestone-fill" id="milestoneFill"></div></div>
+      <div class="milestone-sub" id="milestoneSub">0 / 100</div>
     </div>
 
     <h1 class="headline">People with vitiligo<br>are <em>unique by design</em></h1>
@@ -354,11 +549,24 @@ html,body{
 
     <div class="result-wrap" id="resultWrap">
       <canvas id="resultCanvas"></canvas>
+      <div class="rarity-banner" id="rarityBanner">
+        <div class="rarity-icon">★</div>
+        <div>
+          <div class="rarity-text" id="rarityText">Rare constellation</div>
+          <div class="rarity-sub" id="raritySub">Only 4% of people get this one</div>
+        </div>
+      </div>
     </div>
 
     <div class="const-info" id="constInfo">
       <div class="const-name" id="constName"></div>
       <div class="const-desc" id="constDesc"></div>
+    </div>
+
+    <div class="story-wrap" id="storyWrap">
+      <label class="story-label">Tell your story (optional)</label>
+      <textarea class="story-input" id="storyInput" placeholder='e.g. "Appeared on my hand when I was 12"'></textarea>
+      <div class="story-hint">This becomes part of your NFT — visible to you and whoever you gift it to</div>
     </div>
 
     <button class="btn-main" id="mintBtn" disabled>Mint NFT — 1 TON</button>
@@ -372,12 +580,55 @@ html,body{
     <div class="page-title">Where we are</div>
     <div class="page-sub">People with vitiligo worldwide</div>
     <canvas id="mapCanvas" width="304" height="155"></canvas>
-    <div class="city-item"><div class="cdot"></div><div class="cname">Mumbai, India</div><div class="cbar-wrap"><div class="cbar" style="width:100%"></div></div><div class="ccount">3,420</div></div>
-    <div class="city-item"><div class="cdot"></div><div class="cname">Moscow, Russia</div><div class="cbar-wrap"><div class="cbar" style="width:36%"></div></div><div class="ccount">1,240</div></div>
-    <div class="city-item"><div class="cdot"></div><div class="cname">London, UK</div><div class="cbar-wrap"><div class="cbar" style="width:25%"></div></div><div class="ccount">847</div></div>
-    <div class="city-item"><div class="cdot"></div><div class="cname">Beijing, China</div><div class="cbar-wrap"><div class="cbar" style="width:61%"></div></div><div class="ccount">2,100</div></div>
-    <div class="city-item"><div class="cdot"></div><div class="cname">New York, USA</div><div class="cbar-wrap"><div class="cbar" style="width:18%"></div></div><div class="ccount">612</div></div>
-    <div class="city-item"><div class="cdot"></div><div class="cname">Almaty, Kazakhstan</div><div class="cbar-wrap"><div class="cbar" style="width:6%"></div></div><div class="ccount">188</div></div>
+    <div class="invite-empty" id="cityListEmpty">No one has marked their city yet — be the first ✦</div>
+    <div id="cityListReal"></div>
+  </div>
+</div>
+
+<!-- INVITE -->
+<div class="page" id="page-invite">
+  <div class="invite-page">
+    <div class="page-title">Invite a friend</div>
+    <div class="page-sub">Every star matters — bring someone in</div>
+
+    <div class="invite-card">
+      <div class="invite-glow"></div>
+      <div class="invite-icon">✦</div>
+      <div class="invite-title">Know someone with vitiligo?</div>
+      <div class="invite-text">Send them your link. When they join, you both light up the sky a little brighter.</div>
+
+      <div class="link-box">
+        <div class="link-text" id="refLinkText">t.me/vitiligo_ton_bot?start=ref_you</div>
+        <div class="copy-btn" id="copyBtn">Copy</div>
+      </div>
+
+      <div class="share-row">
+        <div class="share-btn telegram" id="shareTelegram"><span>✈️</span> Telegram</div>
+        <div class="share-btn" id="shareMore"><span>↗</span> Share</div>
+      </div>
+    </div>
+
+    <div class="bonus-card">
+      <div class="bonus-row">
+        <div class="bonus-icon">⭐</div>
+        <div class="bonus-text">
+          <div class="bonus-title">Friend joins & counts in</div>
+          <div class="bonus-desc">Their star appears on the canvas</div>
+        </div>
+      </div>
+      <div class="bonus-row">
+        <div class="bonus-icon">✦</div>
+        <div class="bonus-text">
+          <div class="bonus-title">Your invite badge grows</div>
+          <div class="bonus-desc">Shown on your profile as a constellation guide</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="invited-list-title">People you brought in</div>
+    <div id="invitedList">
+      <div class="invite-empty">No invites yet — share your link above ✦</div>
+    </div>
   </div>
 </div>
 
@@ -389,6 +640,13 @@ html,body{
       <div class="profile-name" id="profileName">Your name</div>
       <div class="profile-handle" id="profileHandle">@telegram_user</div>
     </div>
+
+    <div class="sky-card">
+      <canvas id="mySkyCanvas"></canvas>
+      <div class="sky-count" id="skyCount">0 stars</div>
+      <div class="sky-label">your personal night sky</div>
+    </div>
+
     <label class="form-label">Name</label>
     <input type="text" class="form-input" id="fieldName" placeholder="Your name">
     <label class="form-label">Country</label>
@@ -418,6 +676,9 @@ html,body{
   </button>
   <button class="nav-item" data-page="map">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.4 7.4 12.5 7.7 12.8a.5.5 0 0 0 .6 0C12.6 22.5 20 15.4 20 10a8 8 0 0 0-8-8z"/></svg>Map
+  </button>
+  <button class="nav-item" data-page="invite">
+    <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Invite
   </button>
   <button class="nav-item" data-page="profile">
     <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile
@@ -450,26 +711,70 @@ html,body{
   </div>
 </div>
 
+<!-- MODAL: NFT DETAIL -->
+<div class="modal-backdrop" id="modalNftDetail">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-nft-preview" id="modalNftPreview">
+      <canvas id="modalNftCanvas"></canvas>
+    </div>
+    <div class="modal-nft-title" id="modalNftTitle">✦ Constellation</div>
+    <div class="modal-nft-story" id="modalNftStory">No story added yet.</div>
+    <div class="modal-nft-actions">
+      <div class="modal-nft-btn" id="modalNftShare">Share</div>
+      <div class="modal-nft-btn primary" id="modalNftGift">🎁 Gift to friend</div>
+    </div>
+  </div>
+</div>
+
+<!-- SHARE SHEET -->
+<div class="modal-backdrop" id="shareSheet">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="sheet-preview">
+      <div class="sheet-preview-icon">✦</div>
+      <div>
+        <div class="sheet-preview-title">vitiligo.ton</div>
+        <div class="sheet-preview-sub">People with vitiligo are unique by design</div>
+      </div>
+    </div>
+    <div class="sheet-options">
+      <div class="sheet-option" id="sendToChat"><span class="sheet-option-icon">💬</span> Send to chat</div>
+      <div class="sheet-option" id="copyLinkOpt"><span class="sheet-option-icon">📋</span> Copy link</div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
-const CONTRACT_ADDRESS = 'EQBzy44Ch6szMwEA8jmr33CMr_uJ2GZ2bMMaOIabUQ0LYUZW';
+const CONTRACT_ADDRESS = 'EQBbz8-DHXqTTQFqBGlZ7V3pST_ZuZCY9zHAnXvXyZ7lSjpF';
 const TON_AMOUNT = '1000000000';
+const BOT_USERNAME = 'vitiligo_ton_bot';
 
 /* ── TELEGRAM ── */
 const tg = window.Telegram?.WebApp;
+let myTelegramId = null;
+let referrerId = null;
 if (tg) {
   tg.ready(); tg.expand();
   tg.setHeaderColor('#06030f');
   tg.setBackgroundColor('#06030f');
   const u = tg.initDataUnsafe?.user;
   if (u) {
+    myTelegramId = u.username || u.id;
     const n = [u.first_name, u.last_name].filter(Boolean).join(' ');
     document.getElementById('profileName').textContent = n || 'Your name';
     document.getElementById('profileHandle').textContent = '@' + (u.username || 'you');
     document.getElementById('fieldName').value = n;
   }
+  const startParam = tg.initDataUnsafe?.start_param;
+  if (startParam && startParam.startsWith('ref_')) {
+    referrerId = startParam.replace('ref_', '');
+  }
 }
+const refLink = `t.me/${BOT_USERNAME}?start=ref_${myTelegramId || 'you'}`;
+document.getElementById('refLinkText').textContent = refLink;
 
 /* ── STARFIELD ── */
 const sfC = document.getElementById('starfield');
@@ -547,27 +852,64 @@ function addPixelToCanvas(color, isNFT) {
   },110);
 }
 
-/* ── COUNTER (only when wallet connected) ── */
-let count=0, connected=false, tickTimer=null;
+/* ── LIVE COUNTER FROM BLOCKCHAIN ── */
+let count = 0, photoCount = 0, connected = false, tickTimer = null;
 const numEl=document.getElementById('cnum');
+const numPhotosEl=document.getElementById('cnumPhotos');
 const liveRow=document.getElementById('liveRow');
-function fmt(n){return n.toLocaleString('ru-RU')}
-numEl.textContent=fmt(count);
+function fmt(n){return n.toLocaleString('en-US')}
+
+const MILESTONES = [100, 1000, 10000, 100000];
+function updateMilestone(){
+  let goal = MILESTONES.find(m => m > count) || MILESTONES[MILESTONES.length-1];
+  const prevGoal = MILESTONES[MILESTONES.indexOf(goal)-1] || 0;
+  const progress = Math.min(100, ((count - prevGoal) / (goal - prevGoal)) * 100);
+  document.getElementById('milestoneLabel').textContent = `Goal: ${fmt(goal)} people`;
+  document.getElementById('milestoneFill').style.width = progress + '%';
+  document.getElementById('milestoneSub').textContent = `${fmt(count)} / ${fmt(goal)}`;
+}
+
+async function loadCounterFromChain() {
+  try {
+    const res = await fetch(`https://toncenter.com/api/v2/runGetMethod`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ address: CONTRACT_ADDRESS, method: 'totalCount', stack: [] })
+    });
+    const data = await res.json();
+    const hex = data?.result?.stack?.[0]?.[1];
+    if (hex) {
+      count = parseInt(hex, 16);
+      numEl.textContent = fmt(count);
+      updateMilestone();
+    }
+  } catch(e) { console.log('Counter load failed', e); }
+
+  try {
+    const res2 = await fetch(`https://toncenter.com/api/v2/runGetMethod`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ address: CONTRACT_ADDRESS, method: 'photoCount', stack: [] })
+    });
+    const data2 = await res2.json();
+    const hex2 = data2?.result?.stack?.[0]?.[1];
+    if (hex2) {
+      photoCount = parseInt(hex2, 16);
+      numPhotosEl.textContent = fmt(photoCount);
+    }
+  } catch(e) { console.log('Photo counter load failed', e); }
+}
+loadCounterFromChain();
+updateMilestone();
+
 function startTick(){
   if(tickTimer)return; liveRow.classList.add('show');
-  function next(){
-    tickTimer=setTimeout(()=>{
-      count++; numEl.textContent=fmt(count);
-      numEl.classList.add('flash'); setTimeout(()=>numEl.classList.remove('flash'),600);
-      next();
-    },8000+Math.random()*14000);
-  } next();
 }
 function stopTick(){clearTimeout(tickTimer);tickTimer=null;liveRow.classList.remove('show');}
 
 /* ── TON CONNECT ── */
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-  manifestUrl: 'https://vsrefle.github.io/vitiligo-ton/tonconnect-manifest.json',
+  manifestUrl: 'https://YOUR_GITHUB_USERNAME.github.io/vitiligo-ton/tonconnect-manifest.json',
   buttonRootId: 'ton-connect-btn',
   uiPreferences:{theme:'DARK'}
 });
@@ -577,8 +919,8 @@ tonConnectUI.onStatusChange(wallet => {
   const tcBtn=document.getElementById('ton-connect-btn');
   const btn=document.getElementById('countBtn');
   if (wallet) {
-    const addr=wallet.account.address;
-    document.getElementById('walletAddr').textContent=addr.slice(0,5)+'…'+addr.slice(-4);
+    const addr = wallet.account.address;
+    document.getElementById('walletAddr').textContent = addr.slice(0,5)+'…'+addr.slice(-4);
     chip.classList.add('show'); tcBtn.style.display='none';
     connected=true; btn.disabled=false; btn.textContent='Count me in — 1 TON';
     startTick();
@@ -591,15 +933,50 @@ tonConnectUI.onStatusChange(wallet => {
 });
 document.getElementById('walletDisc').addEventListener('click',()=>tonConnectUI.disconnect());
 
+/* ── TACT MESSAGE ENCODING (CountMe: name/city/country as String?) ── */
+// TODO: replace 4071515321 with the real opcode from:
+// grep -A3 '"name": "CountMe"' contract/build/VilitigoCounter_VilitigoCounter.abi
+const COUNTME_OPCODE = 4071515321;
+
+function bytesToBase64(bytes) {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+
+function buildCountMePayload(name, city, country) {
+  const { beginCell } = TonCore; // loaded via CDN, see <head> script tag
+  let b = beginCell().storeUint(COUNTME_OPCODE, 32);
+
+  [name, city, country].forEach(val => {
+    if (val && val.trim().length > 0) {
+      b = b.storeBit(1);
+      const strCell = beginCell().storeStringTail(val.trim()).endCell();
+      b = b.storeRef(strCell);
+    } else {
+      b = b.storeBit(0);
+    }
+  });
+
+  const cell = b.endCell();
+  const boc = cell.toBoc();
+  return bytesToBase64(boc);
+}
+
 /* ── SEND TX ── */
 async function sendTon(statusId, onSuccess) {
   const el=document.getElementById(statusId);
   if(!tonConnectUI.connected){tonConnectUI.openModal();return;}
   el.className='tx-status pending'; el.textContent='⏳ Waiting for confirmation…';
   try {
+    const name = document.getElementById('fieldName')?.value || null;
+    const city = document.getElementById('fieldCity')?.value || null;
+    const country = document.getElementById('fieldCountry')?.value || null;
+    const payload = buildCountMePayload(name, city, country);
+
     await tonConnectUI.sendTransaction({
       validUntil:Math.floor(Date.now()/1000)+300,
-      messages:[{address:CONTRACT_ADDRESS,amount:TON_AMOUNT}]
+      messages:[{address:CONTRACT_ADDRESS,amount:TON_AMOUNT,payload}]
     });
     el.className='tx-status success'; el.textContent='✓ Transaction confirmed!';
     if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
@@ -618,6 +995,22 @@ function closeWelcome(){
 }
 document.getElementById('welcomeBtn').addEventListener('click',closeWelcome);
 document.getElementById('welcomeSkip').addEventListener('click',closeWelcome);
+
+/* ── SOCIAL PROOF TOAST ── */
+const socialNames = [
+  {name:'Marina', place:'Brazil'}, {name:'Aiden', place:'UK'}, {name:'Priya', place:'India'},
+  {name:'Yuki', place:'Japan'}, {name:'Carlos', place:'Mexico'}, {name:'Fatima', place:'Egypt'},
+  {name:'Lucas', place:'France'}, {name:'Sara', place:'Sweden'}
+];
+function showSocialToast(){
+  const t = socialNames[Math.floor(Math.random()*socialNames.length)];
+  document.getElementById('socialToastText').innerHTML = `<b>${t.name}</b> from ${t.place} just added their constellation ✦`;
+  const toast = document.getElementById('socialToast');
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'), 3500);
+}
+setTimeout(showSocialToast, 4000);
+setInterval(showSocialToast, 25000);
 
 /* ── NAV ── */
 document.querySelectorAll('.nav-item').forEach(btn=>{
@@ -646,6 +1039,7 @@ document.getElementById('countBtn').addEventListener('click',()=>{
 });
 document.getElementById('modalCountClose').addEventListener('click',()=>closeModal('modalCount'));
 document.getElementById('modalMintClose').addEventListener('click',()=>closeModal('modalMint'));
+
 let counted=false;
 document.getElementById('modalCountConfirm').addEventListener('click',()=>{
   sendTon('txCount',()=>{
@@ -654,6 +1048,7 @@ document.getElementById('modalCountConfirm').addEventListener('click',()=>{
       counted=true; count++;
       numEl.textContent=fmt(count);
       numEl.classList.add('flash'); setTimeout(()=>numEl.classList.remove('flash'),700);
+      updateMilestone();
       const btn=document.getElementById('countBtn');
       btn.textContent='✓ Counted!'; btn.classList.add('done'); btn.disabled=true;
       addPixelToCanvas('#9333ea',false);
@@ -673,40 +1068,71 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'),2800);
 }
 
-/* ── CONSTELLATION DATA ── */
+/* ── CONSTELLATION DATA (5 common + 2 rare) ── */
 const CONSTS=[
-  {name:'Orion · The Hunter',
-   desc:'One of the most recognised constellations — your vitiligo now lives in it',
+  {name:'Orion · The Hunter', rare:false,
+   desc:'Orion strides the winter sky eternally — a warrior who fears nothing, marked by the same light you carry. Like him, your skin tells a story of strength, not flaw.',
    stars:[{x:.28,y:.35},{x:.42,y:.2},{x:.62,y:.28},{x:.7,y:.46},{x:.58,y:.63},{x:.38,y:.71},{x:.23,y:.56},{x:.5,y:.44},{x:.74,y:.3},{x:.48,y:.22}],
    lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0],[7,3],[1,9],[9,2]]},
-  {name:'Cassiopeia · The Queen',
-   desc:'A timeless W-shape in the northern sky — your patch is its crown',
+  {name:'Cassiopeia · The Queen', rare:false,
+   desc:'Cassiopeia sits enthroned among the stars, unashamed, unhidden — placed in the heavens for her beauty alone. Your light, too, was never meant to be covered.',
    stars:[{x:.12,y:.58},{x:.28,y:.28},{x:.5,y:.52},{x:.72,y:.26},{x:.88,y:.55},{x:.5,y:.75},{x:.35,y:.68}],
    lines:[[0,1],[1,2],[2,3],[3,4],[2,5],[5,6],[6,0]]},
-  {name:'Cygnus · The Swan',
-   desc:'The Northern Cross soaring through the Milky Way',
+  {name:'Cygnus · The Swan', rare:false,
+   desc:'The Swan flies forever along the Milky Way, graceful and unbothered by the eyes that follow her. She does not ask permission to be seen — neither should you.',
    stars:[{x:.5,y:.12},{x:.5,y:.38},{x:.5,y:.64},{x:.5,y:.88},{x:.18,y:.38},{x:.82,y:.38},{x:.33,y:.54},{x:.67,y:.54}],
    lines:[[0,1],[1,2],[2,3],[4,1],[1,5],[2,6],[2,7]]},
-  {name:'Lyra · The Lyre',
-   desc:'Home to Vega, one of the brightest stars — your patch shines here',
+  {name:'Lyra · The Lyre', rare:false,
+   desc:'Lyra carries the music of Orpheus into the night — proof that what seems broken can still create something beautiful. Your patch is your own quiet melody.',
    stars:[{x:.5,y:.1},{x:.3,y:.38},{x:.7,y:.38},{x:.25,y:.62},{x:.75,y:.62},{x:.5,y:.85},{x:.45,y:.5},{x:.55,y:.5}],
    lines:[[0,1],[0,2],[1,2],[1,3],[2,4],[3,5],[4,5],[1,6],[2,7]]},
-  {name:'Perseus · The Hero',
-   desc:'Guardian of the night sky — your pattern is his constellation',
+  {name:'Perseus · The Hero', rare:false,
+   desc:'Perseus bears his mark proudly across the autumn sky — a hero defined not by what he lacks, but by what he overcame. His stars never dimmed for anyone.',
    stars:[{x:.5,y:.14},{x:.36,y:.3},{x:.64,y:.26},{x:.28,y:.5},{x:.56,y:.48},{x:.72,y:.4},{x:.22,y:.7},{x:.46,y:.68},{x:.7,y:.65},{x:.5,y:.85}],
    lines:[[0,1],[0,2],[1,3],[2,5],[3,6],[4,5],[4,7],[7,8],[7,9],[1,4]]},
+  {name:'Cygnus Rare · Golden Swan', rare:true,
+   desc:'Legend says one swan in a thousand is born wrapped in gold — touched by the same hand that paints the northern lights. Yours is one of the rare ones. Carry it well.',
+   stars:[{x:.5,y:.15},{x:.5,y:.4},{x:.5,y:.65},{x:.5,y:.85},{x:.2,y:.4},{x:.8,y:.4},{x:.35,y:.55},{x:.65,y:.55},{x:.5,y:.05}],
+   lines:[[0,1],[1,2],[2,3],[4,1],[1,5],[2,6],[2,7],[0,8]]},
+  {name:'Corona · Northern Crown', rare:true,
+   desc:'A crown forged not from gold but from light itself — given only to those whose skin has already proven it can carry weight and still shine. Few wear it.',
+   stars:[{x:.2,y:.5},{x:.32,y:.3},{x:.48,y:.18},{x:.65,y:.2},{x:.8,y:.38},{x:.7,y:.6},{x:.5,y:.7},{x:.3,y:.65}],
+   lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0]]},
 ];
 
-/* ── PHOTO → CONSTELLATION ── */
+let currentConst = null;
+let vitiligoPoints = [];
+
+function analyzeVitiligo(canvas, imageData){
+  const d=imageData.data, w=canvas.width, h=canvas.height;
+  const points=[];
+  const step=Math.max(1,Math.floor(w/40));
+  for(let y=0;y<h;y+=step){
+    for(let x=0;x<w;x+=step){
+      const i=(y*w+x)*4;
+      const r=d[i],g=d[i+1],b=d[i+2];
+      const brightness=(r+g+b)/3;
+      const saturation=Math.max(r,g,b)-Math.min(r,g,b);
+      if(brightness>190 && saturation<35){
+        points.push({x:x/w,y:y/h,b:brightness});
+      }
+    }
+  }
+  return points;
+}
+
 const fileInput=document.getElementById('fileInput');
 const uploadArea=document.getElementById('uploadArea');
 const resultWrap=document.getElementById('resultWrap');
 const resultCanvas=document.getElementById('resultCanvas');
 const constInfo=document.getElementById('constInfo');
+const storyWrap=document.getElementById('storyWrap');
 const mintBtn=document.getElementById('mintBtn');
 const resetBtn=document.getElementById('resetBtn');
+const rarityBanner=document.getElementById('rarityBanner');
 
-let chosenConst=null, nftPixelColor=null;
+let nftPixelColor=null;
+let lastStoryText='';
 
 function setStep(n){for(let i=1;i<=4;i++) document.getElementById('ps'+i).classList.toggle('active',i<=n);}
 
@@ -729,14 +1155,12 @@ fileInput.addEventListener('change',e=>{
 
 function buildConstellation(img){
   const W=320, H=320;
-  // offscreen — sample photo for vitiligo patches
   const off=document.createElement('canvas'); off.width=W; off.height=H;
   const ox=off.getContext('2d');
   const scale=Math.max(W/img.width,H/img.height);
   ox.drawImage(img,(W-img.width*scale)/2,(H-img.height*scale)/2,img.width*scale,img.height*scale);
   const data=ox.getImageData(0,0,W,H).data;
 
-  // Find vitiligo — bright, low-saturation pixels
   const patches=[];
   const step=5;
   for(let y=step;y<H-step;y+=step){
@@ -751,10 +1175,12 @@ function buildConstellation(img){
   }
 
   setStep(3);
-  chosenConst=CONSTS[Math.floor(Math.random()*CONSTS.length)];
-  const tmpl=chosenConst.stars;
+  // 10% chance for rare constellation
+  const isRare = Math.random() < 0.10;
+  const pool = isRare ? CONSTS.filter(c=>c.rare) : CONSTS.filter(c=>!c.rare);
+  currentConst = pool[Math.floor(Math.random()*pool.length)];
+  const tmpl = currentConst.stars;
 
-  // Blend real patches with constellation template
   let finalStars;
   if(patches.length>=tmpl.length){
     const step2=Math.floor(patches.length/tmpl.length);
@@ -766,24 +1192,17 @@ function buildConstellation(img){
     finalStars=tmpl.map(cs=>({x:cs.x+(Math.random()-.5)*.05,y:cs.y+(Math.random()-.5)*.05}));
   }
 
-  // Draw result canvas — pure cosmos
   resultCanvas.width=W; resultCanvas.height=H;
   const rx=resultCanvas.getContext('2d');
+  const gold = currentConst.rare;
 
-  // Deep space
   rx.fillStyle='#020110'; rx.fillRect(0,0,W,H);
-
-  // Nebula where body was
   const ng=rx.createRadialGradient(W/2,H/2,0,W/2,H/2,W*.45);
-  ng.addColorStop(0,'rgba(76,29,149,.22)'); ng.addColorStop(.5,'rgba(55,20,120,.1)'); ng.addColorStop(1,'transparent');
+  ng.addColorStop(0, gold?'rgba(245,158,11,.22)':'rgba(76,29,149,.22)');
+  ng.addColorStop(.5, gold?'rgba(180,100,10,.1)':'rgba(55,20,120,.1)');
+  ng.addColorStop(1,'transparent');
   rx.fillStyle=ng; rx.beginPath(); rx.arc(W/2,H/2,W*.45,0,Math.PI*2); rx.fill();
 
-  // A second nebula off-center for depth
-  const ng2=rx.createRadialGradient(W*.7,H*.3,0,W*.7,H*.3,W*.3);
-  ng2.addColorStop(0,'rgba(88,28,135,.12)'); ng2.addColorStop(1,'transparent');
-  rx.fillStyle=ng2; rx.beginPath(); rx.arc(W*.7,H*.3,W*.3,0,Math.PI*2); rx.fill();
-
-  // Background micro-stars
   for(let i=0;i<90;i++){
     const bx=Math.random()*W, by=Math.random()*H;
     const br=Math.random()<.6?.35:.65;
@@ -791,139 +1210,255 @@ function buildConstellation(img){
     rx.beginPath(); rx.arc(bx,by,br,0,Math.PI*2); rx.fill();
   }
 
-  // Constellation lines — delicate dashes
   rx.save();
-  rx.strokeStyle='rgba(168,85,247,.28)'; rx.lineWidth=.75; rx.setLineDash([3,5]);
-  chosenConst.lines.forEach(([a,b])=>{
+  rx.strokeStyle = gold?'rgba(251,191,36,.32)':'rgba(168,85,247,.28)';
+  rx.lineWidth=.75; rx.setLineDash([3,5]);
+  currentConst.lines.forEach(([a,b])=>{
     const sa=finalStars[a],sb=finalStars[b];
     if(!sa||!sb)return;
     rx.beginPath(); rx.moveTo(sa.x*W,sa.y*H); rx.lineTo(sb.x*W,sb.y*H); rx.stroke();
   });
   rx.setLineDash([]); rx.restore();
 
-  // Stars — glow + core + sparkle cross
   finalStars.forEach((star,i)=>{
     const sx=star.x*W, sy=star.y*H;
     const isMain=i===0||i===2||i===4;
     const sz=isMain?4.8:2+Math.random()*.9;
-
-    // outer soft glow
     const og=rx.createRadialGradient(sx,sy,0,sx,sy,sz*7);
-    og.addColorStop(0,`rgba(200,170,255,${isMain?.38:.22})`);
+    og.addColorStop(0,gold?`rgba(253,230,138,${isMain?.42:.25})`:`rgba(200,170,255,${isMain?.38:.22})`);
     og.addColorStop(.35,'rgba(147,51,234,.1)'); og.addColorStop(1,'transparent');
     rx.fillStyle=og; rx.beginPath(); rx.arc(sx,sy,sz*7,0,Math.PI*2); rx.fill();
-
-    // inner glow
-    const ig=rx.createRadialGradient(sx,sy,0,sx,sy,sz*2.2);
-    ig.addColorStop(0,'rgba(255,248,255,.92)'); ig.addColorStop(1,'rgba(192,132,252,.15)');
-    rx.fillStyle=ig; rx.beginPath(); rx.arc(sx,sy,sz*2.2,0,Math.PI*2); rx.fill();
-
-    // core
     rx.fillStyle='rgba(255,252,255,.98)';
     rx.beginPath(); rx.arc(sx,sy,sz,0,Math.PI*2); rx.fill();
-
-    // sparkle cross
     if(isMain){
       rx.strokeStyle=`rgba(230,215,255,${isMain?.55:.35})`; rx.lineWidth=.65;
-      const arms=isMain?sz*3.2:sz*2;
+      const arms=sz*3.2;
       [[arms,0],[-arms,0],[0,arms],[0,-arms]].forEach(([dx,dy])=>{
         rx.beginPath(); rx.moveTo(sx,sy); rx.lineTo(sx+dx,sy+dy); rx.stroke();
       });
     }
   });
 
-  // Constellation name overlay (subtle, bottom)
-  rx.fillStyle='rgba(192,132,252,.35)';
-  rx.font='11px Space Grotesk,sans-serif';
-  rx.textAlign='center';
-  rx.fillText(chosenConst.name.split('·')[0].trim(),W/2,H-12);
-
-  // Show
   resultWrap.style.display='block';
   constInfo.style.display='block';
+  storyWrap.style.display='block';
   uploadArea.style.display='none';
-  document.getElementById('constName').textContent='✦ '+chosenConst.name;
+  constInfo.classList.toggle('rare', gold);
+  document.getElementById('constName').classList.toggle('rare', gold);
+  document.getElementById('constName').textContent='✦ '+currentConst.name;
   document.getElementById('constDesc').textContent=
-    `${patches.length>10?`Detected ${Math.min(patches.length,99)}+ vitiligo patches → `:''}mapped to ${tmpl.length} stars. Your constellation is ready.`;
+    `${patches.length>10?`Detected ${Math.min(patches.length,99)}+ vitiligo patches → `:''}mapped to ${tmpl.length} stars.`;
+
+  if(gold){
+    rarityBanner.style.display='flex';
+    document.getElementById('rarityText').textContent = currentConst.name.split('·')[0].trim()+' — Rare';
+    document.getElementById('raritySub').textContent = currentConst.desc;
+  } else {
+    rarityBanner.style.display='none';
+  }
 
   mintBtn.disabled=false;
   resetBtn.style.display='block';
   setStep(4);
-
-  // NFT pixel color
-  nftPixelColor=['#6d28d9','#7c3aed','#9333ea','#8b5cf6','#a855f7'][Math.floor(Math.random()*5)];
+  nftPixelColor = gold ? '#fbbf24' : ['#6d28d9','#7c3aed','#9333ea','#8b5cf6','#a855f7'][Math.floor(Math.random()*5)];
 }
 
-/* ── MINT ── */
 mintBtn.addEventListener('click',()=>{
   if(!tonConnectUI.connected){
     if(tg) tg.showAlert('Connect your TON wallet first.');
     else alert('Connect your TON wallet first.');
     return;
   }
+  lastStoryText = document.getElementById('storyInput').value.trim();
   openModal('modalMint');
 });
 
 let nftCount=0;
+let myNfts = [];
 document.getElementById('modalMintConfirm').addEventListener('click',()=>{
   sendTon('txMint',()=>{
     closeModal('modalMint');
     nftCount++;
+    const gold = currentConst.rare;
     mintBtn.textContent='✓ Minted!'; mintBtn.classList.add('done'); mintBtn.disabled=true;
     document.getElementById('profileBadge').textContent='⭐⭐';
 
-    // Add mini NFT to profile grid
     const grid=document.getElementById('nftGrid');
+    const card=document.createElement('div');
+    card.className='nft-card' + (gold ? ' rare' : '');
     const mc=document.createElement('canvas'); mc.width=80; mc.height=80;
     mc.style.cssText='width:100%;height:100%;display:block';
     const mctx=mc.getContext('2d');
-    // mini copy of constellation
     mctx.fillStyle='#020110'; mctx.fillRect(0,0,80,80);
     const ng=mctx.createRadialGradient(40,40,0,40,40,38);
-    ng.addColorStop(0,'rgba(76,29,149,.3)'); ng.addColorStop(1,'transparent');
+    ng.addColorStop(0,gold?'rgba(245,158,11,.3)':'rgba(76,29,149,.3)'); ng.addColorStop(1,'transparent');
     mctx.fillStyle=ng; mctx.beginPath(); mctx.arc(40,40,38,0,Math.PI*2); mctx.fill();
-    (chosenConst||CONSTS[0]).stars.forEach((s,i)=>{
+    currentConst.stars.forEach((s,i)=>{
       const sx=s.x*80, sy=s.y*80, sz=i===0?3:1.5;
       const g=mctx.createRadialGradient(sx,sy,0,sx,sy,sz*4);
-      g.addColorStop(0,'rgba(200,170,255,.5)'); g.addColorStop(1,'transparent');
+      g.addColorStop(0,gold?'rgba(253,230,138,.5)':'rgba(200,170,255,.5)'); g.addColorStop(1,'transparent');
       mctx.fillStyle=g; mctx.beginPath(); mctx.arc(sx,sy,sz*4,0,Math.PI*2); mctx.fill();
       mctx.fillStyle='rgba(255,252,255,.95)'; mctx.beginPath(); mctx.arc(sx,sy,sz,0,Math.PI*2); mctx.fill();
     });
-    const card=document.createElement('div'); card.className='nft-card';
     card.appendChild(mc);
-    const badge=document.createElement('div'); badge.className='nft-badge';
-    badge.textContent='⭐⭐ #'+nftCount; card.appendChild(badge);
-    grid.insertBefore(card,document.getElementById('addNftBtn'));
+    if(gold){
+      const badge=document.createElement('div'); badge.className='nft-rare-badge'; badge.textContent='★ RARE';
+      card.appendChild(badge);
+    }
+    const infoBar = document.createElement('div'); infoBar.className='nft-info-bar';
+    infoBar.innerHTML = `<div class="nft-name">${currentConst.name.split('·')[0].trim()}</div>${lastStoryText?`<div class="nft-story">"${lastStoryText}"</div>`:''}`;
+    card.appendChild(infoBar);
+    const giftFab = document.createElement('div'); giftFab.className='gift-fab'; giftFab.textContent='🎁';
+    card.appendChild(giftFab);
 
-    // Switch to home and add pixel to canvas
+    const nftData = {name: currentConst.name.split('·')[0].trim(), story: lastStoryText, rare: gold, constData: currentConst};
+    myNfts.push(nftData);
+    card.addEventListener('click', (e)=>{
+      if(e.target === giftFab) { openModal('shareSheet'); return; }
+      openNftDetail(nftData);
+    });
+
+    grid.insertBefore(card,document.getElementById('addNftBtn'));
+    drawMySky();
+
     setTimeout(()=>{
       document.querySelector('[data-page="home"]').click();
       setTimeout(()=>{
         addPixelToCanvas(nftPixelColor,true);
-        count++; numEl.textContent=fmt(count);
-        numEl.classList.add('flash'); setTimeout(()=>numEl.classList.remove('flash'),600);
-        showToast('✦ Your constellation is on the canvas');
+        photoCount++; numPhotosEl.textContent=fmt(photoCount);
+        numPhotosEl.classList.add('flash'); setTimeout(()=>numPhotosEl.classList.remove('flash'),600);
+        showToast(gold ? '★ Rare constellation minted!' : '✦ Your constellation is on the canvas');
         if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
       },350);
     },900);
   });
 });
 
-/* ── RESET STARS ── */
-resetBtn.addEventListener('click',()=>{
-  uploadArea.style.display=''; resultWrap.style.display='none';
-  constInfo.style.display='none'; mintBtn.disabled=true;
-  mintBtn.textContent='Mint NFT — 1 TON'; mintBtn.classList.remove('done');
-  resetBtn.style.display='none'; fileInput.value=''; setStep(1);
-  chosenConst=null; nftPixelColor=null;
+function openNftDetail(nftData){
+  document.getElementById('modalNftTitle').textContent = '✦ ' + nftData.name + (nftData.rare ? ' ★ RARE' : '');
+  document.getElementById('modalNftTitle').classList.toggle('rare', nftData.rare);
+  document.getElementById('modalNftPreview').classList.toggle('rare', nftData.rare);
+  document.getElementById('modalNftStory').textContent = nftData.story || 'No story added yet.';
+  const canvas = document.getElementById('modalNftCanvas');
+  const w = canvas.parentElement.offsetWidth || 300, h = w/1.6;
+  canvas.width=w; canvas.height=h;
+  const ctx = canvas.getContext('2d');
+  const gold = nftData.rare;
+  ctx.fillStyle='#020110'; ctx.fillRect(0,0,w,h);
+  const ng = ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,w*.4);
+  ng.addColorStop(0, gold?'rgba(245,158,11,.2)':'rgba(76,29,149,.2)'); ng.addColorStop(1,'transparent');
+  ctx.fillStyle=ng; ctx.beginPath(); ctx.arc(w/2,h/2,w*.4,0,Math.PI*2); ctx.fill();
+  nftData.constData.stars.forEach((s,i)=>{
+    const sx=s.x*w, sy=s.y*h, sz=i===0?4:2;
+    const g=ctx.createRadialGradient(sx,sy,0,sx,sy,sz*5);
+    g.addColorStop(0,gold?'rgba(253,230,138,.5)':'rgba(200,170,255,.45)'); g.addColorStop(1,'transparent');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,sy,sz*5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(255,252,255,.96)'; ctx.beginPath(); ctx.arc(sx,sy,sz,0,Math.PI*2); ctx.fill();
+  });
+  openModal('modalNftDetail');
+}
+document.getElementById('modalNftGift').addEventListener('click',()=>{
+  closeModal('modalNftDetail');
+  openModal('shareSheet');
+});
+document.getElementById('modalNftShare').addEventListener('click',()=>{
+  closeModal('modalNftDetail');
+  openModal('shareSheet');
 });
 
-/* ── SAVE PROFILE ── */
+function drawMySky(){
+  const canvas = document.getElementById('mySkyCanvas');
+  const w = canvas.offsetWidth || 300, h = w/1.6;
+  canvas.width=w; canvas.height=h;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle='#030112'; ctx.fillRect(0,0,w,h);
+  for(let i=0;i<40;i++){
+    const x=Math.random()*w, y=Math.random()*h;
+    ctx.fillStyle=`rgba(200,190,255,${.05+Math.random()*.15})`;
+    ctx.beginPath();ctx.arc(x,y,Math.random()<.7?.5:1,0,Math.PI*2);ctx.fill();
+  }
+  if(myNfts.length===0){
+    document.getElementById('skyCount').textContent = '0 stars';
+    return;
+  }
+  const offsets = [{ox:.1,oy:.12,sc:.32},{ox:.55,oy:.1,sc:.3},{ox:.25,oy:.5,sc:.3},{ox:.6,oy:.5,sc:.28},{ox:.05,oy:.55,sc:.25}];
+  let totalStars = 0;
+  myNfts.slice(0,5).forEach((nft,ci)=>{
+    const off = offsets[ci % offsets.length];
+    const pts = nft.constData.stars;
+    const gold = nft.rare;
+    totalStars += pts.length;
+    ctx.strokeStyle = gold?'rgba(251,191,36,.3)':'rgba(168,85,247,.25)';
+    ctx.lineWidth=.6;ctx.setLineDash([2,4]);
+    ctx.beginPath();
+    pts.forEach((p,i)=>{
+      const x=(off.ox+p.x*off.sc)*w, y=(off.oy+p.y*off.sc)*h;
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.stroke();ctx.setLineDash([]);
+    pts.forEach((p,i)=>{
+      const x=(off.ox+p.x*off.sc)*w, y=(off.oy+p.y*off.sc)*h;
+      const sz=i===0?2.8:1.3+Math.random()*.5;
+      const g=ctx.createRadialGradient(x,y,0,x,y,sz*4);
+      g.addColorStop(0,gold?'rgba(253,230,138,.45)':'rgba(200,180,255,.35)');
+      g.addColorStop(1,'transparent');
+      ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,sz*4,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='rgba(255,252,255,.9)';ctx.beginPath();ctx.arc(x,y,sz,0,Math.PI*2);ctx.fill();
+    });
+  });
+  document.getElementById('skyCount').textContent = totalStars + ' stars';
+}
+setTimeout(drawMySky, 200);
+
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  uploadArea.style.display=''; resultWrap.style.display='none';
+  constInfo.style.display='none'; storyWrap.style.display='none';
+  rarityBanner.style.display='none';
+  mintBtn.disabled=true;
+  mintBtn.textContent='Mint NFT — 1 TON'; mintBtn.classList.remove('done');
+  resetBtn.style.display='none'; fileInput.value=''; setStep(1);
+  currentConst=null; nftPixelColor=null;
+  document.getElementById('storyInput').value='';
+});
+
 document.getElementById('saveBtn').addEventListener('click',()=>{
   const n=document.getElementById('fieldName').value;
   if(n) document.getElementById('profileName').textContent=n;
   if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
   if(tg) tg.showAlert('Profile saved!'); else alert('Profile saved!');
+});
+
+/* ── INVITE / REFERRAL ── */
+document.getElementById('copyBtn').addEventListener('click', function(){
+  navigator.clipboard?.writeText('https://'+refLink).catch(()=>{});
+  this.textContent = '✓ Copied';
+  this.classList.add('copied');
+  if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+  setTimeout(()=>{ this.textContent = 'Copy'; this.classList.remove('copied'); }, 2000);
+});
+
+document.getElementById('shareTelegram').addEventListener('click', ()=>{
+  if(tg){
+    tg.openTelegramLink(`https://t.me/share/url?url=https://${refLink}&text=${encodeURIComponent("Join vitiligo.ton — people with vitiligo are unique by design ✦")}`);
+  } else {
+    openModal('shareSheet');
+  }
+});
+document.getElementById('shareMore').addEventListener('click', ()=>{
+  if(navigator.share){
+    navigator.share({title:'vitiligo.ton', text:'Join vitiligo.ton — people with vitiligo are unique by design', url:'https://'+refLink}).catch(()=>{});
+  } else {
+    openModal('shareSheet');
+  }
+});
+document.getElementById('sendToChat').addEventListener('click', ()=>{
+  closeModal('shareSheet');
+  if(tg) tg.openTelegramLink(`https://t.me/share/url?url=https://${refLink}&text=${encodeURIComponent("Join vitiligo.ton ✦")}`);
+});
+document.getElementById('copyLinkOpt').addEventListener('click', ()=>{
+  navigator.clipboard?.writeText('https://'+refLink).catch(()=>{});
+  closeModal('shareSheet');
+  showToast('Link copied ✦');
 });
 
 /* ── MAP ── */
@@ -932,16 +1467,15 @@ const mX=mapC.getContext('2d');
 mapC.width=304; mapC.height=155;
 mX.fillStyle='#030112';
 mX.beginPath(); if(mX.roundRect)mX.roundRect(0,0,304,155,14); else mX.rect(0,0,304,155); mX.fill();
-[{x:88,y:56,r:4,l:'London'},{x:160,y:60,r:4,l:'Moscow'},{x:248,y:92,r:7.5,l:'Mumbai'},
- {x:42,y:106,r:3.5,l:'New York'},{x:266,y:46,r:5.5,l:'Beijing'},{x:210,y:52,r:3,l:'Almaty'}]
-.forEach(c=>{
-  const g=mX.createRadialGradient(c.x,c.y,0,c.x,c.y,c.r*3.5);
-  g.addColorStop(0,'rgba(147,51,234,.28)'); g.addColorStop(1,'transparent');
-  mX.fillStyle=g; mX.beginPath(); mX.arc(c.x,c.y,c.r*3.5,0,Math.PI*2); mX.fill();
-  mX.fillStyle='rgba(192,132,252,.88)'; mX.beginPath(); mX.arc(c.x,c.y,c.r,0,Math.PI*2); mX.fill();
-  mX.fillStyle='rgba(210,195,255,.42)'; mX.font='7px sans-serif';
-  mX.textAlign='center'; mX.fillText(c.l,c.x,c.y-c.r-4);
-});
+// Background stars only — no city dots until real data exists
+for(let i=0;i<35;i++){
+  const x=Math.random()*304, y=Math.random()*155;
+  mX.fillStyle=`rgba(210,200,255,${(.04+Math.random()*.12).toFixed(2)})`;
+  mX.beginPath(); mX.arc(x,y,Math.random()<.7?.5:1,0,Math.PI*2); mX.fill();
+}
+const mapNg = mX.createRadialGradient(152,77,0,152,77,140);
+mapNg.addColorStop(0,'rgba(76,29,149,.1)'); mapNg.addColorStop(1,'transparent');
+mX.fillStyle=mapNg; mX.beginPath(); mX.arc(152,77,140,0,Math.PI*2); mX.fill();
 </script>
 </body>
 </html>
