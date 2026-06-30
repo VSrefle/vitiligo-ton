@@ -542,12 +542,8 @@ html,body{
     <div class="page-title">Where we are</div>
     <div class="page-sub">People with vitiligo worldwide</div>
     <canvas id="mapCanvas" width="304" height="155"></canvas>
-    <div class="city-item"><div class="cdot"></div><div class="cname">Mumbai, India</div><div class="cbar-wrap"><div class="cbar" style="width:100%"></div></div><div class="ccount">3,420</div></div>
-    <div class="city-item"><div class="cdot"></div><div class="cname">Moscow, Russia</div><div class="cbar-wrap"><div class="cbar" style="width:36%"></div></div><div class="ccount">1,240</div></div>
-    <div class="city-item"><div class="cdot"></div><div class="cname">London, UK</div><div class="cbar-wrap"><div class="cbar" style="width:25%"></div></div><div class="ccount">847</div></div>
-    <div class="city-item"><div class="cdot"></div><div class="cname">Beijing, China</div><div class="cbar-wrap"><div class="cbar" style="width:61%"></div></div><div class="ccount">2,100</div></div>
-    <div class="city-item"><div class="cdot"></div><div class="cname">New York, USA</div><div class="cbar-wrap"><div class="cbar" style="width:18%"></div></div><div class="ccount">612</div></div>
-    <div class="city-item"><div class="cdot"></div><div class="cname">Almaty, Kazakhstan</div><div class="cbar-wrap"><div class="cbar" style="width:6%"></div></div><div class="ccount">188</div></div>
+    <div class="invite-empty" id="cityListEmpty">No one has marked their city yet — be the first ✦</div>
+    <div id="cityListReal"></div>
   </div>
 </div>
 
@@ -1370,16 +1366,15 @@ const mX=mapC.getContext('2d');
 mapC.width=304; mapC.height=155;
 mX.fillStyle='#030112';
 mX.beginPath(); if(mX.roundRect)mX.roundRect(0,0,304,155,14); else mX.rect(0,0,304,155); mX.fill();
-[{x:88,y:56,r:4,l:'London'},{x:160,y:60,r:4,l:'Moscow'},{x:248,y:92,r:7.5,l:'Mumbai'},
- {x:42,y:106,r:3.5,l:'New York'},{x:266,y:46,r:5.5,l:'Beijing'},{x:210,y:52,r:3,l:'Almaty'}]
-.forEach(c=>{
-  const g=mX.createRadialGradient(c.x,c.y,0,c.x,c.y,c.r*3.5);
-  g.addColorStop(0,'rgba(147,51,234,.28)'); g.addColorStop(1,'transparent');
-  mX.fillStyle=g; mX.beginPath(); mX.arc(c.x,c.y,c.r*3.5,0,Math.PI*2); mX.fill();
-  mX.fillStyle='rgba(192,132,252,.88)'; mX.beginPath(); mX.arc(c.x,c.y,c.r,0,Math.PI*2); mX.fill();
-  mX.fillStyle='rgba(210,195,255,.42)'; mX.font='7px sans-serif';
-  mX.textAlign='center'; mX.fillText(c.l,c.x,c.y-c.r-4);
-});
+// Background stars only — no city dots until real data exists
+for(let i=0;i<35;i++){
+  const x=Math.random()*304, y=Math.random()*155;
+  mX.fillStyle=`rgba(210,200,255,${(.04+Math.random()*.12).toFixed(2)})`;
+  mX.beginPath(); mX.arc(x,y,Math.random()<.7?.5:1,0,Math.PI*2); mX.fill();
+}
+const mapNg = mX.createRadialGradient(152,77,0,152,77,140);
+mapNg.addColorStop(0,'rgba(76,29,149,.1)'); mapNg.addColorStop(1,'transparent');
+mX.fillStyle=mapNg; mX.beginPath(); mX.arc(152,77,140,0,Math.PI*2); mX.fill();
 </script>
 </body>
 </html>
