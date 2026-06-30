@@ -748,7 +748,7 @@ html,body{
 <div class="toast" id="toast"></div>
 
 <script>
-const CONTRACT_ADDRESS = 'EQBbz8-DHXqTTQFqBGlZ7V3pST_ZuZCY9zHAnXvXyZ7lSjpF';
+const CONTRACT_ADDRESS = 'EQBzy44Ch6szMwEA8jmr33CMr_uJ2GZ2bMMaOIabUQ0LYUZW';
 const TON_AMOUNT = '1000000000';
 const BOT_USERNAME = 'vitiligo_ton_bot';
 
@@ -1175,10 +1175,15 @@ function buildConstellation(img){
   }
 
   setStep(3);
-  // 10% chance for rare constellation
-  const isRare = Math.random() < 0.10;
+  // Rare constellation: 10% random chance, OR guaranteed on every 100th mint overall
+  const upcomingMintNumber = photoCount + 1;
+  const isMilestoneMint = upcomingMintNumber % 100 === 0;
+  const isRare = isMilestoneMint || Math.random() < 0.10;
   const pool = isRare ? CONSTS.filter(c=>c.rare) : CONSTS.filter(c=>!c.rare);
   currentConst = pool[Math.floor(Math.random()*pool.length)];
+  if (isMilestoneMint) {
+    currentConst = {...currentConst, milestoneBadge: `#${upcomingMintNumber} — Milestone constellation ✦`};
+  }
   const tmpl = currentConst.stars;
 
   let finalStars;
@@ -1251,7 +1256,9 @@ function buildConstellation(img){
 
   if(gold){
     rarityBanner.style.display='flex';
-    document.getElementById('rarityText').textContent = currentConst.name.split('·')[0].trim()+' — Rare';
+    document.getElementById('rarityText').textContent =
+      (currentConst.milestoneBadge ? currentConst.milestoneBadge+' · ' : '') +
+      currentConst.name.split('·')[0].trim()+' — Rare';
     document.getElementById('raritySub').textContent = currentConst.desc;
   } else {
     rarityBanner.style.display='none';
