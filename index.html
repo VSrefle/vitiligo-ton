@@ -857,7 +857,13 @@ let count = 0, photoCount = 0, connected = false, tickTimer = null;
 const numEl=document.getElementById('cnum');
 const numPhotosEl=document.getElementById('cnumPhotos');
 const liveRow=document.getElementById('liveRow');
-function fmt(n){return n.toLocaleString('en-US')}
+function fmt(n){
+  if (n < 10000) return n.toLocaleString('en-US');
+  if (n < 1000000) return (n/1000).toFixed(1).replace(/\.0$/,'') + 'K';
+  if (n < 1000000000) return (n/1000000).toFixed(1).replace(/\.0$/,'') + 'M';
+  return (n/1000000000).toFixed(1).replace(/\.0$/,'') + 'B';
+}
+function fmtExact(n){ return n.toLocaleString('en-US'); }
 
 const MILESTONES = [100, 1000, 10000, 100000];
 function updateMilestone(){
@@ -877,11 +883,15 @@ async function loadCounterFromChain() {
       body: JSON.stringify({ address: CONTRACT_ADDRESS, method: 'totalCount', stack: [] })
     });
     const data = await res.json();
+    const exitCode = data?.result?.exit_code;
     const hex = data?.result?.stack?.[0]?.[1];
-    if (hex) {
+    if (exitCode === 0 && hex) {
       count = parseInt(hex, 16);
-      numEl.textContent = fmt(count);
+      numEl.textContent = fmt(count); numEl.title = fmtExact(count)+' people';
       updateMilestone();
+    } else {
+      console.warn('totalCount get-method failed, exit_code:', exitCode);
+      numEl.textContent = fmt(0); numEl.title = '0 people';
     }
   } catch(e) { console.log('Counter load failed', e); }
 
@@ -892,10 +902,14 @@ async function loadCounterFromChain() {
       body: JSON.stringify({ address: CONTRACT_ADDRESS, method: 'photoCount', stack: [] })
     });
     const data2 = await res2.json();
+    const exitCode2 = data2?.result?.exit_code;
     const hex2 = data2?.result?.stack?.[0]?.[1];
-    if (hex2) {
+    if (exitCode2 === 0 && hex2) {
       photoCount = parseInt(hex2, 16);
-      numPhotosEl.textContent = fmt(photoCount);
+      numPhotosEl.textContent = fmt(photoCount); numPhotosEl.title = fmtExact(photoCount)+' constellations';
+    } else {
+      console.warn('photoCount get-method failed, exit_code:', exitCode2);
+      numPhotosEl.textContent = fmt(0); numPhotosEl.title = '0 constellations';
     }
   } catch(e) { console.log('Photo counter load failed', e); }
 }
@@ -996,21 +1010,7 @@ function closeWelcome(){
 document.getElementById('welcomeBtn').addEventListener('click',closeWelcome);
 document.getElementById('welcomeSkip').addEventListener('click',closeWelcome);
 
-/* ── SOCIAL PROOF TOAST ── */
-const socialNames = [
-  {name:'Marina', place:'Brazil'}, {name:'Aiden', place:'UK'}, {name:'Priya', place:'India'},
-  {name:'Yuki', place:'Japan'}, {name:'Carlos', place:'Mexico'}, {name:'Fatima', place:'Egypt'},
-  {name:'Lucas', place:'France'}, {name:'Sara', place:'Sweden'}
-];
-function showSocialToast(){
-  const t = socialNames[Math.floor(Math.random()*socialNames.length)];
-  document.getElementById('socialToastText').innerHTML = `<b>${t.name}</b> from ${t.place} just added their constellation ✦`;
-  const toast = document.getElementById('socialToast');
-  toast.classList.add('show');
-  setTimeout(()=>toast.classList.remove('show'), 3500);
-}
-setTimeout(showSocialToast, 4000);
-setInterval(showSocialToast, 25000);
+/* ── SOCIAL PROOF TOAST: removed — fake activity conflicts with project's honesty principle ── */
 
 /* ── NAV ── */
 document.querySelectorAll('.nav-item').forEach(btn=>{
@@ -1046,7 +1046,7 @@ document.getElementById('modalCountConfirm').addEventListener('click',()=>{
     closeModal('modalCount');
     if(!counted){
       counted=true; count++;
-      numEl.textContent=fmt(count);
+      numEl.textContent=fmt(count); numEl.title=fmtExact(count)+' people';
       numEl.classList.add('flash'); setTimeout(()=>numEl.classList.remove('flash'),700);
       updateMilestone();
       const btn=document.getElementById('countBtn');
@@ -1332,7 +1332,7 @@ document.getElementById('modalMintConfirm').addEventListener('click',()=>{
       document.querySelector('[data-page="home"]').click();
       setTimeout(()=>{
         addPixelToCanvas(nftPixelColor,true);
-        photoCount++; numPhotosEl.textContent=fmt(photoCount);
+        photoCount++; numPhotosEl.textContent=fmt(photoCount); numPhotosEl.title=fmtExact(photoCount)+' constellations';
         numPhotosEl.classList.add('flash'); setTimeout(()=>numPhotosEl.classList.remove('flash'),600);
         showToast(gold ? '★ Rare constellation minted!' : '✦ Your constellation is on the canvas');
         if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
