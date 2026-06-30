@@ -118,6 +118,28 @@ html,body{
 }
 
 .counter-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.dual-counter{
+  display:flex;align-items:center;justify-content:center;
+  gap:18px;margin-bottom:14px;padding:18px 10px;
+  background:rgba(255,255,255,.02);border:.5px solid rgba(147,51,234,.12);
+  border-radius:20px;
+}
+.counter-block{text-align:center;flex:1}
+.counter-divider{width:.5px;height:38px;background:rgba(147,51,234,.2)}
+.cnum-gold{color:#fbbf24!important;text-shadow:none}
+.milestone-bar{margin-bottom:18px;padding:0 2px}
+.milestone-label{font-size:11px;color:var(--purple-light);letter-spacing:.04em;margin-bottom:7px;font-weight:500}
+.milestone-track{
+  width:100%;height:6px;background:rgba(255,255,255,.06);
+  border-radius:6px;overflow:hidden;position:relative;
+}
+.milestone-fill{
+  height:100%;width:0%;border-radius:6px;
+  background:linear-gradient(90deg,#7c3aed,#c084fc);
+  box-shadow:0 0 12px rgba(147,51,234,.5);
+  transition:width 1s cubic-bezier(.16,1,.3,1);
+}
+.milestone-sub{font-size:10px;color:var(--muted);margin-top:6px;text-align:right}
 .cnum{
   font-family:'Outfit',sans-serif;font-size:44px;font-weight:200;
   letter-spacing:-.04em;color:#fff;line-height:1;
@@ -473,12 +495,23 @@ html,body{
       <div class="canvas-label">tap pixel to explore</div>
     </div>
 
-    <div class="counter-row">
-      <div class="cnum" id="cnum">0</div>
-      <div class="counter-meta">
+    <div class="dual-counter">
+      <div class="counter-block">
+        <div class="cnum" id="cnum">0</div>
         <div class="clabel">people counted</div>
         <div class="live-row" id="liveRow"><div class="wdot" style="background:var(--green)"></div>live</div>
       </div>
+      <div class="counter-divider"></div>
+      <div class="counter-block">
+        <div class="cnum cnum-gold" id="cnumPhotos">0</div>
+        <div class="clabel">constellations minted</div>
+      </div>
+    </div>
+
+    <div class="milestone-bar">
+      <div class="milestone-label" id="milestoneLabel">Goal: 100 people</div>
+      <div class="milestone-track"><div class="milestone-fill" id="milestoneFill"></div></div>
+      <div class="milestone-sub" id="milestoneSub">0 / 100</div>
     </div>
 
     <h1 class="headline">People with vitiligo<br>are <em>unique by design</em></h1>
@@ -815,10 +848,21 @@ function addPixelToCanvas(color, isNFT) {
 }
 
 /* ── LIVE COUNTER FROM BLOCKCHAIN ── */
-let count = 0, connected = false, tickTimer = null;
+let count = 0, photoCount = 0, connected = false, tickTimer = null;
 const numEl=document.getElementById('cnum');
+const numPhotosEl=document.getElementById('cnumPhotos');
 const liveRow=document.getElementById('liveRow');
 function fmt(n){return n.toLocaleString('en-US')}
+
+const MILESTONES = [100, 1000, 10000, 100000];
+function updateMilestone(){
+  let goal = MILESTONES.find(m => m > count) || MILESTONES[MILESTONES.length-1];
+  const prevGoal = MILESTONES[MILESTONES.indexOf(goal)-1] || 0;
+  const progress = Math.min(100, ((count - prevGoal) / (goal - prevGoal)) * 100);
+  document.getElementById('milestoneLabel').textContent = `Goal: ${fmt(goal)} people`;
+  document.getElementById('milestoneFill').style.width = progress + '%';
+  document.getElementById('milestoneSub').textContent = `${fmt(count)} / ${fmt(goal)}`;
+}
 
 async function loadCounterFromChain() {
   try {
@@ -832,10 +876,26 @@ async function loadCounterFromChain() {
     if (hex) {
       count = parseInt(hex, 16);
       numEl.textContent = fmt(count);
+      updateMilestone();
     }
   } catch(e) { console.log('Counter load failed', e); }
+
+  try {
+    const res2 = await fetch(`https://toncenter.com/api/v2/runGetMethod`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ address: CONTRACT_ADDRESS, method: 'photoCount', stack: [] })
+    });
+    const data2 = await res2.json();
+    const hex2 = data2?.result?.stack?.[0]?.[1];
+    if (hex2) {
+      photoCount = parseInt(hex2, 16);
+      numPhotosEl.textContent = fmt(photoCount);
+    }
+  } catch(e) { console.log('Photo counter load failed', e); }
 }
 loadCounterFromChain();
+updateMilestone();
 
 function startTick(){
   if(tickTimer)return; liveRow.classList.add('show');
@@ -948,6 +1008,7 @@ document.getElementById('modalCountConfirm').addEventListener('click',()=>{
       counted=true; count++;
       numEl.textContent=fmt(count);
       numEl.classList.add('flash'); setTimeout(()=>numEl.classList.remove('flash'),700);
+      updateMilestone();
       const btn=document.getElementById('countBtn');
       btn.textContent='✓ Counted!'; btn.classList.add('done'); btn.disabled=true;
       addPixelToCanvas('#9333ea',false);
@@ -970,31 +1031,31 @@ function showToast(msg){
 /* ── CONSTELLATION DATA (5 common + 2 rare) ── */
 const CONSTS=[
   {name:'Orion · The Hunter', rare:false,
-   desc:'One of the most recognised constellations — your vitiligo now lives in it',
+   desc:'Orion strides the winter sky eternally — a warrior who fears nothing, marked by the same light you carry. Like him, your skin tells a story of strength, not flaw.',
    stars:[{x:.28,y:.35},{x:.42,y:.2},{x:.62,y:.28},{x:.7,y:.46},{x:.58,y:.63},{x:.38,y:.71},{x:.23,y:.56},{x:.5,y:.44},{x:.74,y:.3},{x:.48,y:.22}],
    lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0],[7,3],[1,9],[9,2]]},
   {name:'Cassiopeia · The Queen', rare:false,
-   desc:'A timeless W-shape in the northern sky — your patch is its crown',
+   desc:'Cassiopeia sits enthroned among the stars, unashamed, unhidden — placed in the heavens for her beauty alone. Your light, too, was never meant to be covered.',
    stars:[{x:.12,y:.58},{x:.28,y:.28},{x:.5,y:.52},{x:.72,y:.26},{x:.88,y:.55},{x:.5,y:.75},{x:.35,y:.68}],
    lines:[[0,1],[1,2],[2,3],[3,4],[2,5],[5,6],[6,0]]},
   {name:'Cygnus · The Swan', rare:false,
-   desc:'The Northern Cross soaring through the Milky Way',
+   desc:'The Swan flies forever along the Milky Way, graceful and unbothered by the eyes that follow her. She does not ask permission to be seen — neither should you.',
    stars:[{x:.5,y:.12},{x:.5,y:.38},{x:.5,y:.64},{x:.5,y:.88},{x:.18,y:.38},{x:.82,y:.38},{x:.33,y:.54},{x:.67,y:.54}],
    lines:[[0,1],[1,2],[2,3],[4,1],[1,5],[2,6],[2,7]]},
   {name:'Lyra · The Lyre', rare:false,
-   desc:'Home to Vega, one of the brightest stars — your patch shines here',
+   desc:'Lyra carries the music of Orpheus into the night — proof that what seems broken can still create something beautiful. Your patch is your own quiet melody.',
    stars:[{x:.5,y:.1},{x:.3,y:.38},{x:.7,y:.38},{x:.25,y:.62},{x:.75,y:.62},{x:.5,y:.85},{x:.45,y:.5},{x:.55,y:.5}],
    lines:[[0,1],[0,2],[1,2],[1,3],[2,4],[3,5],[4,5],[1,6],[2,7]]},
   {name:'Perseus · The Hero', rare:false,
-   desc:'Guardian of the night sky — your pattern is his constellation',
+   desc:'Perseus bears his mark proudly across the autumn sky — a hero defined not by what he lacks, but by what he overcame. His stars never dimmed for anyone.',
    stars:[{x:.5,y:.14},{x:.36,y:.3},{x:.64,y:.26},{x:.28,y:.5},{x:.56,y:.48},{x:.72,y:.4},{x:.22,y:.7},{x:.46,y:.68},{x:.7,y:.65},{x:.5,y:.85}],
    lines:[[0,1],[0,2],[1,3],[2,5],[3,6],[4,5],[4,7],[7,8],[7,9],[1,4]]},
   {name:'Cygnus Rare · Golden Swan', rare:true,
-   desc:'Only 4% of people get this one — a rare golden constellation',
+   desc:'Legend says one swan in a thousand is born wrapped in gold — touched by the same hand that paints the northern lights. Yours is one of the rare ones. Carry it well.',
    stars:[{x:.5,y:.15},{x:.5,y:.4},{x:.5,y:.65},{x:.5,y:.85},{x:.2,y:.4},{x:.8,y:.4},{x:.35,y:.55},{x:.65,y:.55},{x:.5,y:.05}],
    lines:[[0,1],[1,2],[2,3],[4,1],[1,5],[2,6],[2,7],[0,8]]},
   {name:'Corona · Northern Crown', rare:true,
-   desc:'Only 3% of people get this rare crown of light',
+   desc:'A crown forged not from gold but from light itself — given only to those whose skin has already proven it can carry weight and still shine. Few wear it.',
    stars:[{x:.2,y:.5},{x:.32,y:.3},{x:.48,y:.18},{x:.65,y:.2},{x:.8,y:.38},{x:.7,y:.6},{x:.5,y:.7},{x:.3,y:.65}],
    lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0]]},
 ];
@@ -1224,8 +1285,8 @@ document.getElementById('modalMintConfirm').addEventListener('click',()=>{
       document.querySelector('[data-page="home"]').click();
       setTimeout(()=>{
         addPixelToCanvas(nftPixelColor,true);
-        count++; numEl.textContent=fmt(count);
-        numEl.classList.add('flash'); setTimeout(()=>numEl.classList.remove('flash'),600);
+        photoCount++; numPhotosEl.textContent=fmt(photoCount);
+        numPhotosEl.classList.add('flash'); setTimeout(()=>numPhotosEl.classList.remove('flash'),600);
         showToast(gold ? '★ Rare constellation minted!' : '✦ Your constellation is on the canvas');
         if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
       },350);
