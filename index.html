@@ -727,6 +727,15 @@ html,body{
   </div>
 </div>
 
+<!-- PIXEL EXPLORER -->
+<div class="modal-backdrop" id="modalPixel">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-nft-title" id="modalPixelTitle">✦</div>
+    <div id="modalPixelBody"></div>
+  </div>
+</div>
+
 <!-- SHARE SHEET -->
 <div class="modal-backdrop" id="shareSheet">
   <div class="modal">
@@ -815,10 +824,7 @@ const PX = PC.getContext('2d');
 const COLS=38, ROWS=18, PW=8, PH=8;
 PC.width=COLS*PW; PC.height=ROWS*PH;
 const pixels = [];
-const purples = ['#3b0764','#4c1d95','#5b21b6','#6d28d9','#7c3aed','#8b5cf6','#a78bfa','#2e1065','#1e1b4b'];
-for (let i=0;i<COLS*ROWS;i++) {
-  pixels[i] = Math.random()<.52 ? {color:purples[Math.floor(Math.random()*purples.length)],op:.12+Math.random()*.5,isNFT:false} : null;
-}
+for (let i=0;i<COLS*ROWS;i++) { pixels[i] = null; }
 function drawPixels() {
   PX.clearRect(0,0,PC.width,PC.height);
   pixels.forEach((p,i) => {
@@ -835,12 +841,12 @@ function drawPixels() {
 }
 drawPixels();
 
-function addPixelToCanvas(color, isNFT) {
+function addPixelToCanvas(color, isNFT, data) {
   const empty = [];
   pixels.forEach((p,i) => { if (!p) empty.push(i); });
   if (!empty.length) return;
   const idx = empty[Math.floor(Math.random()*empty.length)];
-  pixels[idx] = {color, op:1, isNFT};
+  pixels[idx] = {color, op:1, isNFT, data: data || null};
   drawPixels();
   const x=(idx%COLS)*PW, y=Math.floor(idx/COLS)*PH;
   let f=0;
@@ -851,6 +857,35 @@ function addPixelToCanvas(color, isNFT) {
     if(f>7){clearInterval(fl);drawPixels();}
   },110);
 }
+
+/* ── TAP PIXEL TO EXPLORE ── */
+function openPixelModal(p){
+  const m = document.getElementById('modalPixel');
+  const title = document.getElementById('modalPixelTitle');
+  const body = document.getElementById('modalPixelBody');
+  if (p.isNFT && p.data) {
+    title.textContent = '✦ ' + (p.data.constName || 'Constellation');
+    body.innerHTML =
+      (p.data.isRare ? '<div class="modal-nft-title rare">★ Rare constellation</div>' : '') +
+      '<div class="modal-nft-story">' + (p.data.story ? '"' + p.data.story.replace(/</g,'&lt;') + '"' : 'No story added yet.') + '</div>';
+  } else {
+    title.textContent = '⭐ Counted';
+    body.innerHTML = '<div class="modal-nft-story">A real person, verified on-chain. No photo or story shared yet.</div>';
+  }
+  openModal('modalPixel');
+}
+PC.addEventListener('click', (e) => {
+  const rect = PC.getBoundingClientRect();
+  const scaleX = PC.width / rect.width;
+  const scaleY = PC.height / rect.height;
+  const cx = (e.clientX - rect.left) * scaleX;
+  const cy = (e.clientY - rect.top) * scaleY;
+  const col = Math.floor(cx / PW);
+  const row = Math.floor(cy / PH);
+  const idx = row * COLS + col;
+  const p = pixels[idx];
+  if (p) openPixelModal(p);
+});
 
 /* ── LIVE COUNTER FROM BLOCKCHAIN ── */
 let count = 0, photoCount = 0, connected = false, tickTimer = null;
@@ -1051,7 +1086,7 @@ document.getElementById('modalCountConfirm').addEventListener('click',()=>{
       updateMilestone();
       const btn=document.getElementById('countBtn');
       btn.textContent='✓ Counted!'; btn.classList.add('done'); btn.disabled=true;
-      addPixelToCanvas('#9333ea',false);
+      addPixelToCanvas('#9333ea',false,null);
       showToast('Your star is on the canvas ✦');
     }
   });
@@ -1331,7 +1366,7 @@ document.getElementById('modalMintConfirm').addEventListener('click',()=>{
     setTimeout(()=>{
       document.querySelector('[data-page="home"]').click();
       setTimeout(()=>{
-        addPixelToCanvas(nftPixelColor,true);
+        addPixelToCanvas(nftPixelColor,true,{constName: nftData.name, story: nftData.story, isRare: nftData.rare});
         photoCount++; numPhotosEl.textContent=fmt(photoCount); numPhotosEl.title=fmtExact(photoCount)+' constellations';
         numPhotosEl.classList.add('flash'); setTimeout(()=>numPhotosEl.classList.remove('flash'),600);
         showToast(gold ? '★ Rare constellation minted!' : '✦ Your constellation is on the canvas');
