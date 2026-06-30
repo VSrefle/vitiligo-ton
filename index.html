@@ -599,7 +599,7 @@ async function sendTon(statusId, onSuccess) {
   try {
     await tonConnectUI.sendTransaction({
       validUntil:Math.floor(Date.now()/1000)+300,
-      messages:[{address:CONTRACT_ADDRESS,amount:TON_AMOUNT}]
+      messages:[{address:CONTRACT_ADDRESS,amount:TON_AMOUNT,payload:'te6cckEBAQEADgAAGAAAAAAAAAAAAAAAAA=='}]
     });
     el.className='tx-status success'; el.textContent='✓ Transaction confirmed!';
     if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
