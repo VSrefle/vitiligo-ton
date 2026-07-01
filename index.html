@@ -659,7 +659,10 @@ html,body{
     <label class="form-label">Country</label>
     <input type="text" class="form-input" id="fieldCountry" placeholder="Country">
     <label class="form-label">City</label>
-    <input type="text" class="form-input" id="fieldCity" placeholder="City">
+    <div style="position:relative">
+      <input type="text" class="form-input" id="fieldCity" placeholder="City — start typing..." autocomplete="off" oninput="filterCities(this.value)" onfocus="filterCities(this.value)">
+      <div id="cityDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#12103a;border:1px solid rgba(147,51,234,.3);border-radius:8px;max-height:180px;overflow-y:auto;z-index:100;margin-top:2px"></div>
+    </div>
     <label class="form-label">Age</label>
     <input type="number" class="form-input" id="fieldAge" placeholder="Age" min="1" max="120">
     <label class="form-label">My constellation NFTs</label>
@@ -1776,6 +1779,43 @@ for(let i=0;i<35;i++){
 const mapNg = mX.createRadialGradient(152,77,0,152,77,140);
 mapNg.addColorStop(0,'rgba(76,29,149,.1)'); mapNg.addColorStop(1,'transparent');
 mX.fillStyle=mapNg; mX.beginPath(); mX.arc(152,77,140,0,Math.PI*2); mX.fill();
+
+// ── CITY LIST ──
+const CITIES = [
+  "Tokyo","Delhi","Shanghai","Dhaka","São Paulo","Mexico City","Cairo","Beijing","Mumbai","Osaka",
+  "Chongqing","Karachi","Istanbul","Kinshasa","Lagos","Buenos Aires","Kolkata","Manila","Guangzhou","Rio de Janeiro",
+  "Lahore","Moscow","Shenzhen","Bangalore","Paris","Bogotá","Jakarta","Chennai","Lima","Bangkok",
+  "Seoul","Nagoya","Hyderabad","London","Tehran","Chicago","Chengdu","Nanjing","Wuhan","Luanda",
+  "Ahmedabad","Kuala Lumpur","Wuhan","Xian","Ho Chi Minh City","Hong Kong","Baghdad","Riyadh","Singapore","Santiago",
+  "Surat","Miami","Belo Horizonte","Shenyang","Khartoum","Pune","Madrid","Nairobi","Harbin","Houston",
+  "Dallas","Toronto","Johannesburg","Dar es Salaam","Medellín","Philadelphia","Casablanca","Abidjan","Cape Town","Yangon",
+  "Accra","Alexandria","Suzhou","Addis Ababa","Ankara","Hanoi","Sydney","Kabul","Kanpur","Jaipur",
+  "New York","Los Angeles","Berlin","Rome","Barcelona","Vienna","Warsaw","Kyiv","Minsk","Almaty",
+  "Tashkent","Baku","Tbilisi","Yerevan","Norilsk","Yekaterinburg","Novosibirsk","Omsk","Samara","Ufa",
+  "Chelyabinsk","Rostov-on-Don","Kazan","Voronezh","Perm","Krasnodar","Saratov","Tyumen","Irkutsk","Krasnoyarsk"
+].sort();
+
+function filterCities(val) {
+  const dd = document.getElementById('cityDropdown');
+  if (!val || val.length < 1) { dd.style.display='none'; return; }
+  const filtered = CITIES.filter(c => c.toLowerCase().startsWith(val.toLowerCase())).slice(0, 8);
+  if (!filtered.length) { dd.style.display='none'; return; }
+  dd.innerHTML = filtered.map(c =>
+    `<div onclick="selectCity('${c}')" style="padding:10px 14px;cursor:pointer;font-size:14px;color:#e9d5ff;border-bottom:1px solid rgba(147,51,234,.1)" onmouseover="this.style.background='rgba(147,51,234,.15)'" onmouseout="this.style.background=''">${c}</div>`
+  ).join('');
+  dd.style.display = 'block';
+}
+
+function selectCity(city) {
+  document.getElementById('fieldCity').value = city;
+  document.getElementById('cityDropdown').style.display = 'none';
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#fieldCity') && !e.target.closest('#cityDropdown')) {
+    document.getElementById('cityDropdown').style.display = 'none';
+  }
+});
 
 // Start canvas pulse animation — must be last, after all variables are defined
 
