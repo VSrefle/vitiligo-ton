@@ -903,8 +903,7 @@ function drawPixels(timestamp) {
   pulseRAF = requestAnimationFrame(drawPixels);
 }
 
-// Start pulse loop
-pulseRAF = requestAnimationFrame(drawPixels);
+// Pulse loop is started at the bottom of the script after all variables are defined
 
 function addPixelToCanvas(color, isNFT, data) {
   const empty = [];
@@ -1759,6 +1758,9 @@ for(let i=0;i<35;i++){
 const mapNg = mX.createRadialGradient(152,77,0,152,77,140);
 mapNg.addColorStop(0,'rgba(76,29,149,.1)'); mapNg.addColorStop(1,'transparent');
 mX.fillStyle=mapNg; mX.beginPath(); mX.arc(152,77,140,0,Math.PI*2); mX.fill();
+
+// Start canvas pulse animation — must be last, after all variables are defined
+requestAnimationFrame(drawPixels);
 </script>
 </body>
 </html>
