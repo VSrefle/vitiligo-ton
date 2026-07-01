@@ -519,8 +519,7 @@ html,body{
     <h1 class="headline">People with vitiligo<br>are <em>unique by design</em></h1>
     <p class="sub">just vitiligo · just us · just beautiful</p>
 
-    <button class="btn-main" id="countBtn">I have vitiligo ✦</button>
-    <div class="btn-ghost" style="cursor:default;opacity:.5;font-size:12px;margin-top:4px">Upload photo · get your constellation · 1 TON</div>
+    <button class="btn-main" id="countBtn">Count me in ✦</button>
   </div>
 </div>
 
@@ -869,51 +868,25 @@ function drawPixels(timestamp) {
       PX.fillStyle = p.color;
       PX.fillRect(x + .5, y + .5, PW - 1, PH - 1);
     } else if (p.isGenesis) {
-      // Genesis Star — round with soft glow rays, fades over 1 year
+      // Genesis Star — subtle, slightly brighter than regular, fades over 1 year
       const gb = p.genesisBrightness || 1;
-      const pulse = gb * (0.75 + 0.25 * Math.sin(pulseFrame / 2000 * Math.PI * 2 + i));
+      const pulse = gb * (0.6 + 0.2 * Math.sin(pulseFrame / 2500 * Math.PI * 2 + i));
 
-      // Outer soft glow
-      const outerGlow = PX.createRadialGradient(cx, cy, 0, cx, cy, PW * 2.5);
-      outerGlow.addColorStop(0, `rgba(255,255,255,${pulse * 0.15})`);
+      // Minimal soft glow
+      const outerGlow = PX.createRadialGradient(cx, cy, 0, cx, cy, PW * 1.8);
+      outerGlow.addColorStop(0, `rgba(255,255,255,${pulse * 0.1})`);
       outerGlow.addColorStop(1, 'rgba(255,255,255,0)');
       PX.globalAlpha = 1;
       PX.fillStyle = outerGlow;
       PX.beginPath();
-      PX.arc(cx, cy, PW * 2.5, 0, Math.PI * 2);
+      PX.arc(cx, cy, PW * 1.8, 0, Math.PI * 2);
       PX.fill();
 
-      // Soft rays (4 directions, subtle)
-      for (let r = 0; r < 4; r++) {
-        const angle = (r * Math.PI / 2) + (pulseFrame / 8000);
-        const rayLen = PW * (1.8 + 0.4 * Math.sin(pulseFrame / 1500 + r));
-        PX.globalAlpha = pulse * 0.12;
-        PX.fillStyle = 'white';
-        PX.save();
-        PX.translate(cx, cy);
-        PX.rotate(angle);
-        PX.beginPath();
-        PX.ellipse(rayLen / 2, 0, rayLen / 2, 0.6, 0, 0, Math.PI * 2);
-        PX.fill();
-        PX.restore();
-      }
-
-      // Inner glow
-      const innerGlow = PX.createRadialGradient(cx, cy, 0, cx, cy, PW * 0.9);
-      innerGlow.addColorStop(0, `rgba(255,255,255,${pulse})`);
-      innerGlow.addColorStop(0.5, `rgba(220,220,255,${pulse * 0.8})`);
-      innerGlow.addColorStop(1, 'rgba(255,255,255,0)');
-      PX.globalAlpha = 1;
-      PX.fillStyle = innerGlow;
-      PX.beginPath();
-      PX.arc(cx, cy, PW * 0.9, 0, Math.PI * 2);
-      PX.fill();
-
-      // Round core
+      // Small round core — slightly smaller than regular pixel
       PX.globalAlpha = pulse;
       PX.fillStyle = 'white';
       PX.beginPath();
-      PX.arc(cx, cy, PW * 0.4, 0, Math.PI * 2);
+      PX.arc(cx, cy, PW * 0.3, 0, Math.PI * 2);
       PX.fill();
     } else if (p.data && p.data.isLegendary) {
       // Legendary (real IAU) — bright white pulse with glow (1.5s cycle)
