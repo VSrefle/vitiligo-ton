@@ -868,25 +868,46 @@ function drawPixels(timestamp) {
       PX.fillStyle = p.color;
       PX.fillRect(x + .5, y + .5, PW - 1, PH - 1);
     } else if (p.isGenesis) {
-      // Genesis Star — subtle, slightly brighter than regular, fades over 1 year
+      // Genesis Star — like a bright star: round core + 4 soft diffraction rays
       const gb = p.genesisBrightness || 1;
-      const pulse = gb * (0.6 + 0.2 * Math.sin(pulseFrame / 2500 * Math.PI * 2 + i));
+      const pulse = gb * (0.65 + 0.2 * Math.sin(pulseFrame / 2500 * Math.PI * 2 + i));
+      const rayPulse = gb * (0.4 + 0.2 * Math.sin(pulseFrame / 3000 * Math.PI * 2 + i));
 
-      // Minimal soft glow
-      const outerGlow = PX.createRadialGradient(cx, cy, 0, cx, cy, PW * 1.8);
-      outerGlow.addColorStop(0, `rgba(255,255,255,${pulse * 0.1})`);
-      outerGlow.addColorStop(1, 'rgba(255,255,255,0)');
+      // 4 soft rays (like star diffraction spikes)
+      PX.save();
+      PX.translate(cx, cy);
+      for (let r = 0; r < 4; r++) {
+        PX.save();
+        PX.rotate(r * Math.PI / 4);
+        const rayLen = PW * 2.2;
+        const grad = PX.createLinearGradient(-rayLen, 0, rayLen, 0);
+        grad.addColorStop(0, 'rgba(255,255,255,0)');
+        grad.addColorStop(0.4, `rgba(255,255,255,${rayPulse * 0.5})`);
+        grad.addColorStop(0.5, `rgba(255,255,255,${rayPulse})`);
+        grad.addColorStop(0.6, `rgba(255,255,255,${rayPulse * 0.5})`);
+        grad.addColorStop(1, 'rgba(255,255,255,0)');
+        PX.globalAlpha = 1;
+        PX.fillStyle = grad;
+        PX.fillRect(-rayLen, -0.5, rayLen * 2, 1);
+        PX.restore();
+      }
+      PX.restore();
+
+      // Soft outer glow
+      const glow = PX.createRadialGradient(cx, cy, 0, cx, cy, PW * 1.6);
+      glow.addColorStop(0, `rgba(255,255,255,${pulse * 0.18})`);
+      glow.addColorStop(1, 'rgba(255,255,255,0)');
       PX.globalAlpha = 1;
-      PX.fillStyle = outerGlow;
+      PX.fillStyle = glow;
       PX.beginPath();
-      PX.arc(cx, cy, PW * 1.8, 0, Math.PI * 2);
+      PX.arc(cx, cy, PW * 1.6, 0, Math.PI * 2);
       PX.fill();
 
-      // Small round core — slightly smaller than regular pixel
+      // Round bright core
       PX.globalAlpha = pulse;
       PX.fillStyle = 'white';
       PX.beginPath();
-      PX.arc(cx, cy, PW * 0.3, 0, Math.PI * 2);
+      PX.arc(cx, cy, PW * 0.35, 0, Math.PI * 2);
       PX.fill();
     } else if (p.data && p.data.isLegendary) {
       // Legendary (real IAU) — bright white pulse with glow (1.5s cycle)
