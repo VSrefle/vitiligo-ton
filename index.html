@@ -643,15 +643,19 @@ html,body{
 <div class="page" id="page-profile">
   <div class="profile-page">
     <div class="profile-header">
-      <div class="avatar">🌟<div class="avatar-badge" id="profileBadge">⭐</div></div>
+      <div class="avatar" id="profileAvatar">🌟<div class="avatar-badge" id="profileBadge">⭐</div></div>
       <div class="profile-name" id="profileName">Your name</div>
       <div class="profile-handle" id="profileHandle">@telegram_user</div>
     </div>
 
-    <div class="sky-card">
+    <div class="sky-card" id="skyCard">
       <canvas id="mySkyCanvas"></canvas>
-      <div class="sky-count" id="skyCount">0 stars</div>
-      <div class="sky-label">your personal night sky</div>
+      <div id="skyEmpty" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px">
+        <div style="font-size:28px;opacity:0.15">✦</div>
+        <div style="font-size:12px;color:#6b7280;text-align:center;line-height:1.6">Your constellation will appear here<br>after you upload your photo</div>
+      </div>
+      <div class="sky-count" id="skyCount" style="display:none">0 constellations</div>
+      <div class="sky-label" id="skyLabel" style="display:none">your personal night sky</div>
     </div>
 
     <label class="form-label">Name</label>
@@ -668,10 +672,9 @@ html,body{
     </div>
     <label class="form-label">Age</label>
     <select class="form-input" id="fieldAge" style="color:#e9d5ff;background:#12103a;border:1px solid rgba(147,51,234,.3)">
-      <option value="" disabled selected style="color:#6b7280">Age</option>
-      ${Array.from({length: 100}, (_, i) => i + 5).map(a => `<option value="${a}">${a}</option>`).join('')}
+      <option value="" disabled selected style="color:#6b7280">Select your age</option>
     </select>
-    <label class="form-label">My constellation NFTs</label>
+    <label class="form-label">My constellations</label>
     <div class="nft-grid" id="nftGrid">
       <div class="nft-card nft-add" id="addNftBtn">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(192,132,252,.3)" stroke-width="1.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1719,7 +1722,11 @@ function drawMySky(){
     ctx.beginPath();ctx.arc(x,y,Math.random()<.7?.5:1,0,Math.PI*2);ctx.fill();
   }
   if(myNfts.length===0){
-    document.getElementById('skyCount').textContent = '0 stars';
+    document.getElementById('skyCount').textContent = '0 constellations';
+    // Show sky content, hide empty state
+    document.getElementById('skyEmpty').style.display = 'none';
+    document.getElementById('skyCount').style.display = 'block';
+    document.getElementById('skyLabel').style.display = 'block';
     return;
   }
   const offsets = [{ox:.1,oy:.12,sc:.32},{ox:.55,oy:.1,sc:.3},{ox:.25,oy:.5,sc:.3},{ox:.6,oy:.5,sc:.28},{ox:.05,oy:.55,sc:.25}];
@@ -1817,6 +1824,14 @@ for(let i=0;i<35;i++){
 const mapNg = mX.createRadialGradient(152,77,0,152,77,140);
 mapNg.addColorStop(0,'rgba(76,29,149,.1)'); mapNg.addColorStop(1,'transparent');
 mX.fillStyle=mapNg; mX.beginPath(); mX.arc(152,77,140,0,Math.PI*2); mX.fill();
+
+// ── POPULATE AGE SELECT ──
+const ageSelect = document.getElementById('fieldAge');
+for (let a = 5; a <= 104; a++) {
+  const opt = document.createElement('option');
+  opt.value = a; opt.textContent = a;
+  ageSelect.appendChild(opt);
+}
 
 // ── COUNTRY LIST ──
 const COUNTRIES = [
