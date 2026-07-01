@@ -543,7 +543,7 @@ html,body{
       <div class="pstep active" id="ps1"><div class="pstep-dot"></div><div class="pstep-label">Upload</div></div>
       <div class="pstep" id="ps2"><div class="pstep-dot"></div><div class="pstep-label">Detect</div></div>
       <div class="pstep" id="ps3"><div class="pstep-dot"></div><div class="pstep-label">Map stars</div></div>
-      <div class="pstep" id="ps4"><div class="pstep-dot"></div><div class="pstep-label">Mint NFT</div></div>
+      <div class="pstep" id="ps4"><div class="pstep-dot"></div><div class="pstep-label">Save</div></div>
     </div>
 
     <div class="upload-area" id="uploadArea">
@@ -553,8 +553,8 @@ html,body{
     </div>
     <input type="file" id="fileInput" accept="image/*">
 
-    <div class="result-wrap" id="resultWrap">
-      <canvas id="resultCanvas"></canvas>
+    <div class="result-wrap" id="resultWrap" style="display:none">
+      <canvas id="resultCanvas" style="display:none"></canvas>
       <div class="rarity-banner" id="rarityBanner">
         <div class="rarity-icon">★</div>
         <div>
@@ -567,15 +567,16 @@ html,body{
     <div class="const-info" id="constInfo">
       <div class="const-name" id="constName"></div>
       <div class="const-desc" id="constDesc"></div>
+      <div style="font-size:12px;color:#6b7280;text-align:center;margin-top:8px">Your constellation will be revealed after payment ✦</div>
     </div>
 
     <div class="story-wrap" id="storyWrap">
       <label class="story-label">Tell your story (optional)</label>
       <textarea class="story-input" id="storyInput" placeholder='e.g. "Appeared on my hand when I was 12"'></textarea>
-      <div class="story-hint">This becomes part of your NFT — visible to you and whoever you gift it to</div>
+      <div class="story-hint">This becomes part of your constellation — visible to you and whoever you gift it to</div>
     </div>
 
-    <button class="btn-main" id="mintBtn" disabled>I have vitiligo — 1 TON</button>
+    <button class="btn-main" id="mintBtn" disabled>Save constellation — 1 TON</button>
     <button class="btn-ghost" id="resetBtn" style="display:none;margin-top:0">Try another photo</button>
   </div>
 </div>
@@ -854,6 +855,21 @@ function drawPixels(timestamp) {
       const pulse = 0.55 + 0.25 * Math.sin(pulseFrame / 4000 * Math.PI * 2 + i * 0.3);
       PX.globalAlpha = pulse;
       PX.fillStyle = p.color;
+      PX.fillRect(x + .5, y + .5, PW - 1, PH - 1);
+    } else if (p.isGenesis) {
+      // Genesis Star — subtly brighter than normal, fades over 1 year
+      const gb = p.genesisBrightness || 1;
+      const pulse = gb * (0.7 + 0.3 * Math.sin(pulseFrame / 2000 * Math.PI * 2 + i));
+      // Soft glow only
+      const glow = PX.createRadialGradient(cx, cy, 0, cx, cy, PW * 1.5);
+      glow.addColorStop(0, `rgba(255,255,255,${pulse * 0.25})`);
+      glow.addColorStop(1, 'rgba(255,255,255,0)');
+      PX.globalAlpha = 1;
+      PX.fillStyle = glow;
+      PX.fillRect(cx - PW * 1.5, cy - PH * 1.5, PW * 3, PH * 3);
+      // Core
+      PX.globalAlpha = pulse;
+      PX.fillStyle = 'white';
       PX.fillRect(x + .5, y + .5, PW - 1, PH - 1);
     } else if (p.data && p.data.isLegendary) {
       // Legendary (real IAU) — bright white pulse with glow (1.5s cycle)
@@ -1564,7 +1580,7 @@ document.getElementById('modalMintConfirm').addEventListener('click',()=>{
     closeModal('modalMint');
     nftCount++;
     const gold = currentConst.rare;
-    mintBtn.textContent='✓ Minted!'; mintBtn.classList.add('done'); mintBtn.disabled=true;
+    mintBtn.textContent='✓ Saved!'; mintBtn.classList.add('done'); mintBtn.disabled=true;
     document.getElementById('profileBadge').textContent='⭐⭐';
 
     const grid=document.getElementById('nftGrid');
@@ -1699,7 +1715,7 @@ document.getElementById('resetBtn').addEventListener('click',()=>{
   constInfo.style.display='none'; storyWrap.style.display='none';
   rarityBanner.style.display='none';
   mintBtn.disabled=true;
-  mintBtn.textContent='Mint NFT — 1 TON'; mintBtn.classList.remove('done');
+  mintBtn.textContent='Save constellation — 1 TON'; mintBtn.classList.remove('done');
   resetBtn.style.display='none'; fileInput.value=''; setStep(1);
   currentConst=null; nftPixelColor=null;
   document.getElementById('storyInput').value='';
@@ -1762,6 +1778,29 @@ mapNg.addColorStop(0,'rgba(76,29,149,.1)'); mapNg.addColorStop(1,'transparent');
 mX.fillStyle=mapNg; mX.beginPath(); mX.arc(152,77,140,0,Math.PI*2); mX.fill();
 
 // Start canvas pulse animation — must be last, after all variables are defined
+
+// ── GENESIS STAR ── The first transaction · The one who started counting
+const GENESIS_DATE = new Date('2026-07-01').getTime();
+const GENESIS_FADE_YEARS = 1;
+const genesisAge = Math.min(1, (Date.now() - GENESIS_DATE) / (GENESIS_FADE_YEARS * 365.24 * 24 * 3600 * 1000));
+const genesisBrightness = 1 - (genesisAge * 0.7);
+
+const genesisIdx = Math.floor(ROWS / 2) * COLS + Math.floor(COLS / 2);
+pixels[genesisIdx] = {
+  color: 'white',
+  op: 1,
+  isNFT: true,
+  isGenesis: true,
+  genesisBrightness,
+  data: {
+    constName: 'Genesis Star',
+    story: 'The first. The one who started counting.',
+    isRare: true,
+    isLegendary: true,
+    isGenesis: true
+  }
+};
+
 requestAnimationFrame(drawPixels);
 </script>
 </body>
