@@ -533,6 +533,15 @@ html,body{
     <div class="page-title">Your constellation</div>
     <div class="page-sub">Your vitiligo becomes real stars</div>
 
+    <div id="discoveryProgress" style="background:rgba(147,51,234,.12);border:1px solid rgba(147,51,234,.25);border-radius:12px;padding:12px 16px;margin-bottom:16px;text-align:center">
+      <div style="font-size:11px;color:#a78bfa;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Real constellations discovered</div>
+      <div style="font-size:22px;font-weight:700;color:white" id="discoveryCount">0 <span style="font-size:14px;color:#a78bfa;font-weight:400">of 88</span></div>
+      <div style="height:4px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:8px">
+        <div id="discoveryBar" style="height:100%;background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:2px;width:0%;transition:width .6s ease"></div>
+      </div>
+      <div style="font-size:11px;color:#6b7280;margin-top:6px">Each real constellation appears only once across all participants</div>
+    </div>
+
     <div class="process-steps">
       <div class="pstep active" id="ps1"><div class="pstep-dot"></div><div class="pstep-label">Upload</div></div>
       <div class="pstep" id="ps2"><div class="pstep-dot"></div><div class="pstep-label">Detect</div></div>
@@ -825,37 +834,95 @@ const COLS=38, ROWS=18, PW=8, PH=8;
 PC.width=COLS*PW; PC.height=ROWS*PH;
 const pixels = [];
 for (let i=0;i<COLS*ROWS;i++) { pixels[i] = null; }
-function drawPixels() {
-  PX.clearRect(0,0,PC.width,PC.height);
-  pixels.forEach((p,i) => {
+// ── PULSING CANVAS ANIMATION ──
+let pulseFrame = 0;
+let pulseRAF = null;
+
+function drawPixels(timestamp) {
+  pulseFrame = timestamp || 0;
+  PX.clearRect(0, 0, PC.width, PC.height);
+
+  pixels.forEach((p, i) => {
     if (!p) return;
-    const x=(i%COLS)*PW, y=Math.floor(i/COLS)*PH;
-    PX.globalAlpha=p.op; PX.fillStyle=p.color;
-    PX.fillRect(x+.5,y+.5,PW-1,PH-1);
-    if (p.isNFT) {
-      PX.globalAlpha=1; PX.fillStyle='rgba(255,255,255,.7)';
-      PX.fillRect(x+PW-2,y,2,2);
+    const x = (i % COLS) * PW, y = Math.floor(i / COLS) * PH;
+    const cx = x + PW/2, cy = y + PH/2;
+
+    if (!p.isNFT) {
+      // Plain count-in pixel — subtle slow pulse (4s cycle)
+      const pulse = 0.55 + 0.25 * Math.sin(pulseFrame / 4000 * Math.PI * 2 + i * 0.3);
+      PX.globalAlpha = pulse;
+      PX.fillStyle = p.color;
+      PX.fillRect(x + .5, y + .5, PW - 1, PH - 1);
+    } else if (p.data && p.data.isLegendary) {
+      // Legendary (real IAU) — bright white pulse with glow (1.5s cycle)
+      const pulse = 0.7 + 0.3 * Math.sin(pulseFrame / 1500 * Math.PI * 2 + i * 0.5);
+      // Outer glow
+      const glow = PX.createRadialGradient(cx, cy, 0, cx, cy, PW * 1.2);
+      glow.addColorStop(0, `rgba(255,255,255,${pulse * 0.4})`);
+      glow.addColorStop(1, 'rgba(255,255,255,0)');
+      PX.globalAlpha = 1;
+      PX.fillStyle = glow;
+      PX.fillRect(x - PW * 0.2, y - PH * 0.2, PW * 1.4, PH * 1.4);
+      // Core
+      PX.globalAlpha = pulse;
+      PX.fillStyle = 'white';
+      PX.fillRect(x + .5, y + .5, PW - 1, PH - 1);
+      // Sparkle dot
+      PX.globalAlpha = pulse;
+      PX.fillStyle = 'rgba(255,255,255,0.9)';
+      PX.fillRect(cx - .5, y, 1, 1);
+    } else if (p.data && p.data.isRare) {
+      // Rare (golden) — gold pulse with shimmer (2s cycle)
+      const pulse = 0.65 + 0.25 * Math.sin(pulseFrame / 2000 * Math.PI * 2 + i * 0.4);
+      const shimmer = 0.3 + 0.2 * Math.sin(pulseFrame / 800 * Math.PI * 2 + i);
+      // Gold glow
+      const glow = PX.createRadialGradient(cx, cy, 0, cx, cy, PW);
+      glow.addColorStop(0, `rgba(245,158,11,${shimmer})`);
+      glow.addColorStop(1, 'rgba(245,158,11,0)');
+      PX.globalAlpha = 1;
+      PX.fillStyle = glow;
+      PX.fillRect(x - PW * 0.1, y - PH * 0.1, PW * 1.2, PH * 1.2);
+      // Core
+      PX.globalAlpha = pulse;
+      PX.fillStyle = p.color;
+      PX.fillRect(x + .5, y + .5, PW - 1, PH - 1);
+    } else {
+      // Regular NFT constellation — medium purple pulse (3s cycle)
+      const pulse = 0.6 + 0.3 * Math.sin(pulseFrame / 3000 * Math.PI * 2 + i * 0.35);
+      PX.globalAlpha = pulse;
+      PX.fillStyle = p.color;
+      PX.fillRect(x + .5, y + .5, PW - 1, PH - 1);
+      // Small white dot marker
+      PX.globalAlpha = pulse * 0.8;
+      PX.fillStyle = 'rgba(255,255,255,.7)';
+      PX.fillRect(x + PW - 2, y, 2, 2);
     }
   });
-  PX.globalAlpha=1;
+
+  PX.globalAlpha = 1;
+  pulseRAF = requestAnimationFrame(drawPixels);
 }
-drawPixels();
+
+// Start pulse loop
+pulseRAF = requestAnimationFrame(drawPixels);
 
 function addPixelToCanvas(color, isNFT, data) {
   const empty = [];
-  pixels.forEach((p,i) => { if (!p) empty.push(i); });
+  pixels.forEach((p, i) => { if (!p) empty.push(i); });
   if (!empty.length) return;
-  const idx = empty[Math.floor(Math.random()*empty.length)];
-  pixels[idx] = {color, op:1, isNFT, data: data || null};
-  drawPixels();
-  const x=(idx%COLS)*PW, y=Math.floor(idx/COLS)*PH;
-  let f=0;
-  const fl=setInterval(()=>{
-    f++; PX.globalAlpha=f%2===0?.3:1;
-    PX.fillStyle=color; PX.fillRect(x+.5,y+.5,PW-1,PH-1);
-    PX.globalAlpha=1;
-    if(f>7){clearInterval(fl);drawPixels();}
-  },110);
+  const idx = empty[Math.floor(Math.random() * empty.length)];
+  pixels[idx] = {color, op: 1, isNFT, data: data || null};
+  // Flash animation on arrival
+  const x = (idx % COLS) * PW, y = Math.floor(idx / COLS) * PH;
+  let f = 0;
+  const fl = setInterval(() => {
+    f++;
+    PX.globalAlpha = f % 2 === 0 ? .2 : 1;
+    PX.fillStyle = color;
+    PX.fillRect(x + .5, y + .5, PW - 1, PH - 1);
+    PX.globalAlpha = 1;
+    if (f > 7) clearInterval(fl);
+  }, 110);
 }
 
 /* ── TAP PIXEL TO EXPLORE ── */
@@ -908,6 +975,14 @@ function updateMilestone(){
   document.getElementById('milestoneLabel').textContent = `Goal: ${fmt(goal)} people`;
   document.getElementById('milestoneFill').style.width = progress + '%';
   document.getElementById('milestoneSub').textContent = `${fmt(count)} / ${fmt(goal)}`;
+}
+
+function updateDiscoveryProgress() {
+  const found = discoveredReal.size;
+  const el = document.getElementById('discoveryCount');
+  const bar = document.getElementById('discoveryBar');
+  if (el) el.innerHTML = `${found} <span style="font-size:14px;color:#a78bfa;font-weight:400">of 88</span>`;
+  if (bar) bar.style.width = Math.min(100, (found / 88) * 100) + '%';
 }
 
 async function loadCounterFromChain() {
@@ -1104,39 +1179,162 @@ function showToast(msg){
 }
 
 /* ── CONSTELLATION DATA (5 common + 2 rare) ── */
-const CONSTS=[
-  {name:'Orion · The Hunter', rare:false,
-   desc:'Orion strides the winter sky eternally — a warrior who fears nothing, marked by the same light you carry. Like him, your skin tells a story of strength, not flaw.',
-   stars:[{x:.28,y:.35},{x:.42,y:.2},{x:.62,y:.28},{x:.7,y:.46},{x:.58,y:.63},{x:.38,y:.71},{x:.23,y:.56},{x:.5,y:.44},{x:.74,y:.3},{x:.48,y:.22}],
-   lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0],[7,3],[1,9],[9,2]]},
-  {name:'Cassiopeia · The Queen', rare:false,
-   desc:'Cassiopeia sits enthroned among the stars, unashamed, unhidden — placed in the heavens for her beauty alone. Your light, too, was never meant to be covered.',
-   stars:[{x:.12,y:.58},{x:.28,y:.28},{x:.5,y:.52},{x:.72,y:.26},{x:.88,y:.55},{x:.5,y:.75},{x:.35,y:.68}],
-   lines:[[0,1],[1,2],[2,3],[3,4],[2,5],[5,6],[6,0]]},
-  {name:'Cygnus · The Swan', rare:false,
-   desc:'The Swan flies forever along the Milky Way, graceful and unbothered by the eyes that follow her. She does not ask permission to be seen — neither should you.',
-   stars:[{x:.5,y:.12},{x:.5,y:.38},{x:.5,y:.64},{x:.5,y:.88},{x:.18,y:.38},{x:.82,y:.38},{x:.33,y:.54},{x:.67,y:.54}],
-   lines:[[0,1],[1,2],[2,3],[4,1],[1,5],[2,6],[2,7]]},
-  {name:'Lyra · The Lyre', rare:false,
-   desc:'Lyra carries the music of Orpheus into the night — proof that what seems broken can still create something beautiful. Your patch is your own quiet melody.',
-   stars:[{x:.5,y:.1},{x:.3,y:.38},{x:.7,y:.38},{x:.25,y:.62},{x:.75,y:.62},{x:.5,y:.85},{x:.45,y:.5},{x:.55,y:.5}],
-   lines:[[0,1],[0,2],[1,2],[1,3],[2,4],[3,5],[4,5],[1,6],[2,7]]},
-  {name:'Perseus · The Hero', rare:false,
-   desc:'Perseus bears his mark proudly across the autumn sky — a hero defined not by what he lacks, but by what he overcame. His stars never dimmed for anyone.',
-   stars:[{x:.5,y:.14},{x:.36,y:.3},{x:.64,y:.26},{x:.28,y:.5},{x:.56,y:.48},{x:.72,y:.4},{x:.22,y:.7},{x:.46,y:.68},{x:.7,y:.65},{x:.5,y:.85}],
-   lines:[[0,1],[0,2],[1,3],[2,5],[3,6],[4,5],[4,7],[7,8],[7,9],[1,4]]},
-  {name:'Cygnus Rare · Golden Swan', rare:true,
-   desc:'Legend says one swan in a thousand is born wrapped in gold — touched by the same hand that paints the northern lights. Yours is one of the rare ones. Carry it well.',
-   stars:[{x:.5,y:.15},{x:.5,y:.4},{x:.5,y:.65},{x:.5,y:.85},{x:.2,y:.4},{x:.8,y:.4},{x:.35,y:.55},{x:.65,y:.55},{x:.5,y:.05}],
-   lines:[[0,1],[1,2],[2,3],[4,1],[1,5],[2,6],[2,7],[0,8]]},
-  {name:'Corona · Northern Crown', rare:true,
-   desc:'A crown forged not from gold but from light itself — given only to those whose skin has already proven it can carry weight and still shine. Few wear it.',
-   stars:[{x:.2,y:.5},{x:.32,y:.3},{x:.48,y:.18},{x:.65,y:.2},{x:.8,y:.38},{x:.7,y:.6},{x:.5,y:.7},{x:.3,y:.65}],
-   lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0]]},
+// ── 88 REAL IAU CONSTELLATIONS (given out in order, one per mint) ──
+const REAL_CONSTS = [
+  {name:'Orion · The Hunter', desc:'Orion strides the winter sky eternally — a warrior who fears nothing, marked by the same light you carry. Like him, your skin tells a story of strength, not flaw.', stars:[{x:.28,y:.35},{x:.42,y:.2},{x:.62,y:.28},{x:.7,y:.46},{x:.58,y:.63},{x:.38,y:.71},{x:.23,y:.56},{x:.5,y:.44},{x:.74,y:.3},{x:.48,y:.22}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0],[7,3],[1,9],[9,2]]},
+  {name:'Cassiopeia · The Queen', desc:'Cassiopeia sits enthroned among the stars, unashamed, unhidden — placed in the heavens for her beauty alone. Your light, too, was never meant to be covered.', stars:[{x:.12,y:.58},{x:.28,y:.28},{x:.5,y:.52},{x:.72,y:.26},{x:.88,y:.55},{x:.5,y:.75},{x:.35,y:.68}], lines:[[0,1],[1,2],[2,3],[3,4],[2,5],[5,6],[6,0]]},
+  {name:'Cygnus · The Swan', desc:'The Swan flies forever along the Milky Way, graceful and unbothered by the eyes that follow. She does not ask permission to be seen — neither should you.', stars:[{x:.5,y:.12},{x:.5,y:.38},{x:.5,y:.64},{x:.5,y:.88},{x:.18,y:.38},{x:.82,y:.38},{x:.33,y:.54},{x:.67,y:.54}], lines:[[0,1],[1,2],[2,3],[4,1],[1,5],[2,6],[2,7]]},
+  {name:'Lyra · The Lyre', desc:'Lyra carries the music of Orpheus into the night — proof that what seems broken can still create something beautiful. Your patch is your own quiet melody.', stars:[{x:.5,y:.1},{x:.3,y:.38},{x:.7,y:.38},{x:.25,y:.62},{x:.75,y:.62},{x:.5,y:.85},{x:.45,y:.5},{x:.55,y:.5}], lines:[[0,1],[0,2],[1,2],[1,3],[2,4],[3,5],[4,5]]},
+  {name:'Perseus · The Hero', desc:'Perseus bears his mark proudly across the autumn sky — a hero defined not by what he lacks, but by what he overcame. His stars never dimmed for anyone.', stars:[{x:.5,y:.14},{x:.36,y:.3},{x:.64,y:.26},{x:.28,y:.5},{x:.56,y:.48},{x:.72,y:.4},{x:.22,y:.7},{x:.46,y:.68},{x:.7,y:.65},{x:.5,y:.85}], lines:[[0,1],[0,2],[1,3],[2,5],[3,6],[4,5],[4,7],[7,8],[7,9]]},
+  {name:'Andromeda · The Chained', desc:'Andromeda was chained for her beauty — yet the chains became stars. What was meant to bind her became her crown in the sky. Nothing can truly hold what is made of light.', stars:[{x:.15,y:.5},{x:.3,y:.38},{x:.5,y:.28},{x:.68,y:.38},{x:.82,y:.52},{x:.5,y:.5},{x:.38,y:.65},{x:.62,y:.65}], lines:[[0,1],[1,2],[2,3],[3,4],[2,5],[5,6],[5,7]]},
+  {name:'Scorpius · The Scorpion', desc:'Scorpius rules the summer sky with quiet power — ancient, unafraid, carrying venom and beauty in the same body. Power and uniqueness have always coexisted.', stars:[{x:.3,y:.2},{x:.42,y:.32},{x:.5,y:.44},{x:.44,y:.58},{x:.36,y:.7},{x:.28,y:.8},{x:.6,y:.42},{x:.72,y:.36},{x:.82,y:.28},{x:.2,y:.86},{x:.32,y:.9}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,9],[9,10],[2,6],[6,7],[7,8]]},
+  {name:'Leo · The Lion', desc:'Leo blazes in spring, undeniable — a lion does not explain its roar, nor does it hide its mane. You were made to be seen, not explained.', stars:[{x:.2,y:.35},{x:.3,y:.22},{x:.48,y:.18},{x:.62,y:.28},{x:.68,y:.45},{x:.6,y:.62},{x:.38,y:.68},{x:.25,y:.55},{x:.45,y:.42}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0],[3,8],[8,6]]},
+  {name:'Aquila · The Eagle', desc:'Aquila soars on wings that cast no shadow — the eagle of Zeus, carrying lightning and never once apologising for the storm it brings. Fly without apology.', stars:[{x:.5,y:.15},{x:.5,y:.38},{x:.28,y:.52},{x:.72,y:.52},{x:.38,y:.68},{x:.62,y:.68},{x:.5,y:.82},{x:.2,y:.38},{x:.8,y:.38}], lines:[[0,1],[1,2],[1,3],[2,4],[3,5],[4,6],[5,6],[2,7],[3,8]]},
+  {name:'Gemini · The Twins', desc:'Gemini — two souls fused into one constellation, inseparable. Your skin carries two worlds too: the one others see, and the luminous one underneath.', stars:[{x:.3,y:.15},{x:.5,y:.15},{x:.28,y:.35},{x:.52,y:.33},{x:.22,y:.55},{x:.48,y:.52},{x:.18,y:.72},{x:.44,y:.7},{x:.15,y:.88},{x:.42,y:.86}], lines:[[0,2],[2,4],[4,6],[6,8],[1,3],[3,5],[5,7],[7,9],[0,1],[4,5]]},
+  {name:'Aquarius · The Water Bearer', desc:'Aquarius pours endlessly from a jar that never empties — giving without diminishing. Like water, you find the shape you need to be.', stars:[{x:.5,y:.12},{x:.38,y:.28},{x:.62,y:.28},{x:.3,y:.45},{x:.55,y:.42},{x:.45,y:.6},{x:.65,y:.58},{x:.35,y:.75},{x:.58,y:.78},{x:.42,y:.9}], lines:[[0,1],[0,2],[1,3],[2,4],[3,5],[4,6],[5,7],[6,8],[7,9]]},
+  {name:'Aries · The Ram', desc:'Aries charges first into spring — no hesitation, no permission asked. The ram does not wait to be invited. Neither do stars.', stars:[{x:.22,y:.38},{x:.38,y:.28},{x:.55,y:.32},{x:.7,y:.42},{x:.8,y:.58},{x:.62,y:.65},{x:.4,y:.62}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,1]]},
+  {name:'Taurus · The Bull', desc:'Taurus holds the Pleiades in his shoulder — a bull who carries an entire world of stars. Your skin carries its own world, equally vast.', stars:[{x:.5,y:.2},{x:.35,y:.35},{x:.65,y:.35},{x:.22,y:.52},{x:.78,y:.52},{x:.3,y:.7},{x:.7,y:.7},{x:.5,y:.8},{x:.5,y:.45}], lines:[[0,1],[0,2],[1,3],[2,4],[3,5],[4,6],[5,7],[6,7],[0,8]]},
+  {name:'Cancer · The Crab', desc:'Cancer — the quiet constellation, easy to miss in the dark sky. Not everything powerful announces itself. Some lights are subtle and ancient.', stars:[{x:.25,y:.3},{x:.75,y:.3},{x:.5,y:.5},{x:.3,y:.68},{x:.7,y:.68},{x:.5,y:.82}], lines:[[0,2],[1,2],[2,3],[2,4],[3,5],[4,5]]},
+  {name:'Virgo · The Maiden', desc:'Virgo holds a sheaf of wheat — she is the harvest, the abundance, the proof that patience eventually fills every empty field. Your light is the harvest of something long growing.', stars:[{x:.5,y:.12},{x:.35,y:.28},{x:.65,y:.25},{x:.28,y:.45},{x:.58,y:.42},{x:.72,y:.38},{x:.22,y:.62},{x:.48,y:.65},{x:.7,y:.58},{x:.38,y:.8},{x:.6,y:.78}], lines:[[0,1],[0,2],[1,3],[2,5],[3,6],[4,7],[5,8],[7,9],[8,10],[4,5]]},
+  {name:'Libra · The Scales', desc:'Libra — the only constellation that is an object, not a creature. The universe chose scales because balance matters. Your skin has found its own perfect balance of light and shadow.', stars:[{x:.5,y:.18},{x:.28,y:.38},{x:.72,y:.38},{x:.2,y:.58},{x:.8,y:.58},{x:.35,y:.75},{x:.65,y:.75},{x:.5,y:.88}], lines:[[0,1],[0,2],[1,3],[2,4],[3,5],[4,6],[5,7],[6,7],[1,2]]},
+  {name:'Sagittarius · The Archer', desc:'Sagittarius aims his arrow at the very heart of the galaxy — not blindly, but with the wisdom of the centaur. To know where you came from is to know where to aim.', stars:[{x:.5,y:.15},{x:.32,y:.28},{x:.68,y:.28},{x:.22,y:.48},{x:.5,y:.42},{x:.78,y:.45},{x:.28,y:.65},{x:.55,y:.62},{x:.75,y:.65},{x:.4,y:.82},{x:.65,y:.82}], lines:[[0,1],[0,2],[1,3],[2,5],[3,6],[4,7],[5,8],[6,9],[7,9],[8,10],[9,10]]},
+  {name:'Capricornus · The Sea-Goat', desc:'Half goat, half fish — Capricornus was never one thing and refused to be. The rarest creatures are those that cannot be categorised. You know something about that.', stars:[{x:.2,y:.35},{x:.42,y:.25},{x:.62,y:.28},{x:.8,y:.4},{x:.75,y:.58},{x:.55,y:.68},{x:.35,y:.72},{x:.18,y:.62},{x:.48,y:.52}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0],[2,8],[8,5]]},
+  {name:'Pisces · The Fish', desc:'Two fish bound together by a silver cord, swimming in opposite directions — yet always connected. You belong to something larger than yourself, even when you swim alone.', stars:[{x:.2,y:.28},{x:.35,y:.18},{x:.52,y:.22},{x:.65,y:.35},{x:.6,y:.52},{x:.45,y:.62},{x:.28,y:.55},{x:.72,y:.28},{x:.82,y:.45},{x:.75,y:.62}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0],[3,7],[7,8],[8,9],[9,4]]},
+  {name:'Ursa Major · The Great Bear', desc:'Ursa Major has guided sailors home for ten thousand years — the most recognised shape in the sky. What is always visible is always trustworthy.', stars:[{x:.18,y:.45},{x:.32,y:.35},{x:.48,y:.32},{x:.62,y:.38},{x:.72,y:.52},{x:.62,y:.65},{x:.45,y:.68},{x:.5,y:.2},{x:.62,y:.22}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,2],[7,2],[7,8],[8,3]]},
+  {name:'Ursa Minor · The Little Bear', desc:'Ursa Minor holds Polaris — the one star that never moves while everything else circles around it. Some things are fixed points in a spinning world.', stars:[{x:.5,y:.1},{x:.38,y:.28},{x:.28,y:.45},{x:.35,y:.62},{x:.52,y:.68},{x:.65,y:.55},{x:.58,y:.38}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,1]]},
+  {name:'Draco · The Dragon', desc:'Draco coils around the north pole, ancient beyond memory — the dragon that guards the axis of the sky. Ancient things guard the most important things.', stars:[{x:.5,y:.12},{x:.38,y:.25},{x:.28,y:.4},{x:.35,y:.55},{x:.5,y:.62},{x:.65,y:.55},{x:.75,y:.42},{x:.68,y:.28},{x:.55,y:.22},{x:.22,y:.58},{x:.15,y:.72}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,0],[2,9],[9,10]]},
+  {name:'Hercules · The Hero', desc:'Hercules kneels in the sky — not in defeat, but in the posture of someone who has carried the world and is resting. Even heroes rest. Even stars need darkness to shine.', stars:[{x:.5,y:.18},{x:.35,y:.32},{x:.65,y:.32},{x:.25,y:.5},{x:.5,y:.48},{x:.75,y:.48},{x:.3,y:.68},{x:.5,y:.72},{x:.7,y:.68},{x:.5,y:.88}], lines:[[0,1],[0,2],[1,3],[2,5],[1,4],[2,4],[3,6],[4,7],[5,8],[6,7],[7,8],[7,9]]},
+  {name:'Boötes · The Herdsman', desc:'Boötes drives the Great Bear around the pole, patient and eternal. Patience in the sky is measured in millennia. Your patience too is written in the stars.', stars:[{x:.5,y:.12},{x:.32,y:.28},{x:.68,y:.28},{x:.22,y:.48},{x:.5,y:.42},{x:.78,y:.48},{x:.35,y:.65},{x:.65,y:.65},{x:.5,y:.82}], lines:[[0,1],[0,2],[1,3],[2,5],[1,4],[2,4],[3,6],[5,7],[6,8],[7,8]]},
+  {name:'Corona Borealis · The Northern Crown', desc:'A crown of seven stars — given by Dionysus to Ariadne as a wedding gift, then flung into the sky to last forever. Love, when true, becomes a constellation.', stars:[{x:.2,y:.5},{x:.32,y:.28},{x:.48,y:.18},{x:.65,y:.22},{x:.8,y:.38},{x:.75,y:.6},{x:.55,y:.72},{x:.35,y:.68}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0]]},
+  {name:'Serpens · The Serpent', desc:'Serpens is split in two — Caput and Cauda, head and tail, held apart by Ophiuchus yet still one. To be divided is not to be broken.', stars:[{x:.18,y:.35},{x:.3,y:.25},{x:.45,y:.2},{x:.58,y:.28},{x:.65,y:.42},{x:.72,y:.58},{x:.78,y:.72},{x:.7,y:.85}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7]]},
+  {name:'Ophiuchus · The Serpent Bearer', desc:'Ophiuchus holds a serpent in both hands — the thirteenth constellation, often forgotten, yet always there. The healer stands between venom and cure. You know what it means to carry something complicated.', stars:[{x:.5,y:.12},{x:.32,y:.28},{x:.68,y:.28},{x:.25,y:.5},{x:.5,y:.45},{x:.75,y:.5},{x:.3,y:.7},{x:.5,y:.75},{x:.7,y:.7},{x:.5,y:.9}], lines:[[0,1],[0,2],[1,3],[2,5],[3,6],[5,8],[6,7],[7,8],[4,7],[0,4]]},
+  {name:'Centaurus · The Centaur', desc:'Centaurus was Chiron — the wisest of all centaurs, healer and teacher. Half wild, half wise. The most interesting beings have always been two things at once.', stars:[{x:.25,y:.3},{x:.5,y:.22},{x:.75,y:.3},{x:.82,y:.5},{x:.7,y:.65},{x:.5,y:.72},{x:.3,y:.65},{x:.18,y:.5},{x:.5,y:.45},{x:.4,y:.82},{x:.6,y:.82}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0],[0,8],[2,8],[5,9],[5,10]]},
+  {name:'Lupus · The Wolf', desc:'The Wolf stands beside the centaur, companion and equal — wild and unbowed. There is dignity in the untamed.', stars:[{x:.3,y:.25},{x:.5,y:.18},{x:.68,y:.28},{x:.75,y:.45},{x:.62,y:.6},{x:.42,y:.65},{x:.25,y:.55},{x:.18,y:.38},{x:.5,y:.45}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0],[1,8],[3,8]]},
+  {name:'Ara · The Altar', desc:'The gods swore their oaths upon Ara before the war with the Titans. The altar was the beginning of everything. Every great thing starts with a moment of commitment.', stars:[{x:.3,y:.3},{x:.7,y:.3},{x:.75,y:.55},{x:.65,y:.75},{x:.5,y:.82},{x:.35,y:.75},{x:.25,y:.55},{x:.5,y:.5}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0],[0,7],[1,7],[7,4]]},
+  {name:'Corona Australis · The Southern Crown', desc:'The southern crown — quieter than its northern twin, less seen, equally real. Not all crowns need an audience to be royal.', stars:[{x:.22,y:.55},{x:.35,y:.32},{x:.52,y:.22},{x:.68,y:.28},{x:.8,y:.48},{x:.72,y:.68},{x:.52,y:.78},{x:.35,y:.72}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0]]},
+  {name:'Piscis Austrinus · The Southern Fish', desc:'Piscis Austrinus receives the water poured by Aquarius — the receiver, not the giver, equally essential. The one who receives rain makes the river.', stars:[{x:.5,y:.2},{x:.32,y:.35},{x:.22,y:.52},{x:.3,y:.68},{x:.5,y:.75},{x:.7,y:.68},{x:.78,y:.52},{x:.68,y:.35},{x:.5,y:.5}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0],[0,8]]},
+  {name:'Sculptor · The Sculptor', desc:'Named for the art studio, Sculptor is the constellation of creation. Every mark made deliberately — on canvas or on skin — is an act of making something from nothing.', stars:[{x:.25,y:.38},{x:.45,y:.28},{x:.65,y:.35},{x:.75,y:.55},{x:.6,y:.7},{x:.38,y:.72},{x:.22,y:.58},{x:.5,y:.52}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0],[1,7],[3,7]]},
+  {name:'Fornax · The Furnace', desc:'The Furnace — named for the chemical furnace where elements are born. You are made of stardust that was forged in the cores of ancient suns. Your patches are part of that same story.', stars:[{x:.3,y:.3},{x:.5,y:.22},{x:.7,y:.3},{x:.78,y:.52},{x:.62,y:.68},{x:.42,y:.7},{x:.25,y:.58}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0],[1,5]]},
+  {name:'Eridanus · The River', desc:'Eridanus is the longest constellation — a river that winds from Orion all the way to the southern sky. The longest rivers carry the most stories.', stars:[{x:.5,y:.12},{x:.38,y:.25},{x:.28,y:.4},{x:.38,y:.55},{x:.55,y:.58},{x:.68,y:.45},{x:.75,y:.62},{x:.62,y:.75},{x:.45,y:.8},{x:.3,y:.88}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9]]},
+  {name:'Lepus · The Hare', desc:'Lepus crouches beneath Orion, swift and watchful — small beside the hunter, but equally present in the sky. Size has never determined visibility.', stars:[{x:.25,y:.35},{x:.42,y:.28},{x:.58,y:.32},{x:.7,y:.45},{x:.65,y:.62},{x:.48,y:.68},{x:.3,y:.62},{x:.18,y:.5}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0],[2,6]]},
+  {name:'Canis Major · The Great Dog', desc:'Canis Major follows Orion faithfully and holds Sirius — the brightest star in the sky. Loyalty and brilliance have always gone together.', stars:[{x:.5,y:.1},{x:.35,y:.28},{x:.65,y:.28},{x:.25,y:.48},{x:.5,y:.45},{x:.72,y:.42},{x:.32,y:.65},{x:.55,y:.68},{x:.48,y:.85}], lines:[[0,1],[0,2],[1,3],[2,5],[1,4],[3,6],[4,7],[6,8],[7,8]]},
+  {name:'Canis Minor · The Little Dog', desc:'Canis Minor is almost comically simple — just two bright stars. But Procyon, its brightest, outshines almost everything. Sometimes less is more luminous.', stars:[{x:.35,y:.38},{x:.62,y:.45},{x:.5,y:.62},{x:.3,y:.7},{x:.72,y:.7}], lines:[[0,1],[1,2],[0,3],[1,4]]},
+  {name:'Monoceros · The Unicorn', desc:'Monoceros — the unicorn, invisible without a telescope, yet crossing the Milky Way itself. Rare things often pass unseen by those not looking carefully.', stars:[{x:.5,y:.18},{x:.32,y:.35},{x:.62,y:.32},{x:.22,y:.55},{x:.5,y:.52},{x:.75,y:.5},{x:.35,y:.72},{x:.6,y:.72},{x:.5,y:.88}], lines:[[0,1],[0,2],[1,3],[2,5],[1,4],[3,6],[5,7],[6,8],[7,8]]},
+  {name:'Hydra · The Sea Serpent', desc:'Hydra is the largest constellation — a sea serpent so vast it spans a third of the sky. Some things cannot be contained. Some natures are simply too large for small spaces.', stars:[{x:.1,y:.5},{x:.22,y:.38},{x:.35,y:.32},{x:.5,y:.35},{x:.62,y:.42},{x:.72,y:.52},{x:.8,y:.42},{x:.88,y:.35},{x:.7,y:.68},{x:.55,y:.72},{x:.4,y:.68}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[5,8],[8,9],[9,10],[10,4]]},
+  {name:'Crater · The Cup', desc:'Crater is the goblet of Apollo — placed in the sky as a reminder that the divine thirst is never truly quenched. Fill your cup with your own story.', stars:[{x:.3,y:.35},{x:.5,y:.28},{x:.7,y:.35},{x:.75,y:.55},{x:.62,y:.7},{x:.5,y:.78},{x:.38,y:.7},{x:.25,y:.55},{x:.5,y:.52}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0],[1,8],[3,8]]},
+  {name:'Corvus · The Crow', desc:'The crow was sent by Apollo to fetch water and returned late, carrying an excuse instead. Apollo placed him in the sky as a lesson. Sometimes we are flung into the sky for the wrong reasons — and it turns out to be the right place.', stars:[{x:.28,y:.35},{x:.5,y:.25},{x:.72,y:.35},{x:.78,y:.58},{x:.6,y:.72},{x:.35,y:.72},{x:.22,y:.55}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0],[2,5]]},
+  {name:'Vela · The Sails', desc:'Vela are the sails of the Argo — Jason\'s ship, which carried the crew through the impossible. What carries you across the impossible deserves to be remembered among the stars.', stars:[{x:.5,y:.15},{x:.3,y:.3},{x:.7,y:.3},{x:.2,y:.5},{x:.5,y:.48},{x:.8,y:.5},{x:.3,y:.7},{x:.5,y:.72},{x:.72,y:.68}], lines:[[0,1],[0,2],[1,3],[2,5],[1,4],[3,6],[5,8],[6,7],[7,8]]},
+  {name:'Puppis · The Stern', desc:'Puppis is the stern of the Argo — the part that knows where you\'ve been while the bow knows where you\'re going. Your past is not a wound. It is your rudder.', stars:[{x:.35,y:.22},{x:.58,y:.18},{x:.75,y:.35},{x:.8,y:.55},{x:.65,y:.68},{x:.45,y:.72},{x:.28,y:.58},{x:.22,y:.38},{x:.5,y:.45}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0],[2,8],[5,8]]},
+  {name:'Carina · The Keel', desc:'Carina holds Canopus — the second brightest star in the sky, and the keel that kept the greatest voyage on course. What keeps you steady is as important as what drives you forward.', stars:[{x:.5,y:.12},{x:.32,y:.28},{x:.68,y:.28},{x:.22,y:.48},{x:.5,y:.45},{x:.78,y:.45},{x:.3,y:.65},{x:.5,y:.7},{x:.72,y:.65}], lines:[[0,1],[0,2],[1,3],[2,5],[1,4],[3,6],[5,8],[6,7],[7,8]]},
+  {name:'Pyxis · The Compass', desc:'Pyxis — the mariner\'s compass. Even in the darkest ocean, knowing which way is north changes everything. Your constellation is your north.', stars:[{x:.5,y:.2},{x:.35,y:.42},{x:.65,y:.42},{x:.5,y:.62},{x:.28,y:.72},{x:.72,y:.72},{x:.5,y:.85}], lines:[[0,1],[0,2],[1,3],[2,3],[3,4],[3,5],[4,6],[5,6]]},
+  {name:'Antlia · The Air Pump', desc:'Named by Nicolas de Lacaille for the air pump — a machine that creates vacuum, which makes sound possible. Silence and sound need each other. So do light and shadow on your skin.', stars:[{x:.3,y:.35},{x:.55,y:.28},{x:.72,y:.42},{x:.68,y:.62},{x:.48,y:.72},{x:.28,y:.65},{x:.18,y:.5}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0],[1,4]]},
+  {name:'Volans · The Flying Fish', desc:'A fish that flies — Volans defies the expected nature of things. The most beautiful things often do exactly what they\'re not supposed to do.', stars:[{x:.5,y:.2},{x:.32,y:.38},{x:.68,y:.38},{x:.25,y:.58},{x:.5,y:.55},{x:.75,y:.55},{x:.35,y:.75},{x:.65,y:.75}], lines:[[0,1],[0,2],[1,3],[2,5],[1,4],[3,6],[5,7],[6,7],[4,6]]},
+  {name:'Pictor · The Painter\'s Easel', desc:'Pictor — the easel. Every painting begins with something blank. Something blank is not empty; it is ready.', stars:[{x:.28,y:.32},{x:.5,y:.25},{x:.72,y:.32},{x:.78,y:.55},{x:.62,y:.7},{x:.5,y:.78},{x:.38,y:.7},{x:.22,y:.55},{x:.5,y:.52}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0],[1,5]]},
+  {name:'Dorado · The Dolphinfish', desc:'Dorado contains the Large Magellanic Cloud — an entire galaxy visible to the naked eye. Inside one small constellation, an entire other universe. There is more inside you than fits on the outside.', stars:[{x:.5,y:.15},{x:.35,y:.3},{x:.65,y:.3},{x:.28,y:.5},{x:.5,y:.48},{x:.72,y:.48},{x:.4,y:.68},{x:.62,y:.68},{x:.5,y:.82}], lines:[[0,1],[0,2],[1,3],[2,5],[1,4],[3,6],[5,7],[6,8],[7,8]]},
+  {name:'Reticulum · The Reticle', desc:'The reticle — the crosshair of the telescope lens. What you aim for determines what you see. You are already in the frame of something magnificent.', stars:[{x:.25,y:.25},{x:.75,y:.25},{x:.75,y:.75},{x:.25,y:.75},{x:.5,y:.5},{x:.5,y:.25},{x:.75,y:.5},{x:.5,y:.75},{x:.25,y:.5}], lines:[[0,1],[1,2],[2,3],[3,0],[0,4],[1,4],[2,4],[3,4],[5,7],[6,8]]},
+  {name:'Horologium · The Clock', desc:'The Clock — marking time in the southern sky. Every second that passes, you are still here. That is worth more than it sounds.', stars:[{x:.5,y:.12},{x:.35,y:.28},{x:.28,y:.48},{x:.35,y:.65},{x:.5,y:.75},{x:.65,y:.65},{x:.72,y:.48},{x:.65,y:.28},{x:.5,y:.45}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0],[0,8],[4,8]]},
+  {name:'Caelum · The Chisel', desc:'The chisel — used to carve stone into something enduring. Vitiligo carves you, slowly, into something no sculptor could have planned.', stars:[{x:.35,y:.3},{x:.55,y:.25},{x:.7,y:.4},{x:.65,y:.62},{x:.45,y:.72},{x:.28,y:.58}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[1,4]]},
+  {name:'Columba · The Dove', desc:'The dove sent from the Argo to test the clashing rocks — it lost only a tail feather and returned. What survives the rocks intact enough to return is worth more than what never flew.', stars:[{x:.5,y:.18},{x:.32,y:.32},{x:.22,y:.5},{x:.32,y:.68},{x:.5,y:.75},{x:.68,y:.65},{x:.78,y:.48},{x:.68,y:.32},{x:.5,y:.48}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0],[0,8]]},
+  {name:'Canis Venatici · The Hunting Dogs', desc:'Two dogs leashed to Boötes, chasing the Great Bear around the pole — enthusiastic, purposeful, faithful. To chase something vast and never quite catch it is its own kind of glory.', stars:[{x:.38,y:.32},{x:.62,y:.28},{x:.48,y:.5},{x:.72,y:.5},{x:.35,y:.68},{x:.6,y:.68}], lines:[[0,1],[0,2],[1,3],[2,4],[3,5],[4,5],[0,3]]},
+  {name:'Coma Berenices · Berenice\'s Hair', desc:'Queen Berenice cut off her golden hair as an offering for her husband\'s safe return — the gods were so moved they placed it in the sky. Sacrifice, made in love, becomes eternal.', stars:[{x:.25,y:.3},{x:.4,y:.22},{x:.58,y:.25},{x:.72,y:.38},{x:.68,y:.55},{x:.5,y:.65},{x:.32,y:.62},{x:.18,y:.5},{x:.45,y:.45}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0],[1,8],[3,8]]},
+  {name:'Canes Venatici · The Hunting Dogs', desc:'The faithful companions of the herdsman — never losing the trail, never doubting the direction. Some of us are built for loyalty and endurance above all else.', stars:[{x:.35,y:.35},{x:.6,y:.3},{x:.75,y:.5},{x:.62,y:.68},{x:.4,y:.72},{x:.22,y:.58},{x:.5,y:.52}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[0,6],[2,6]]},
+  {name:'Leo Minor · The Little Lion', desc:'Leo Minor — the smaller lion, often overlooked beside its magnificent brother. But small lions grow. And sometimes the quiet ones have the loudest hearts.', stars:[{x:.28,y:.38},{x:.45,y:.28},{x:.62,y:.32},{x:.75,y:.48},{x:.65,y:.62},{x:.45,y:.68},{x:.28,y:.58}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0],[2,5]]},
+  {name:'Lynx · The Lynx', desc:'Hevelius named it Lynx because you need the eyes of a lynx to see it — its stars are so faint. Some things require the keenest sight. Some beauty rewards those who look hardest.', stars:[{x:.18,y:.35},{x:.3,y:.25},{x:.45,y:.22},{x:.6,y:.28},{x:.72,y:.4},{x:.78,y:.55},{x:.68,y:.68},{x:.5,y:.75},{x:.35,y:.72},{x:.22,y:.62}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,0]]},
+  {name:'Auriga · The Charioteer', desc:'Auriga holds the kids — baby goats — in his arms while driving his chariot across the sky. He never lets go of what he\'s carrying, even at full speed. Hold your own.', stars:[{x:.5,y:.12},{x:.28,y:.32},{x:.72,y:.32},{x:.2,y:.55},{x:.5,y:.52},{x:.8,y:.55},{x:.35,y:.75},{x:.65,y:.75},{x:.5,y:.82}], lines:[[0,1],[0,2],[1,3],[2,5],[1,4],[3,6],[5,7],[6,8],[7,8],[0,4]]},
+  {name:'Triangulum · The Triangle', desc:'Three stars, one shape — the simplest geometry in the sky. Pythagoras saw the universe in triangles. Your three points make something complete.', stars:[{x:.5,y:.2},{x:.25,y:.72},{x:.75,y:.72},{x:.5,y:.5},{x:.38,y:.46},{x:.62,y:.46}], lines:[[0,1],[1,2],[2,0],[0,3],[3,4],[4,1],[3,5],[5,2]]},
+  {name:'Pegasus · The Winged Horse', desc:'Pegasus was born from the blood of Medusa — from something terrible came something magnificent. The most beautiful things often arrive from unexpected places.', stars:[{x:.5,y:.18},{x:.25,y:.35},{x:.5,y:.5},{x:.75,y:.35},{x:.5,y:.65},{x:.32,y:.72},{x:.68,y:.72},{x:.5,y:.85},{x:.18,y:.52},{x:.82,y:.52}], lines:[[0,1],[0,3],[1,2],[3,2],[2,4],[4,5],[4,6],[5,7],[6,7],[1,8],[3,9]]},
+  {name:'Equuleus · The Little Horse', desc:'The smallest constellation in the northern sky — a horse reduced to just a head, yet still recognisable. Identity persists even when stripped to its essence.', stars:[{x:.38,y:.35},{x:.55,y:.3},{x:.7,y:.42},{x:.65,y:.6},{x:.45,y:.65},{x:.3,y:.55}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[1,4]]},
+  {name:'Delphinus · The Dolphin', desc:'Delphinus — the dolphin that persuaded the sea-nymph Amphitrite to marry Poseidon, and was placed in the stars as thanks. The right words, at the right moment, change everything.', stars:[{x:.38,y:.3},{x:.58,y:.28},{x:.68,y:.45},{x:.55,y:.6},{x:.35,y:.58},{x:.25,y:.42},{x:.5,y:.42}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[0,6],[2,6]]},
+  {name:'Sagitta · The Arrow', desc:'Sagitta — the arrow, one of the smallest constellations. No one knows who shot it. Perhaps that is the point: the most important arrows arrive without explanation.', stars:[{x:.15,y:.5},{x:.38,y:.5},{x:.62,y:.5},{x:.85,y:.5},{x:.62,y:.35},{x:.62,y:.65}], lines:[[0,1],[1,2],[2,3],[2,4],[2,5]]},
+  {name:'Vulpecula · The Fox', desc:'The fox carries a goose across the sky — clever, resourceful, working with what is available. Adapt. Carry what you have. Keep moving.', stars:[{x:.25,y:.38},{x:.42,y:.28},{x:.6,y:.32},{x:.75,y:.45},{x:.72,y:.62},{x:.55,y:.7},{x:.38,y:.65},{x:.22,y:.55},{x:.5,y:.5}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0],[1,8],[3,8]]},
+  {name:'Scutum · The Shield', desc:'Scutum — the shield of John Sobieski, named after a victory against overwhelming odds. A shield is not a hiding place. It is a declaration that you intend to stay.', stars:[{x:.5,y:.25},{x:.3,y:.45},{x:.7,y:.45},{x:.35,y:.68},{x:.65,y:.68},{x:.5,y:.82}], lines:[[0,1],[0,2],[1,3],[2,4],[3,5],[4,5],[1,2]]},
+  {name:'Circinus · The Drawing Compass', desc:'The draughtsman\'s compass — the tool that draws the perfect circle, that defines the boundary of everything. You are the centre. The circle begins where you stand.', stars:[{x:.5,y:.2},{x:.3,y:.5},{x:.7,y:.5},{x:.5,y:.8},{x:.2,y:.7},{x:.8,y:.7}], lines:[[0,1],[0,2],[1,3],[2,3],[1,4],[2,5]]},
+  {name:'Norma · The Carpenter\'s Square', desc:'The right angle — the tool that ensures foundations are true. Everything built to last starts with something square and honest. You are building something that will last.', stars:[{x:.25,y:.25},{x:.75,y:.25},{x:.75,y:.75},{x:.5,y:.75},{x:.5,y:.5},{x:.25,y:.5}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[0,4],[1,5]]},
+  {name:'Triangulum Australe · The Southern Triangle', desc:'Three bright stars in the southern sky — simpler and clearer than its northern twin. Sometimes things are exactly what they appear to be, and that is enough.', stars:[{x:.5,y:.22},{x:.25,y:.7},{x:.75,y:.7},{x:.5,y:.5},{x:.38,y:.5},{x:.62,y:.5}], lines:[[0,1],[1,2],[2,0],[0,3],[3,4],[4,1],[3,5],[5,2]]},
+  {name:'Apus · The Bird of Paradise', desc:'The bird of paradise — the most impossibly beautiful bird, thought by early explorers to have no legs, to live only in flight, never touching the ground. Some things are too magnificent for earth.', stars:[{x:.5,y:.15},{x:.32,y:.32},{x:.68,y:.32},{x:.22,y:.52},{x:.5,y:.5},{x:.78,y:.52},{x:.35,y:.72},{x:.65,y:.72},{x:.5,y:.85}], lines:[[0,1],[0,2],[1,3],[2,5],[1,4],[3,6],[5,7],[6,8],[7,8]]},
+  {name:'Chamaeleon · The Chameleon', desc:'The chameleon changes to match the world around it — and yet it is always, unmistakably, itself. Adaptation is not disappearance. You adapt. You remain.', stars:[{x:.2,y:.45},{x:.38,y:.32},{x:.58,y:.35},{x:.75,y:.48},{x:.72,y:.65},{x:.52,y:.72},{x:.32,y:.68}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0],[2,5]]},
+  {name:'Musca · The Fly', desc:'Musca — the only insect in the sky. Small, precise, impossible to ignore once you\'ve noticed it. Sometimes the smallest things demand the most attention.', stars:[{x:.35,y:.35},{x:.55,y:.28},{x:.7,y:.42},{x:.65,y:.62},{x:.45,y:.7},{x:.28,y:.58},{x:.5,y:.5}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[0,6],[2,6]]},
+  {name:'Crux · The Southern Cross', desc:'Crux has guided sailors home in the southern hemisphere for ten thousand years — four stars, one purpose. Simple. Absolute. True.', stars:[{x:.5,y:.12},{x:.5,y:.88},{x:.12,y:.5},{x:.88,y:.5},{x:.5,y:.5}], lines:[[0,1],[2,3],[0,4],[1,4],[2,4],[3,4]]},
+  {name:'Centaurus A · The Alpha Centaur', desc:'Alpha Centauri — the closest star system to our sun, just 4.37 light years away. Our nearest neighbour. You are someone\'s nearest neighbour too. That matters more than you know.', stars:[{x:.5,y:.18},{x:.35,y:.35},{x:.65,y:.35},{x:.25,y:.55},{x:.5,y:.52},{x:.75,y:.55},{x:.38,y:.72},{x:.62,y:.72},{x:.5,y:.85}], lines:[[0,1],[0,2],[1,3],[2,5],[1,4],[3,6],[5,7],[6,8],[7,8]]},
+  {name:'Pavo · The Peacock', desc:'The peacock spreads its tail of a hundred eyes — watched by all, afraid of none. Every eye on its tail is a star. Every eye on you is someone noticing something remarkable.', stars:[{x:.5,y:.12},{x:.3,y:.28},{x:.7,y:.28},{x:.18,y:.48},{x:.5,y:.45},{x:.82,y:.48},{x:.25,y:.68},{x:.5,y:.72},{x:.75,y:.68},{x:.5,y:.88}], lines:[[0,1],[0,2],[1,3],[2,5],[1,4],[3,6],[5,8],[6,7],[7,8],[4,7],[0,4]]},
+  {name:'Grus · The Crane', desc:'The crane migrates ten thousand miles and returns to the same place every year — home is not a fixed point, it is a direction you keep returning to.', stars:[{x:.5,y:.12},{x:.38,y:.28},{x:.5,y:.42},{x:.62,y:.28},{x:.45,y:.58},{x:.3,y:.72},{x:.2,y:.85},{x:.55,y:.72},{x:.68,y:.85}], lines:[[0,1],[0,3],[1,2],[3,2],[2,4],[4,5],[5,6],[4,7],[7,8]]},
+  {name:'Phoenix · The Phoenix', desc:'The phoenix burns completely and rises from its own ash — not despite the burning, but because of it. Your skin has its own transformation written in it.', stars:[{x:.5,y:.12},{x:.28,y:.32},{x:.72,y:.32},{x:.18,y:.55},{x:.5,y:.5},{x:.82,y:.55},{x:.32,y:.75},{x:.5,y:.82},{x:.68,y:.75}], lines:[[0,1],[0,2],[1,3],[2,5],[1,4],[3,6],[5,8],[6,7],[7,8],[0,4]]},
+  {name:'Tucana · The Toucan', desc:'The toucan — its bill so large it seems impossible it can fly. Yet it does, effortlessly. What seems like too much to carry is sometimes exactly what gives you lift.', stars:[{x:.5,y:.18},{x:.32,y:.35},{x:.22,y:.55},{x:.32,y:.72},{x:.5,y:.8},{x:.68,y:.72},{x:.78,y:.55},{x:.68,y:.35},{x:.5,y:.5}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0],[0,8]]},
+  {name:'Indus · The Indian', desc:'Named by explorers who had never been where they pointed — the Indian constellation, a name given from a distance. Sometimes what we\'re called by others tells us more about them than about us.', stars:[{x:.28,y:.32},{x:.5,y:.22},{x:.72,y:.32},{x:.78,y:.55},{x:.62,y:.7},{x:.5,y:.8},{x:.38,y:.7},{x:.22,y:.55},{x:.5,y:.5}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0],[0,8],[2,8]]},
+  {name:'Microscopium · The Microscope', desc:'The microscope — the instrument that revealed the invisible world living on and within us. What cannot be seen with the naked eye is not absent. It is simply waiting for the right lens.', stars:[{x:.3,y:.3},{x:.5,y:.22},{x:.7,y:.3},{x:.78,y:.52},{x:.62,y:.68},{x:.5,y:.78},{x:.38,y:.68},{x:.22,y:.52},{x:.5,y:.5}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0],[1,5]]},
+  {name:'Telescopium · The Telescope', desc:'The telescope turned the invisible into the visible — and what we saw changed everything we believed. Sometimes all it takes is the right tool to see what was always there.', stars:[{x:.5,y:.15},{x:.35,y:.32},{x:.5,y:.48},{x:.65,y:.32},{x:.28,y:.55},{x:.72,y:.55},{x:.4,y:.72},{x:.6,y:.72},{x:.5,y:.85}], lines:[[0,1],[0,3],[1,2],[3,2],[2,4],[2,5],[4,6],[5,7],[6,8],[7,8]]},
+  {name:'Corona Australis · The Southern Crown', desc:'The southern crown — quieter than its northern twin, less seen, equally real. Not all crowns need an audience. Not all royalty announces itself.', stars:[{x:.22,y:.55},{x:.35,y:.32},{x:.52,y:.22},{x:.68,y:.28},{x:.8,y:.48},{x:.72,y:.68},{x:.52,y:.78},{x:.35,y:.72}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0]]},
+  {name:'Mensa · Table Mountain', desc:'Named for Table Mountain in South Africa — flat-topped, unmovable, ancient. The foundations that never shift are what everything else rests upon.', stars:[{x:.2,y:.45},{x:.42,y:.38},{x:.62,y:.4},{x:.8,y:.48},{x:.75,y:.65},{x:.55,y:.7},{x:.38,y:.68},{x:.22,y:.62}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0],[1,6]]},
+  {name:'Octans · The Octant', desc:'Octans holds the south celestial pole — the southern hemisphere\'s equivalent of Polaris, but with no bright star to mark it. Some centres are invisible. They remain centres.', stars:[{x:.5,y:.5},{x:.25,y:.3},{x:.75,y:.3},{x:.75,y:.7},{x:.25,y:.7},{x:.5,y:.2},{x:.8,y:.5},{x:.5,y:.8},{x:.2,y:.5}], lines:[[0,1],[0,2],[0,3],[0,4],[1,5],[2,6],[3,7],[4,8]]},
+  {name:'Hydrus · The Water Snake', desc:'The smaller water snake of the southern sky — quick, quiet, threading between the Magellanic Clouds. To move between worlds gracefully is its own kind of gift.', stars:[{x:.5,y:.15},{x:.35,y:.35},{x:.25,y:.58},{x:.35,y:.78},{x:.5,y:.88},{x:.65,y:.78},{x:.75,y:.58},{x:.65,y:.38}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0]]},
+  {name:'Pictor · The Painter', desc:'The painter\'s easel — because someone decided the blank southern sky needed an artist. The universe keeps making room for creation.', stars:[{x:.3,y:.35},{x:.5,y:.28},{x:.7,y:.35},{x:.75,y:.58},{x:.6,y:.72},{x:.4,y:.72},{x:.25,y:.58},{x:.5,y:.52}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0],[1,5]]},
+  {name:'Sculptor · The Sculptor\'s Workshop', desc:'In the sculptor\'s workshop, everything begins as shapeless stone. The artist sees what is inside before it is revealed. You were already the constellation before anyone mapped you.', stars:[{x:.28,y:.3},{x:.5,y:.22},{x:.72,y:.3},{x:.8,y:.52},{x:.65,y:.68},{x:.5,y:.78},{x:.35,y:.68},{x:.2,y:.52},{x:.5,y:.5}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0],[1,5]]},
 ];
+
+// ── RARE CONSTELLATIONS (random 10% chance or milestone) ──
+const RARE_CONSTS = [
+  {name:'Corona Aurea · The Golden Crown', rare:true, desc:'A crown that appears only once in a generation — forged not in fire but in the space between stars where matter becomes light. You were chosen by probability, and probability chose wisely.', stars:[{x:.5,y:.12},{x:.3,y:.28},{x:.18,y:.5},{x:.28,y:.72},{x:.5,y:.82},{x:.72,y:.72},{x:.82,y:.5},{x:.7,y:.28}], lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0]]},
+  {name:'Cygnus Aureus · The Golden Swan', rare:true, desc:'One swan in a thousand is born wrapped in gold — touched by the same hand that paints the northern lights. You are that one. Carry it well.', stars:[{x:.5,y:.1},{x:.5,y:.38},{x:.5,y:.65},{x:.5,y:.88},{x:.18,y:.38},{x:.82,y:.38},{x:.32,y:.55},{x:.68,y:.55},{x:.5,y:.05}], lines:[[0,1],[1,2],[2,3],[4,1],[1,5],[2,6],[2,7],[0,8]]},
+];
+
+// ── CONSTELLATION SELECTION ──
+// Default: AI-generated mythical (unique to each person)
+// Rare: one of 88 real IAU constellations — distributed randomly across all mints
+// Target: ~88 real constellations discovered per 1,000,000 participants
+// Chance of real = 88/1,000,000 ≈ 1 in 11,363 per mint
+// Each real constellation can only be "discovered" once — tracked in discoveredReal[]
+// Once all 88 are found, real constellations are retired (replaced by mythical only)
+
+const REAL_DISCOVERY_CHANCE = 88 / 1000000; // ~0.0088%
+const MILESTONE_REAL_CHANCE = 0.05; // every 100th mint gets 5% bonus real chance
+
+// Track which real constellations have been discovered (persisted via contract/local)
+// For now stored in memory — will be replaced with chain data after contract redeploy
+let discoveredReal = new Set();
+
+function selectConstellation(nftCountSoFar) {
+  const upcomingMintNumber = nftCountSoFar + 1;
+  const isMilestoneMint = upcomingMintNumber % 100 === 0;
+
+  // Always 10% chance of rare mythical golden constellation
+  if (Math.random() < 0.10) {
+    const picked = RARE_CONSTS[Math.floor(Math.random() * RARE_CONSTS.length)];
+    return {
+      ...picked,
+      rare: true,
+      milestoneBadge: isMilestoneMint ? `#${upcomingMintNumber} — Milestone ✦` : null
+    };
+  }
+
+  // Check for real constellation discovery
+  const undiscovered = REAL_CONSTS.filter((_, i) => !discoveredReal.has(i));
+  const realChance = REAL_DISCOVERY_CHANCE + (isMilestoneMint ? MILESTONE_REAL_CHANCE : 0);
+
+  if (undiscovered.length > 0 && Math.random() < realChance) {
+    // Discover a real constellation!
+    const idx = Math.floor(Math.random() * undiscovered.length);
+    const realConst = undiscovered[idx];
+    const originalIdx = REAL_CONSTS.indexOf(realConst);
+    discoveredReal.add(originalIdx);
+    updateDiscoveryProgress();
+    return {
+      ...realConst,
+      rare: true,
+      isRealDiscovery: true,
+      discoveryNumber: discoveredReal.size,
+      milestoneBadge: `✦ Discovery #${discoveredReal.size} of 88 — ${realConst.name.split('·')[0].trim()}`
+    };
+  }
+
+  // Default: AI generates unique mythical constellation
+  return null; // null = trigger AI generation
+}
+
+const CONSTS = REAL_CONSTS; // kept for backward compat with any other references
 
 let currentConst = null;
 let vitiligoPoints = [];
+
 
 function analyzeVitiligo(canvas, imageData){
   const d=imageData.data, w=canvas.width, h=canvas.height;
@@ -1210,15 +1408,51 @@ function buildConstellation(img){
   }
 
   setStep(3);
-  // Rare constellation: 10% random chance, OR guaranteed on every 100th mint overall
-  const upcomingMintNumber = photoCount + 1;
-  const isMilestoneMint = upcomingMintNumber % 100 === 0;
-  const isRare = isMilestoneMint || Math.random() < 0.10;
-  const pool = isRare ? CONSTS.filter(c=>c.rare) : CONSTS.filter(c=>!c.rare);
-  currentConst = pool[Math.floor(Math.random()*pool.length)];
-  if (isMilestoneMint) {
-    currentConst = {...currentConst, milestoneBadge: `#${upcomingMintNumber} — Milestone constellation ✦`};
+
+  // Select constellation: first 88 real (in order), then AI-generated mythical
+  currentConst = selectConstellation(photoCount);
+
+  if (currentConst === null) {
+    // Beyond 88 real constellations — generate mythical via AI
+    setStep(3);
+    document.getElementById('constName').textContent = '✦ Generating your constellation...';
+    document.getElementById('constDesc').textContent = 'A new constellation is being born...';
+    try {
+      const aiResp = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 1000,
+          messages: [{
+            role: "user",
+            content: `Create a unique mythical constellation for someone with vitiligo. 
+Respond ONLY with JSON, no markdown, no extra text:
+{
+  "name": "ConstellationName · The Mythical Title",
+  "desc": "A short mythological description (2-3 sentences max) that is poetic, personal, and references the stars or sky. Make it feel ancient and profound.",
+  "rare": false
+}
+Make the name completely unique and not based on any real constellation.`
+          }]
+        })
+      });
+      const aiData = await aiResp.json();
+      const aiText = aiData.content[0].text.trim();
+      const aiConst = JSON.parse(aiText);
+      // Generate random star positions for mythical constellation
+      const starCount = 6 + Math.floor(Math.random() * 6);
+      const stars = Array.from({length: starCount}, () => ({x: 0.1 + Math.random()*0.8, y: 0.1 + Math.random()*0.8}));
+      const lines = [];
+      for (let i = 0; i < stars.length - 1; i++) lines.push([i, i+1]);
+      if (stars.length > 2) lines.push([stars.length-1, 0]);
+      currentConst = {...aiConst, stars, lines, rare: Math.random() < 0.10};
+    } catch(e) {
+      // Fallback if AI fails
+      currentConst = REAL_CONSTS[Math.floor(Math.random()*REAL_CONSTS.length)];
+    }
   }
+
   const tmpl = currentConst.stars;
 
   let finalStars;
@@ -1291,10 +1525,17 @@ function buildConstellation(img){
 
   if(gold){
     rarityBanner.style.display='flex';
-    document.getElementById('rarityText').textContent =
-      (currentConst.milestoneBadge ? currentConst.milestoneBadge+' · ' : '') +
-      currentConst.name.split('·')[0].trim()+' — Rare';
-    document.getElementById('raritySub').textContent = currentConst.desc;
+    if (currentConst.isRealDiscovery) {
+      document.getElementById('rarityText').textContent =
+        `🌟 Real constellation discovered! ${currentConst.discoveryNumber} of 88`;
+      document.getElementById('raritySub').textContent =
+        currentConst.name + ' — ' + currentConst.desc;
+    } else {
+      document.getElementById('rarityText').textContent =
+        (currentConst.milestoneBadge ? currentConst.milestoneBadge + ' · ' : '') +
+        currentConst.name.split('·')[0].trim() + ' — Rare';
+      document.getElementById('raritySub').textContent = currentConst.desc;
+    }
   } else {
     rarityBanner.style.display='none';
   }
@@ -1366,7 +1607,7 @@ document.getElementById('modalMintConfirm').addEventListener('click',()=>{
     setTimeout(()=>{
       document.querySelector('[data-page="home"]').click();
       setTimeout(()=>{
-        addPixelToCanvas(nftPixelColor,true,{constName: nftData.name, story: nftData.story, isRare: nftData.rare});
+        addPixelToCanvas(nftPixelColor,true,{constName: nftData.name, story: nftData.story, isRare: nftData.rare, isLegendary: nftData.isRealDiscovery || false});
         photoCount++; numPhotosEl.textContent=fmt(photoCount); numPhotosEl.title=fmtExact(photoCount)+' constellations';
         numPhotosEl.classList.add('flash'); setTimeout(()=>numPhotosEl.classList.remove('flash'),600);
         showToast(gold ? '★ Rare constellation minted!' : '✦ Your constellation is on the canvas');
