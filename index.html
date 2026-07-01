@@ -576,7 +576,7 @@ html,body{
       <div class="story-hint">This becomes part of your constellation — visible to you and whoever you gift it to</div>
     </div>
 
-    <button class="btn-main" id="mintBtn" disabled>Save constellation — 1 TON</button>
+    <button class="btn-main" id="mintBtn" disabled>Count me in ✦</button>
     <button class="btn-ghost" id="resetBtn" style="display:none;margin-top:0">Try another photo</button>
   </div>
 </div>
@@ -714,7 +714,7 @@ html,body{
     <div class="ton-amount">1 TON</div>
     <div class="modal-desc">Your vitiligo photo becomes a unique constellation — forever on the TON blockchain. Your star lights up on the shared canvas.</div>
     <div class="tx-status" id="txCount"></div>
-    <button class="modal-btn" id="modalCountConfirm">I have vitiligo — 1 TON</button>
+    <button class="modal-btn" id="modalCountConfirm">Confirm — 1 TON</button>
     <button class="modal-btn secondary" id="modalCountClose">Cancel</button>
   </div>
 </div>
@@ -727,7 +727,7 @@ html,body{
     <div class="ton-amount">1 TON</div>
     <div class="modal-desc">Your vitiligo becomes a unique constellation — forever on the TON blockchain. Your star lights up on the shared canvas of everyone who has vitiligo.</div>
     <div class="tx-status" id="txMint"></div>
-    <button class="modal-btn" id="modalMintConfirm">I have vitiligo — 1 TON</button>
+    <button class="modal-btn" id="modalMintConfirm">Confirm — 1 TON</button>
     <button class="modal-btn secondary" id="modalMintClose">Cancel</button>
   </div>
 </div>
@@ -1621,7 +1621,7 @@ document.getElementById('modalMintConfirm').addEventListener('click',()=>{
     closeModal('modalMint');
     nftCount++;
     const gold = currentConst.rare;
-    mintBtn.textContent='✓ Saved!'; mintBtn.classList.add('done'); mintBtn.disabled=true;
+    mintBtn.textContent='✓ Counted!'; mintBtn.classList.add('done'); mintBtn.disabled=true;
     document.getElementById('profileBadge').textContent='⭐⭐';
 
     const grid=document.getElementById('nftGrid');
@@ -1756,7 +1756,7 @@ document.getElementById('resetBtn').addEventListener('click',()=>{
   constInfo.style.display='none'; storyWrap.style.display='none';
   rarityBanner.style.display='none';
   mintBtn.disabled=true;
-  mintBtn.textContent='Save constellation — 1 TON'; mintBtn.classList.remove('done');
+  mintBtn.textContent='Count me in ✦'; mintBtn.classList.remove('done');
   resetBtn.style.display='none'; fileInput.value=''; setStep(1);
   currentConst=null; nftPixelColor=null;
   document.getElementById('storyInput').value='';
