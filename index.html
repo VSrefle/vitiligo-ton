@@ -472,7 +472,7 @@ html,body{
     vitiligo.ton — the first counter of people with vitiligo in the world.<br><br>
     Every star on this canvas is a real person. Together we are a constellation.
   </div>
-  <button class="welcome-btn" id="welcomeBtn">I'm in ✦</button>
+  <button class="welcome-btn" id="welcomeBtn">I have vitiligo ✦</button>
   <div class="welcome-skip" id="welcomeSkip">just look around first</div>
 </div>
 
@@ -519,8 +519,8 @@ html,body{
     <h1 class="headline">People with vitiligo<br>are <em>unique by design</em></h1>
     <p class="sub">just vitiligo · just us · just beautiful</p>
 
-    <button class="btn-main" id="countBtn" disabled>Connect wallet to join</button>
-    <button class="btn-ghost" id="goStarsBtn">✦ Add your constellation — 1 TON</button>
+    <button class="btn-main" id="countBtn">I have vitiligo ✦</button>
+    <div class="btn-ghost" style="cursor:default;opacity:.5;font-size:12px;margin-top:4px">Upload photo · get your constellation · 1 TON</div>
   </div>
 </div>
 
@@ -575,7 +575,7 @@ html,body{
       <div class="story-hint">This becomes part of your NFT — visible to you and whoever you gift it to</div>
     </div>
 
-    <button class="btn-main" id="mintBtn" disabled>Mint NFT — 1 TON</button>
+    <button class="btn-main" id="mintBtn" disabled>I have vitiligo — 1 TON</button>
     <button class="btn-ghost" id="resetBtn" style="display:none;margin-top:0">Try another photo</button>
   </div>
 </div>
@@ -700,11 +700,11 @@ html,body{
 <div class="modal-backdrop" id="modalCount">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">Join the count</div>
+    <div class="modal-title">You're joining the count</div>
     <div class="ton-amount">1 TON</div>
-    <div class="modal-desc">Send 1 TON — you're verified as a real human with vitiligo. Your star lights up on the canvas.</div>
+    <div class="modal-desc">Your vitiligo photo becomes a unique constellation — forever on the TON blockchain. Your star lights up on the shared canvas.</div>
     <div class="tx-status" id="txCount"></div>
-    <button class="modal-btn" id="modalCountConfirm">Send 1 TON & be counted</button>
+    <button class="modal-btn" id="modalCountConfirm">I have vitiligo — 1 TON</button>
     <button class="modal-btn secondary" id="modalCountClose">Cancel</button>
   </div>
 </div>
@@ -713,11 +713,11 @@ html,body{
 <div class="modal-backdrop" id="modalMint">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">Mint your constellation</div>
+    <div class="modal-title">Join the count forever</div>
     <div class="ton-amount">1 TON</div>
-    <div class="modal-desc">Your vitiligo patch becomes a unique constellation NFT — forever on the TON blockchain. No one can buy it. Only you can own it.</div>
+    <div class="modal-desc">Your vitiligo becomes a unique constellation — forever on the TON blockchain. Your star lights up on the shared canvas of everyone who has vitiligo.</div>
     <div class="tx-status" id="txMint"></div>
-    <button class="modal-btn" id="modalMintConfirm">Mint NFT — 1 TON</button>
+    <button class="modal-btn" id="modalMintConfirm">I have vitiligo — 1 TON</button>
     <button class="modal-btn secondary" id="modalMintClose">Cancel</button>
   </div>
 </div>
@@ -1042,17 +1042,16 @@ const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
 tonConnectUI.onStatusChange(wallet => {
   const chip=document.getElementById('walletChip');
   const tcBtn=document.getElementById('ton-connect-btn');
-  const btn=document.getElementById('countBtn');
   if (wallet) {
     const addr = wallet.account.address;
     document.getElementById('walletAddr').textContent = addr.slice(0,5)+'…'+addr.slice(-4);
     chip.classList.add('show'); tcBtn.style.display='none';
-    connected=true; btn.disabled=false; btn.textContent='Count me in — 1 TON';
+    connected=true;
     startTick();
     if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
   } else {
     chip.classList.remove('show'); tcBtn.style.display='';
-    connected=false; btn.disabled=true; btn.textContent='Connect wallet to join';
+    connected=false;
     stopTick();
   }
 });
@@ -1134,9 +1133,6 @@ document.querySelectorAll('.nav-item').forEach(btn=>{
     window.scrollTo(0,0);
   });
 });
-document.getElementById('goStarsBtn').addEventListener('click',()=>{
-  document.querySelector('[data-page="stars"]').click();
-});
 document.getElementById('addNftBtn').addEventListener('click',()=>{
   document.querySelector('[data-page="stars"]').click();
 });
@@ -1144,15 +1140,19 @@ document.getElementById('addNftBtn').addEventListener('click',()=>{
 /* ── MODALS ── */
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+// "I have vitiligo" — goes straight to photo upload on Stars tab
 document.getElementById('countBtn').addEventListener('click',()=>{
-  if(!connected){tonConnectUI.openModal();return;}
-  openModal('modalCount');
+  document.querySelector('[data-page="stars"]').click();
+  showToast('Upload a photo of your vitiligo to get started ✦');
 });
+
 document.getElementById('modalCountClose').addEventListener('click',()=>closeModal('modalCount'));
 document.getElementById('modalMintClose').addEventListener('click',()=>closeModal('modalMint'));
 
 let counted=false;
 document.getElementById('modalCountConfirm').addEventListener('click',()=>{
+  if(!connected){tonConnectUI.openModal();return;}
   sendTon('txCount',()=>{
     closeModal('modalCount');
     if(!counted){
@@ -1161,7 +1161,7 @@ document.getElementById('modalCountConfirm').addEventListener('click',()=>{
       numEl.classList.add('flash'); setTimeout(()=>numEl.classList.remove('flash'),700);
       updateMilestone();
       const btn=document.getElementById('countBtn');
-      btn.textContent='✓ Counted!'; btn.classList.add('done'); btn.disabled=true;
+      btn.textContent='✓ You\'re counted!'; btn.classList.add('done'); btn.disabled=true;
       addPixelToCanvas('#9333ea',false,null);
       showToast('Your star is on the canvas ✦');
     }
@@ -1548,9 +1548,9 @@ Make the name completely unique and not based on any real constellation.`
 }
 
 mintBtn.addEventListener('click',()=>{
-  if(!tonConnectUI.connected){
-    if(tg) tg.showAlert('Connect your TON wallet first.');
-    else alert('Connect your TON wallet first.');
+  if(!connected){
+    tonConnectUI.openModal();
+    showToast('Connect your wallet to continue ✦');
     return;
   }
   lastStoryText = document.getElementById('storyInput').value.trim();
