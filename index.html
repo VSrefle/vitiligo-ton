@@ -61,6 +61,12 @@ html,body{
 }
 .welcome-btn:active{transform:scale(.97)}
 .welcome-skip{margin-top:14px;font-size:12px;color:rgba(255,255,255,.22);cursor:pointer}
+.ob-screen{display:flex;flex-direction:column;align-items:center;text-align:center;width:100%}
+.ob-number{font-size:44px;font-weight:800;color:white;letter-spacing:-2px;margin-bottom:8px;margin-top:16px}
+.ob-title{font-size:24px;font-weight:600;color:#fff;line-height:1.3;margin-bottom:16px}
+.ob-body{font-size:14px;color:rgba(220,200,255,.5);line-height:1.7;margin-bottom:36px;max-width:280px}
+.ob-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.2);transition:all .3s ease}
+.ob-dot.active{width:20px;border-radius:3px;background:#9333ea}
 
 /* SOCIAL TOAST */
 .social-toast{
@@ -466,14 +472,42 @@ html,body{
 
 <!-- WELCOME -->
 <div class="welcome" id="welcome">
-  <div class="welcome-glow"><div class="welcome-star">✦</div></div>
-  <div class="welcome-title">You're one of us,<br><span>unique by design</span></div>
-  <div class="welcome-body">
-    vitiligo.ton — the first counter of people with vitiligo in the world.<br><br>
-    Every star on this canvas is a real person. Together we are a constellation.
+
+  <!-- ONBOARDING DOTS -->
+  <div id="obDots" style="position:absolute;top:20px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:10">
+    <div class="ob-dot active" id="dot0"></div>
+    <div class="ob-dot" id="dot1"></div>
+    <div class="ob-dot" id="dot2"></div>
   </div>
-  <button class="welcome-btn" id="welcomeBtn">I have vitiligo ✦</button>
-  <div class="welcome-skip" id="welcomeSkip">just look around first</div>
+
+  <!-- SCREEN 1 -->
+  <div class="ob-screen" id="ob0">
+    <div class="welcome-glow"><div class="welcome-star">✦</div></div>
+    <div class="ob-number">100,000,000</div>
+    <div class="ob-title">People with vitiligo<br>in the world</div>
+    <div class="ob-body">Nobody has ever counted for real.<br>No survey. No exact number.<br>Just estimates.</div>
+    <button class="welcome-btn" onclick="goOb(1)">We can change that →</button>
+  </div>
+
+  <!-- SCREEN 2 -->
+  <div class="ob-screen" id="ob1" style="display:none">
+    <div class="welcome-glow" style="background:radial-gradient(ellipse at 50% 40%, rgba(245,158,11,.2) 0%, transparent 70%)">
+      <div class="welcome-star">🌟</div>
+    </div>
+    <div class="ob-title">Your vitiligo<br>becomes a constellation</div>
+    <div class="ob-body">Upload a photo — the algorithm finds your patches and builds a personal star map. Unique. Yours. Forever on the blockchain.</div>
+    <button class="welcome-btn" onclick="goOb(2)">Tell me more →</button>
+  </div>
+
+  <!-- SCREEN 3 -->
+  <div class="ob-screen" id="ob2" style="display:none">
+    <div class="welcome-glow"><div class="welcome-star">✦</div></div>
+    <div class="ob-title">Every star on this canvas<br>is a real person</div>
+    <div class="ob-body">Together we are a constellation that cannot be faked. Each star pulses. Tap any pixel — see whose it is.</div>
+    <button class="welcome-btn" id="welcomeBtn">I have vitiligo ✦</button>
+    <div class="welcome-skip" id="welcomeSkip">just look around first</div>
+  </div>
+
 </div>
 
 <!-- SOCIAL TOAST -->
@@ -484,6 +518,7 @@ html,body{
   <div class="home">
     <div class="topbar">
       <span class="logo">vitiligo.ton</span>
+      <button onclick="openModal('modalHelp')" style="background:none;border:1px solid rgba(147,51,234,.3);color:#a78bfa;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">?</button>
       <div id="ton-connect-btn"></div>
       <div class="wallet-chip" id="walletChip">
         <div class="wdot"></div>
@@ -756,6 +791,57 @@ html,body{
     <div class="modal-handle"></div>
     <div class="modal-nft-title" id="modalPixelTitle">✦</div>
     <div id="modalPixelBody"></div>
+  </div>
+</div>
+
+<!-- HELP MODAL -->
+<div class="modal-backdrop" id="modalHelp">
+  <div class="modal" style="padding-bottom:32px">
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="margin-bottom:20px">How it works</div>
+
+    <div style="display:flex;flex-direction:column;gap:16px;text-align:left">
+
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="min-width:32px;height:32px;border-radius:50%;background:rgba(147,51,234,.2);border:1px solid rgba(147,51,234,.4);display:flex;align-items:center;justify-content:center;color:#a78bfa;font-size:14px;font-weight:600">1</div>
+        <div>
+          <div style="color:white;font-size:14px;font-weight:500;margin-bottom:2px">Press "I have vitiligo ✦"</div>
+          <div style="color:#6b7280;font-size:13px">You'll go to the photo upload screen</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="min-width:32px;height:32px;border-radius:50%;background:rgba(147,51,234,.2);border:1px solid rgba(147,51,234,.4);display:flex;align-items:center;justify-content:center;color:#a78bfa;font-size:14px;font-weight:600">2</div>
+        <div>
+          <div style="color:white;font-size:14px;font-weight:500;margin-bottom:2px">Upload a photo of your vitiligo</div>
+          <div style="color:#6b7280;font-size:13px">The algorithm finds the patches and builds your personal constellation</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="min-width:32px;height:32px;border-radius:50%;background:rgba(147,51,234,.2);border:1px solid rgba(147,51,234,.4);display:flex;align-items:center;justify-content:center;color:#a78bfa;font-size:14px;font-weight:600">3</div>
+        <div>
+          <div style="color:white;font-size:14px;font-weight:500;margin-bottom:2px">Press "Count me in ✦"</div>
+          <div style="color:#6b7280;font-size:13px">Connect your TON wallet (Tonkeeper) and confirm 1 TON</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="min-width:32px;height:32px;border-radius:50%;background:rgba(147,51,234,.2);border:1px solid rgba(147,51,234,.4);display:flex;align-items:center;justify-content:center;color:#a78bfa;font-size:14px;font-weight:600">✦</div>
+        <div>
+          <div style="color:white;font-size:14px;font-weight:500;margin-bottom:2px">Your star appears on the canvas</div>
+          <div style="color:#6b7280;font-size:13px">Your constellation is revealed — unique, yours, forever on the blockchain</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="margin-top:20px;padding:12px 16px;background:rgba(147,51,234,.08);border-radius:10px;border:1px solid rgba(147,51,234,.2)">
+      <div style="font-size:12px;color:#a78bfa;margin-bottom:4px">Don't have a TON wallet?</div>
+      <div style="font-size:12px;color:#6b7280">Download <b style="color:#c4b5fd">Tonkeeper</b> from App Store or Google Play — it's free. Top up with 1–2 TON to get started.</div>
+    </div>
+
+    <button onclick="closeModal('modalHelp')" class="btn-main" style="margin-top:20px">Got it ✦</button>
   </div>
 </div>
 
@@ -1167,6 +1253,16 @@ async function sendTon(statusId, onSuccess) {
 }
 
 /* ── WELCOME ── */
+// ── ONBOARDING ──
+function goOb(n) {
+  [0,1,2].forEach(i => {
+    const screen = document.getElementById('ob' + i);
+    const dot = document.getElementById('dot' + i);
+    if (screen) screen.style.display = i === n ? 'flex' : 'none';
+    if (dot) dot.classList.toggle('active', i === n);
+  });
+}
+
 function closeWelcome(){
   document.getElementById('welcome').classList.add('fade');
   setTimeout(()=>{document.getElementById('welcome').style.display='none';},600);
