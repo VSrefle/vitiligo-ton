@@ -527,9 +527,17 @@ html,body{
       </div>
     </div>
 
-    <div class="canvas-wrap">
-      <canvas id="pixelCanvas" width="304" height="140"></canvas>
-      <div class="canvas-label">tap pixel to explore</div>
+    <div class="canvas-wrap" style="position:relative;border-radius:12px;overflow:hidden;background:#040b18;height:160px">
+      <canvas id="cosmosCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;touch-action:none;cursor:grab"></canvas>
+      <div id="cosmosExp" style="position:absolute;bottom:8px;right:8px;width:28px;height:28px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.35);color:#a78bfa;border-radius:7px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;user-select:none">⛶</div>
+      <div id="cosmosUI" style="position:fixed;top:12px;right:12px;flex-direction:column;gap:6px;z-index:10001;display:none">
+        <div id="cosmosClose" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:9px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</div>
+        <div id="cosmosPlus" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:9px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">+</div>
+        <div id="cosmosMinus" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:9px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">−</div>
+        <div id="cosmosReset" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:9px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center">✦</div>
+        <div id="cosmosMe" style="width:34px;height:34px;background:rgba(124,58,237,.35);border:1px solid rgba(167,139,250,.7);color:#ddd6fe;border-radius:9px;font-size:9px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;letter-spacing:.5px">ME</div>
+      </div>
+      <div id="cosmosTip" style="position:absolute;bottom:8px;left:8px;background:rgba(4,11,24,.97);border:1px solid rgba(124,58,237,.3);border-radius:8px;padding:8px 12px;font-size:11px;color:#e9d5ff;pointer-events:none;display:none;z-index:10;max-width:180px;line-height:1.5"></div>
     </div>
 
     <div class="dual-counter">
@@ -927,173 +935,149 @@ function drawSF() {
 }
 drawSF();
 
-/* ── PIXEL CANVAS ── */
-const PC = document.getElementById('pixelCanvas');
-const PX = PC.getContext('2d');
-const COLS=38, ROWS=18, PW=8, PH=8;
-PC.width=COLS*PW; PC.height=ROWS*PH;
-const pixels = [];
-for (let i=0;i<COLS*ROWS;i++) { pixels[i] = null; }
-// ── PULSING CANVAS ANIMATION ──
-let pulseFrame = 0;
-let pulseRAF = null;
+/* ── COSMIC CANVAS ── */
+(function(){
+  const cv=document.getElementById('cosmosCanvas');
+  if(!cv) return;
+  const ctx=cv.getContext('2d');
+  const DPR=window.devicePixelRatio||1;
+  const wrap=cv.parentElement;
+  let W,H,isFull=false;
 
-function drawPixels(timestamp) {
-  pulseFrame = timestamp || 0;
-  PX.clearRect(0, 0, PC.width, PC.height);
+  function resize(){
+    W=wrap.clientWidth;H=wrap.clientHeight;
+    cv.width=W*DPR;cv.height=H*DPR;
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  resize();
 
-  pixels.forEach((p, i) => {
-    if (!p) return;
-    const x = (i % COLS) * PW, y = Math.floor(i / COLS) * PH;
-    const cx = x + PW/2, cy = y + PH/2;
+  function mkR(s){let r=s|0;return()=>{r=(Math.imul(r,1664525)+1013904223)|0;return(r>>>0)/4294967296};}
+  const WORLD=3000,rr=mkR(42);
+  const NAMES=['Aisha','Min','Sara','Carlos','Fatima','Yuki','Ivan','Priya','Lucas','Anna','Omar'];
+  const CITIES=['Moscow','Tokyo','Cairo','São Paulo','Mumbai','Berlin','Seoul','Norilsk','Paris'];
+  const CONSTS=['Orion','Cassiopeia','Lyra','Cygnus','Perseus','Leo','Scorpius'];
+  const MYTHIC=['Velin · The Wanderer','Sarath · The Bridge','Korel · The Witness'];
 
-    if (!p.isNFT) {
-      // Plain count-in pixel — subtle slow pulse (4s cycle)
-      const pulse = 0.55 + 0.25 * Math.sin(pulseFrame / 4000 * Math.PI * 2 + i * 0.3);
-      PX.globalAlpha = pulse;
-      PX.fillStyle = p.color;
-      PX.fillRect(x + .5, y + .5, PW - 1, PH - 1);
-    } else if (p.isGenesis) {
-      // Genesis Star — like a bright star: round core + 4 soft diffraction rays
-      const gb = p.genesisBrightness || 1;
-      const pulse = gb * (0.65 + 0.2 * Math.sin(pulseFrame / 2500 * Math.PI * 2 + i));
-      const rayPulse = gb * (0.4 + 0.2 * Math.sin(pulseFrame / 3000 * Math.PI * 2 + i));
+  function gPts(seed,n){const r=mkR(seed);return Array.from({length:n},()=>{const a=r()*Math.PI*2,d=.2+r()*.8;return{x:Math.cos(a)*d,y:Math.sin(a)*d};});}
+  function gEdge(pts){const e=[],u=new Set();for(let i=0;i<pts.length;i++){let b=-1,m=Infinity;for(let j=0;j<pts.length;j++){if(i===j)continue;const k=`${Math.min(i,j)}-${Math.max(i,j)}`;if(u.has(k))continue;const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=dx*dx+dy*dy;if(d<m){m=d;b=j;}}if(b>=0){const k=`${Math.min(i,b)}-${Math.max(i,b)}`;if(!u.has(k)){u.add(k);e.push([i,b]);}}}return e;}
 
-      // 4 soft rays (like star diffraction spikes)
-      PX.save();
-      PX.translate(cx, cy);
-      for (let r = 0; r < 4; r++) {
-        PX.save();
-        PX.rotate(r * Math.PI / 4);
-        const rayLen = PW * 2.2;
-        const grad = PX.createLinearGradient(-rayLen, 0, rayLen, 0);
-        grad.addColorStop(0, 'rgba(255,255,255,0)');
-        grad.addColorStop(0.4, `rgba(255,255,255,${rayPulse * 0.5})`);
-        grad.addColorStop(0.5, `rgba(255,255,255,${rayPulse})`);
-        grad.addColorStop(0.6, `rgba(255,255,255,${rayPulse * 0.5})`);
-        grad.addColorStop(1, 'rgba(255,255,255,0)');
-        PX.globalAlpha = 1;
-        PX.fillStyle = grad;
-        PX.fillRect(-rayLen, -0.5, rayLen * 2, 1);
-        PX.restore();
-      }
-      PX.restore();
+  const nebulas=Array.from({length:5},(_,i)=>{const r=mkR(i*199);return{x:200+r()*(WORLD-400),y:200+r()*(WORLD-400),rx:400+r()*600,ry:250+r()*400,hue:205+r()*45,a:.013+r()*.016,rot:r()*Math.PI};});
+  const bgS=Array.from({length:700},()=>({x:rr()*WORLD,y:rr()*WORLD,r:.1+rr()*.5,a:.04+rr()*.16,col:rr()<.25?'#d4c080':rr()<.5?'#a0a8c0':'#fff',ph:rr()*Math.PI*2,sp:.03+rr()*.1}));
 
-      // Soft outer glow
-      const glow = PX.createRadialGradient(cx, cy, 0, cx, cy, PW * 1.6);
-      glow.addColorStop(0, `rgba(255,255,255,${pulse * 0.18})`);
-      glow.addColorStop(1, 'rgba(255,255,255,0)');
-      PX.globalAlpha = 1;
-      PX.fillStyle = glow;
-      PX.beginPath();
-      PX.arc(cx, cy, PW * 1.6, 0, Math.PI * 2);
-      PX.fill();
+  // Participants — will load from chain, for now random
+  const cosmoParts=[];
+  const gp=gPts(0,8);
+  cosmoParts.push({x:WORLD/2,y:WORLD/2,type:'genesis',name:'Viktor',city:'Norilsk',constName:'Genesis Star',story:'The one who started counting',pts:gp,edges:gEdge(gp),ph:0,sp:.3,sz:24,isGenesis:true});
+  for(let i=1;i<220;i++){
+    const v=rr(),type=v<.003?'legendary':v<.1?'rare':'normal',n=4+Math.floor(rr()*6),pts=gPts(i*23+7,n);
+    cosmoParts.push({x:40+rr()*(WORLD-80),y:40+rr()*(WORLD-80),type,name:NAMES[Math.floor(rr()*NAMES.length)],city:CITIES[Math.floor(rr()*CITIES.length)],constName:type==='legendary'?CONSTS[Math.floor(rr()*CONSTS.length)]:type==='rare'?MYTHIC[Math.floor(rr()*MYTHIC.length)]:'',story:rr()<.3?`"Appeared when I was ${Math.floor(10+rr()*30)}"`:rr()<.4?'"with love"':'',pts,edges:gEdge(pts),ph:rr()*Math.PI*2,sp:.1+rr()*.35,sz:type==='legendary'?20:type==='rare'?15:7+rr()*8,br:.3+rr()*.7});
+  }
 
-      // Round bright core
-      PX.globalAlpha = pulse;
-      PX.fillStyle = 'white';
-      PX.beginPath();
-      PX.arc(cx, cy, PW * 0.35, 0, Math.PI * 2);
-      PX.fill();
-    } else if (p.data && p.data.isLegendary) {
-      // Legendary (real IAU) — bright white pulse with glow (1.5s cycle)
-      const pulse = 0.7 + 0.3 * Math.sin(pulseFrame / 1500 * Math.PI * 2 + i * 0.5);
-      // Outer glow
-      const glow = PX.createRadialGradient(cx, cy, 0, cx, cy, PW * 1.2);
-      glow.addColorStop(0, `rgba(255,255,255,${pulse * 0.4})`);
-      glow.addColorStop(1, 'rgba(255,255,255,0)');
-      PX.globalAlpha = 1;
-      PX.fillStyle = glow;
-      PX.fillRect(x - PW * 0.2, y - PH * 0.2, PW * 1.4, PH * 1.4);
-      // Core
-      PX.globalAlpha = pulse;
-      PX.fillStyle = 'white';
-      PX.fillRect(x + .5, y + .5, PW - 1, PH - 1);
-      // Sparkle dot
-      PX.globalAlpha = pulse;
-      PX.fillStyle = 'rgba(255,255,255,0.9)';
-      PX.fillRect(cx - .5, y, 1, 1);
-    } else if (p.data && p.data.isRare) {
-      // Rare (golden) — gold pulse with shimmer (2s cycle)
-      const pulse = 0.65 + 0.25 * Math.sin(pulseFrame / 2000 * Math.PI * 2 + i * 0.4);
-      const shimmer = 0.3 + 0.2 * Math.sin(pulseFrame / 800 * Math.PI * 2 + i);
-      // Gold glow
-      const glow = PX.createRadialGradient(cx, cy, 0, cx, cy, PW);
-      glow.addColorStop(0, `rgba(245,158,11,${shimmer})`);
-      glow.addColorStop(1, 'rgba(245,158,11,0)');
-      PX.globalAlpha = 1;
-      PX.fillStyle = glow;
-      PX.fillRect(x - PW * 0.1, y - PH * 0.1, PW * 1.2, PH * 1.2);
-      // Core
-      PX.globalAlpha = pulse;
-      PX.fillStyle = p.color;
-      PX.fillRect(x + .5, y + .5, PW - 1, PH - 1);
-    } else {
-      // Regular NFT constellation — medium purple pulse (3s cycle)
-      const pulse = 0.6 + 0.3 * Math.sin(pulseFrame / 3000 * Math.PI * 2 + i * 0.35);
-      PX.globalAlpha = pulse;
-      PX.fillStyle = p.color;
-      PX.fillRect(x + .5, y + .5, PW - 1, PH - 1);
-      // Small white dot marker
-      PX.globalAlpha = pulse * 0.8;
-      PX.fillStyle = 'rgba(255,255,255,.7)';
-      PX.fillRect(x + PW - 2, y, 2, 2);
-    }
+  // My star — set when user mints
+  let myStar=null;
+
+  // Add star to cosmos when user counts in
+  window.addCosmosstar = function(type,constName,story){
+    const pts=gPts(Date.now(),5+Math.floor(Math.random()*5));
+    myStar={x:100+Math.random()*(WORLD-200),y:100+Math.random()*(WORLD-200),type:type||'normal',name:'You',city:'',constName:constName||'',story:story||'',pts,edges:gEdge(pts),ph:Math.random()*Math.PI*2,sp:.2,sz:15,isMe:true};
+    cosmoParts.push(myStar);
+  };
+
+  let vx=WORLD/2-200,vy=WORLD/2-160,zoom=.5;
+  let drag=false,lx=0,ly=0,hlMe=false,hlT=null;
+  function w2s(wx,wy){return[(wx-vx)*zoom,(wy-vy)*zoom];}
+  function s2w(sx,sy){return[sx/zoom+vx,sy/zoom+vy];}
+  function zTo(z,cx=W/2,cy=H/2){const[wx,wy]=s2w(cx,cy);zoom=Math.max(.06,Math.min(14,z));vx=wx-cx/zoom;vy=wy-cy/zoom;}
+  function doReset(){zoom=.5;vx=WORLD/2-W/zoom/2;vy=WORLD/2-H/zoom/2;}
+  function flyMe(){
+    const target=myStar||cosmoParts[0];
+    const tz=5,sv=vx,svy=vy,sz=zoom,ev=target.x-W/tz/2,evy=target.y-H/tz/2,t0=performance.now(),dur=900;
+    function go(now){const p=Math.min(1,(now-t0)/dur),e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;zoom=sz+(tz-sz)*e;vx=sv+(ev-sv)*e;vy=svy+(evy-svy)*e;if(p<1)requestAnimationFrame(go);else{hlMe=true;if(hlT)clearTimeout(hlT);hlT=setTimeout(()=>hlMe=false,3500);}}
+    requestAnimationFrame(go);
+  }
+
+  // Fullscreen toggle
+  const expBtn=document.getElementById('cosmosExp');
+  const cosmosUI=document.getElementById('cosmosUI');
+  function openFull(){
+    isFull=true;
+    wrap.style.cssText='position:fixed;top:0;left:0;width:100vw;height:100vh;border-radius:0;z-index:9999;background:#040b18';
+    cosmosUI.style.display='flex';
+    expBtn.style.display='none';
+    setTimeout(resize,50);
+  }
+  function closeFull(){
+    isFull=false;
+    wrap.style.cssText='position:relative;border-radius:12px;overflow:hidden;background:#040b18;height:160px';
+    cosmosUI.style.display='none';
+    expBtn.style.display='flex';
+    setTimeout(resize,50);
+  }
+  if(expBtn) expBtn.onclick=openFull;
+  const closeBtn=document.getElementById('cosmosClose');
+  if(closeBtn) closeBtn.onclick=closeFull;
+  const plusBtn=document.getElementById('cosmosPlus');
+  if(plusBtn) plusBtn.onclick=()=>zTo(zoom*1.6);
+  const minusBtn=document.getElementById('cosmosMinus');
+  if(minusBtn) minusBtn.onclick=()=>zTo(zoom*.62);
+  const resetBtn2=document.getElementById('cosmosReset');
+  if(resetBtn2) resetBtn2.onclick=doReset;
+  const meBtn=document.getElementById('cosmosMe');
+  if(meBtn) meBtn.onclick=flyMe;
+
+  cv.addEventListener('mousedown',e=>{drag=true;const r=cv.getBoundingClientRect();lx=e.clientX-r.left;ly=e.clientY-r.top;});
+  cv.addEventListener('mousemove',e=>{if(!drag)return;const r=cv.getBoundingClientRect();const nx=e.clientX-r.left,ny=e.clientY-r.top;vx-=(nx-lx)/zoom;vy-=(ny-ly)/zoom;lx=nx;ly=ny;});
+  cv.addEventListener('mouseup',()=>drag=false);
+  cv.addEventListener('wheel',e=>{e.preventDefault();const r=cv.getBoundingClientRect();zTo(zoom*(e.deltaY>0?.88:1.14),e.clientX-r.left,e.clientY-r.top);},{passive:false});
+  cv.addEventListener('touchstart',e=>{if(e.touches.length===1){drag=true;const r=cv.getBoundingClientRect();lx=e.touches[0].clientX-r.left;ly=e.touches[0].clientY-r.top;}},{passive:true});
+  cv.addEventListener('touchmove',e=>{if(!drag||e.touches.length!==1)return;const r=cv.getBoundingClientRect();const nx=e.touches[0].clientX-r.left,ny=e.touches[0].clientY-r.top;vx-=(nx-lx)/zoom;vy-=(ny-ly)/zoom;lx=nx;ly=ny;},{passive:true});
+  cv.addEventListener('touchend',()=>drag=false);
+  cv.addEventListener('click',e=>{
+    const r=cv.getBoundingClientRect();const[wx,wy]=s2w(e.clientX-r.left,e.clientY-r.top);
+    let hit=null,md=Infinity;
+    cosmoParts.forEach(p=>{const dx=p.x-wx,dy=p.y-wy,d=dx*dx+dy*dy;if(d<(35/zoom)**2&&d<md){md=d;hit=p;}});
+    const tip=document.getElementById('cosmosTip');
+    if(hit){const tl=hit.isMe?'✦ Your star':hit.isGenesis?'✦ Genesis':hit.type==='legendary'?'★ Legendary':hit.type==='rare'?'✦ Rare':'';tip.style.display='block';tip.innerHTML=`<b style="color:#fff">${hit.name}</b>${hit.city?` <span style="color:#6b7280">${hit.city}</span>`:''}${tl?`<br><span style="color:#a78bfa">${tl}${hit.constName?' · '+hit.constName:''}</span>`:''}${hit.story?`<br><i style="color:#4b5563">${hit.story}</i>`:''}`;}
+    else if(tip) tip.style.display='none';
   });
 
-  PX.globalAlpha = 1;
-  pulseRAF = requestAnimationFrame(drawPixels);
-}
-
-// Pulse loop is started at the bottom of the script after all variables are defined
-
-function addPixelToCanvas(color, isNFT, data) {
-  const empty = [];
-  pixels.forEach((p, i) => { if (!p) empty.push(i); });
-  if (!empty.length) return;
-  const idx = empty[Math.floor(Math.random() * empty.length)];
-  pixels[idx] = {color, op: 1, isNFT, data: data || null};
-  // Flash animation on arrival
-  const x = (idx % COLS) * PW, y = Math.floor(idx / COLS) * PH;
-  let f = 0;
-  const fl = setInterval(() => {
-    f++;
-    PX.globalAlpha = f % 2 === 0 ? .2 : 1;
-    PX.fillStyle = color;
-    PX.fillRect(x + .5, y + .5, PW - 1, PH - 1);
-    PX.globalAlpha = 1;
-    if (f > 7) clearInterval(fl);
-  }, 110);
-}
-
-/* ── TAP PIXEL TO EXPLORE ── */
-function openPixelModal(p){
-  const m = document.getElementById('modalPixel');
-  const title = document.getElementById('modalPixelTitle');
-  const body = document.getElementById('modalPixelBody');
-  if (p.isNFT && p.data) {
-    title.textContent = '✦ ' + (p.data.constName || 'Constellation');
-    body.innerHTML =
-      (p.data.isRare ? '<div class="modal-nft-title rare">★ Rare constellation</div>' : '') +
-      '<div class="modal-nft-story">' + (p.data.story ? '"' + p.data.story.replace(/</g,'&lt;') + '"' : 'No story added yet.') + '</div>';
-  } else {
-    title.textContent = '⭐ Counted';
-    body.innerHTML = '<div class="modal-nft-story">A real person, verified on-chain. No photo or story shared yet.</div>';
+  function drawStar(x,y,r,col,a,p,spk){
+    ctx.globalAlpha=.03*p*a;const h=ctx.createRadialGradient(x,y,0,x,y,r*7);h.addColorStop(0,col);h.addColorStop(1,'transparent');ctx.fillStyle=h;ctx.beginPath();ctx.arc(x,y,r*7,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=.15*p*a;const g=ctx.createRadialGradient(x,y,0,x,y,r*2.5);g.addColorStop(0,col);g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r*2.5,0,Math.PI*2);ctx.fill();
+    if(spk){for(let i=0;i<4;i++){ctx.save();ctx.translate(x,y);ctx.rotate(i*Math.PI/4);const sl=r*5.5;const sg=ctx.createLinearGradient(-sl,0,sl,0);sg.addColorStop(0,'transparent');sg.addColorStop(.4,col+'18');sg.addColorStop(.5,col+'48');sg.addColorStop(.6,col+'18');sg.addColorStop(1,'transparent');ctx.globalAlpha=p*a*.85;ctx.fillStyle=sg;ctx.fillRect(-sl,-r*.05,sl*2,r*.1);ctx.restore();}}
+    ctx.globalAlpha=p*a;const c=ctx.createRadialGradient(x,y,0,x,y,r);c.addColorStop(0,'#fff');c.addColorStop(.25,col);c.addColorStop(1,'transparent');ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
   }
-  openModal('modalPixel');
+
+  function frame(){
+    const t=performance.now()/1000;
+    ctx.fillStyle='#040b18';ctx.fillRect(0,0,W,H);
+    nebulas.forEach(n=>{const[sx,sy]=w2s(n.x,n.y);const rx=n.rx*zoom,ry=n.ry*zoom;if(sx+rx<0||sx-rx>W||sy+ry<0||sy-ry>H)return;ctx.save();ctx.translate(sx,sy);ctx.rotate(n.rot);ctx.scale(1,ry/rx);const g=ctx.createRadialGradient(0,0,0,0,0,rx);g.addColorStop(0,`hsla(${n.hue},45%,16%,${n.a})`);g.addColorStop(.5,`hsla(${n.hue},35%,10%,${n.a*.5})`);g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,rx,0,Math.PI*2);ctx.fill();ctx.restore();});
+    bgS.forEach(s=>{const[sx,sy]=w2s(s.x,s.y);if(sx<0||sx>W||sy<0||sy>H)return;ctx.globalAlpha=s.a*(.5+.5*Math.sin(t*s.sp+s.ph));ctx.fillStyle=s.col;ctx.beginPath();ctx.arc(sx,sy,s.r*Math.max(.25,zoom*.2),0,Math.PI*2);ctx.fill();});
+    ctx.globalAlpha=1;
+    cosmoParts.forEach(p=>{
+      const[sx,sy]=w2s(p.x,p.y);if(sx<-100||sx>W+100||sy<-100||sy>H+100)return;
+      const sz=p.sz*zoom,pulse=.6+.4*Math.abs(Math.sin(t*p.sp+p.ph)),isMe=p.isMe,isGen=p.isGenesis;
+      const col=isMe?'#c084fc':isGen?'#fff':p.type==='legendary'?'#f0ead8':p.type==='rare'?'#e8c050':`hsl(${42+Math.sin(p.ph)*12},${50+(p.br||.5)*30}%,${50+(p.br||.5)*20}%)`;
+      const a=(p.type==='normal'&&!isMe&&!isGen)?(p.br||.5)*.6:.95;
+      const bright=p.type!=='normal'||isMe||isGen;
+      if((isMe&&hlMe)||isGen&&hlMe){const rp=.5+.5*Math.abs(Math.sin(t*3));ctx.globalAlpha=rp*.4;ctx.strokeStyle=isMe?'#c084fc':'white';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(sx,sy,sz*.7+8,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=rp*.08;ctx.fillStyle=isMe?'#c084fc':'white';ctx.beginPath();ctx.arc(sx,sy,sz*.7+8,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;}
+      if(sz>18){p.edges.forEach(([ea,eb])=>{const ax=sx+p.pts[ea].x*sz*.5,ay=sy+p.pts[ea].y*sz*.5,bx=sx+p.pts[eb].x*sz*.5,by=sy+p.pts[eb].y*sz*.5;ctx.globalAlpha=.28*pulse*a;ctx.strokeStyle=isMe?'rgba(192,132,252,.6)':p.type==='normal'?'rgba(200,175,90,.4)':'rgba(220,195,100,.65)';ctx.lineWidth=Math.max(.5,sz*.012);ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();});p.pts.forEach((pt,i)=>{drawStar(sx+pt.x*sz*.5,sy+pt.y*sz*.5,Math.max(.7,sz*(i===0?.1:.065)),col,a*(i===0?1:.75),pulse,bright&&i===0);});}
+      else drawStar(sx,sy,Math.max(.5,sz*.45),col,a,pulse,bright);
+      if(isMe&&sz>16){ctx.globalAlpha=.75;ctx.fillStyle='#c084fc';ctx.font=`bold ${Math.min(11,sz*.22)}px system-ui`;ctx.textAlign='center';ctx.fillText('You ✦',sx,sy+sz*.75+8);}
+      ctx.globalAlpha=1;
+    });
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+// addPixelToCanvas — теперь добавляет звезду в космический холст
+function addPixelToCanvas(color, isNFT, data) {
+  if (isNFT && window.addCosmosstar) {
+    const type = data && data.isLegendary ? 'legendary' : data && data.isRare ? 'rare' : 'normal';
+    window.addCosmosstar(type, data && data.constName, data && data.story);
+  }
 }
-PC.addEventListener('click', (e) => {
-  const rect = PC.getBoundingClientRect();
-  const scaleX = PC.width / rect.width;
-  const scaleY = PC.height / rect.height;
-  const cx = (e.clientX - rect.left) * scaleX;
-  const cy = (e.clientY - rect.top) * scaleY;
-  const col = Math.floor(cx / PW);
-  const row = Math.floor(cy / PH);
-  const idx = row * COLS + col;
-  const p = pixels[idx];
-  if (p) openPixelModal(p);
-});
+/* ── LIVE COUNTER FROM BLOCKCHAIN ── */
 
 /* ── LIVE COUNTER FROM BLOCKCHAIN ── */
 let count = 0, photoCount = 0, connected = false, tickTimer = null;
@@ -2021,7 +2005,7 @@ pixels[genesisIdx] = {
   }
 };
 
-requestAnimationFrame(drawPixels);
+// Canvas pulse animation handled inside cosmic canvas IIFE above
 </script>
 </body>
 </html>
