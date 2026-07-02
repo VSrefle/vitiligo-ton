@@ -1181,10 +1181,13 @@ tonConnectUI.onStatusChange(wallet => {
 });
 document.getElementById('walletDisc').addEventListener('click',()=>tonConnectUI.disconnect());
 
-/* ── TACT MESSAGE ENCODING (CountMe: name/city/country as String?) ── */
-// TODO: replace 4071515321 with the real opcode from:
-// grep -A3 '"name": "CountMe"' contract/build/VilitigoCounter_VilitigoCounter.abi
-const COUNTME_OPCODE = 4071515321;
+/* ── TACT MESSAGE ENCODING для VilitigoCounterFinal ── */
+// Опкоды будут получены из ABI после компиляции контракта.
+// После деплоя запустить:
+// node -e "const fs=require('fs');const abi=JSON.parse(fs.readFileSync('./build/VilitigoCounter_VilitigoCounterFinal.abi','utf8'));const r=abi.types.find(t=>t.name==='Register');const m=abi.types.find(t=>t.name==='MintConstellation');console.log('Register:',r?.header,'MintConstellation:',m?.header);"
+// И заменить 0 ниже на реальные опкоды:
+const REGISTER_OPCODE = 0;       // TODO: заменить после компиляции
+const MINT_OPCODE = 0;           // TODO: заменить после компиляции
 
 function bytesToBase64(bytes) {
   let binary = '';
@@ -1192,39 +1195,53 @@ function bytesToBase64(bytes) {
   return btoa(binary);
 }
 
-function buildCountMePayload(name, city, country) {
-  const { beginCell } = TonCore; // loaded via CDN, see <head> script tag
-  let b = beginCell().storeUint(COUNTME_OPCODE, 32);
+function storeString(builder, val) {
+  const { beginCell } = TonCore;
+  if (val && val.trim().length > 0) {
+    const strCell = beginCell().storeStringTail(val.trim()).endCell();
+    return builder.storeBit(1).storeRef(strCell);
+  }
+  return builder.storeBit(0);
+}
 
-  [name, city, country].forEach(val => {
-    if (val && val.trim().length > 0) {
-      b = b.storeBit(1);
-      const strCell = beginCell().storeStringTail(val.trim()).endCell();
-      b = b.storeRef(strCell);
-    } else {
-      b = b.storeBit(0);
-    }
-  });
+// Register: queryId(uint64) + name(String?) + country(String?) + city(String?) + age(uint8)
+function buildRegisterPayload(name, country, city, age) {
+  const { beginCell } = TonCore;
+  let b = beginCell()
+    .storeUint(REGISTER_OPCODE, 32)
+    .storeUint(0, 64); // queryId
+  b = storeString(b, name);
+  b = storeString(b, country);
+  b = storeString(b, city);
+  b = b.storeUint(age || 0, 8);
+  return bytesToBase64(b.endCell().toBoc());
+}
 
-  const cell = b.endCell();
-  const boc = cell.toBoc();
-  return bytesToBase64(boc);
+// MintConstellation: queryId(uint64) + constName(String?) + isRare(bool) + isLegendary(bool)
+//                  + discoveryNumber(uint8) + story(String?) + pixelColor(String?)
+function buildMintPayload(constName, isRare, isLegendary, discoveryNumber, story, pixelColor) {
+  const { beginCell } = TonCore;
+  let b = beginCell()
+    .storeUint(MINT_OPCODE, 32)
+    .storeUint(0, 64) // queryId
+  b = storeString(b, constName);
+  b = b.storeBit(isRare ? 1 : 0);
+  b = b.storeBit(isLegendary ? 1 : 0);
+  b = b.storeUint(discoveryNumber || 0, 8);
+  b = storeString(b, story);
+  b = storeString(b, pixelColor);
+  return bytesToBase64(b.endCell().toBoc());
 }
 
 /* ── SEND TX ── */
-async function sendTon(statusId, onSuccess) {
+async function sendTon(statusId, onSuccess, payload) {
   const el=document.getElementById(statusId);
   if(!tonConnectUI.connected){tonConnectUI.openModal();return;}
   el.className='tx-status pending'; el.textContent='⏳ Waiting for confirmation…';
   try {
-    const name = document.getElementById('fieldName')?.value || null;
-    const city = document.getElementById('fieldCity')?.value || null;
-    const country = document.getElementById('fieldCountry')?.value || null;
-    const payload = buildCountMePayload(name, city, country);
-
     await tonConnectUI.sendTransaction({
       validUntil:Math.floor(Date.now()/1000)+300,
-      messages:[{address:CONTRACT_ADDRESS,amount:TON_AMOUNT,payload}]
+      messages:[{address:CONTRACT_ADDRESS,amount:TON_AMOUNT,payload: payload || ''}]
     });
     el.className='tx-status success'; el.textContent='✓ Transaction confirmed!';
     if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
@@ -1287,6 +1304,11 @@ document.getElementById('modalMintClose').addEventListener('click',()=>closeModa
 let counted=false;
 document.getElementById('modalCountConfirm').addEventListener('click',()=>{
   if(!connected){tonConnectUI.openModal();return;}
+  const name = document.getElementById('fieldName')?.value || '';
+  const country = document.getElementById('fieldCountry')?.value || '';
+  const city = document.getElementById('fieldCity')?.value || '';
+  const age = parseInt(document.getElementById('fieldAge')?.value || '0');
+  const payload = buildRegisterPayload(name, country, city, age);
   sendTon('txCount',()=>{
     closeModal('modalCount');
     if(!counted){
@@ -1299,7 +1321,7 @@ document.getElementById('modalCountConfirm').addEventListener('click',()=>{
       addPixelToCanvas('#9333ea',false,null);
       showToast('Your star is on the canvas ✦');
     }
-  });
+  }, payload);
 });
 
 document.querySelectorAll('.modal-backdrop').forEach(bd=>{
@@ -1694,6 +1716,14 @@ mintBtn.addEventListener('click',()=>{
 let nftCount=0;
 let myNfts = [];
 document.getElementById('modalMintConfirm').addEventListener('click',()=>{
+  if(!connected){tonConnectUI.openModal();return;}
+  const constName = currentConst ? currentConst.name.split('·')[0].trim() : '';
+  const isRare = currentConst ? (currentConst.rare || false) : false;
+  const isLegendary = currentConst ? (currentConst.isRealDiscovery || false) : false;
+  const discoveryNumber = currentConst ? (currentConst.discoveryNumber || 0) : 0;
+  const story = lastStoryText || '';
+  const pixelColor = nftPixelColor || '#9333ea';
+  const payload = buildMintPayload(constName, isRare, isLegendary, discoveryNumber, story, pixelColor);
   sendTon('txMint',()=>{
     closeModal('modalMint');
     nftCount++;
@@ -1749,7 +1779,7 @@ document.getElementById('modalMintConfirm').addEventListener('click',()=>{
         if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
       },350);
     },900);
-  });
+  }, payload);
 });
 
 function openNftDetail(nftData){
