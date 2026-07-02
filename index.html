@@ -518,7 +518,6 @@ html,body{
   <div class="home">
     <div class="topbar">
       <span class="logo">vitiligo.ton</span>
-      <button onclick="openModal('modalHelp')" style="background:none;border:1px solid rgba(147,51,234,.3);color:#a78bfa;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">?</button>
       <div id="ton-connect-btn"></div>
       <div class="wallet-chip" id="walletChip">
         <div class="wdot"></div>
@@ -725,10 +724,12 @@ html,body{
     </div>
     <button class="btn-main" id="saveBtn" style="margin-top:20px;margin-bottom:16px">Save profile</button>
 
-    <a href="https://t.me/vitiligo_ton" target="_blank" style="display:block;text-align:center;padding:14px;border:1px solid rgba(147,51,234,.3);border-radius:12px;color:#a78bfa;font-size:14px;text-decoration:none;margin-bottom:12px">
+    <a href="https://t.me/vitiligo_ton" target="_blank" style="display:block;text-align:center;padding:14px;border:1px solid rgba(147,51,234,.3);border-radius:12px;color:#a78bfa;font-size:14px;text-decoration:none;margin-bottom:8px">
       💬 Write to the team
     </a>
-    <div style="text-align:center;font-size:11px;color:#6b7280;margin-bottom:32px">Ideas, feedback, questions — we read everything</div>
+    <button onclick="openModal('modalHelp')" style="display:block;width:100%;text-align:center;padding:14px;border:1px solid rgba(147,51,234,.2);border-radius:12px;color:#6b7280;font-size:14px;background:none;cursor:pointer;margin-bottom:32px">
+      ? How it works
+    </button>
   </div>
 </div>
 
@@ -935,142 +936,181 @@ function drawSF() {
 }
 drawSF();
 
-/* ── COSMIC CANVAS ── */
-(function(){
-  const cv=document.getElementById('cosmosCanvas');
-  if(!cv) return;
-  const ctx=cv.getContext('2d');
-  const DPR=window.devicePixelRatio||1;
-  const wrap=cv.parentElement;
-  let W,H,isFull=false;
+/* ── SIMPLE STAR CANVAS ── */
+const cosmosCV = document.getElementById('cosmosCanvas');
+if (cosmosCV) {
+  const cosmosCtx = cosmosCV.getContext('2d');
+  const DPR = window.devicePixelRatio || 1;
+  let cW, cH;
+  const cosmosParts = [];
 
-  function resize(){
-    W=wrap.clientWidth;H=wrap.clientHeight;
-    cv.width=W*DPR;cv.height=H*DPR;
-    ctx.setTransform(DPR,0,0,DPR,0,0);
+  function cosmosResize() {
+    const wrap = cosmosCV.parentElement;
+    cW = wrap.clientWidth; cH = wrap.clientHeight;
+    cosmosCV.width = cW * DPR; cosmosCV.height = cH * DPR;
+    cosmosCV.style.width = cW + 'px'; cosmosCV.style.height = cH + 'px';
+    cosmosCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
   }
-  resize();
+  cosmosResize();
 
-  function mkR(s){let r=s|0;return()=>{r=(Math.imul(r,1664525)+1013904223)|0;return(r>>>0)/4294967296};}
-  const WORLD=3000,rr=mkR(42);
-  const NAMES=['Aisha','Min','Sara','Carlos','Fatima','Yuki','Ivan','Priya','Lucas','Anna','Omar'];
-  const CITIES=['Moscow','Tokyo','Cairo','São Paulo','Mumbai','Berlin','Seoul','Norilsk','Paris'];
-  const CONSTS=['Orion','Cassiopeia','Lyra','Cygnus','Perseus','Leo','Scorpius'];
-  const MYTHIC=['Velin · The Wanderer','Sarath · The Bridge','Korel · The Witness'];
+  // Generate background stars
+  const bgStars = Array.from({length: 120}, () => ({
+    x: Math.random() * 2000, y: Math.random() * 2000,
+    r: 0.3 + Math.random() * 1.2,
+    a: 0.1 + Math.random() * 0.4,
+    ph: Math.random() * Math.PI * 2,
+    sp: 0.3 + Math.random() * 0.7
+  }));
 
-  function gPts(seed,n){const r=mkR(seed);return Array.from({length:n},()=>{const a=r()*Math.PI*2,d=.2+r()*.8;return{x:Math.cos(a)*d,y:Math.sin(a)*d};});}
-  function gEdge(pts){const e=[],u=new Set();for(let i=0;i<pts.length;i++){let b=-1,m=Infinity;for(let j=0;j<pts.length;j++){if(i===j)continue;const k=`${Math.min(i,j)}-${Math.max(i,j)}`;if(u.has(k))continue;const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=dx*dx+dy*dy;if(d<m){m=d;b=j;}}if(b>=0){const k=`${Math.min(i,b)}-${Math.max(i,b)}`;if(!u.has(k)){u.add(k);e.push([i,b]);}}}return e;}
-
-  const nebulas=Array.from({length:5},(_,i)=>{const r=mkR(i*199);return{x:200+r()*(WORLD-400),y:200+r()*(WORLD-400),rx:400+r()*600,ry:250+r()*400,hue:205+r()*45,a:.013+r()*.016,rot:r()*Math.PI};});
-  const bgS=Array.from({length:700},()=>({x:rr()*WORLD,y:rr()*WORLD,r:.1+rr()*.5,a:.04+rr()*.16,col:rr()<.25?'#d4c080':rr()<.5?'#a0a8c0':'#fff',ph:rr()*Math.PI*2,sp:.03+rr()*.1}));
-
-  // Participants — will load from chain, for now random
-  const cosmoParts=[];
-  const gp=gPts(0,8);
-  cosmoParts.push({x:WORLD/2,y:WORLD/2,type:'genesis',name:'Viktor',city:'Norilsk',constName:'Genesis Star',story:'The one who started counting',pts:gp,edges:gEdge(gp),ph:0,sp:.3,sz:24,isGenesis:true});
-  for(let i=1;i<220;i++){
-    const v=rr(),type=v<.003?'legendary':v<.1?'rare':'normal',n=4+Math.floor(rr()*6),pts=gPts(i*23+7,n);
-    cosmoParts.push({x:40+rr()*(WORLD-80),y:40+rr()*(WORLD-80),type,name:NAMES[Math.floor(rr()*NAMES.length)],city:CITIES[Math.floor(rr()*CITIES.length)],constName:type==='legendary'?CONSTS[Math.floor(rr()*CONSTS.length)]:type==='rare'?MYTHIC[Math.floor(rr()*MYTHIC.length)]:'',story:rr()<.3?`"Appeared when I was ${Math.floor(10+rr()*30)}"`:rr()<.4?'"with love"':'',pts,edges:gEdge(pts),ph:rr()*Math.PI*2,sp:.1+rr()*.35,sz:type==='legendary'?20:type==='rare'?15:7+rr()*8,br:.3+rr()*.7});
-  }
-
-  // My star — set when user mints
-  let myStar=null;
-
-  // Add star to cosmos when user counts in
-  window.addCosmosstar = function(type,constName,story){
-    const pts=gPts(Date.now(),5+Math.floor(Math.random()*5));
-    myStar={x:100+Math.random()*(WORLD-200),y:100+Math.random()*(WORLD-200),type:type||'normal',name:'You',city:'',constName:constName||'',story:story||'',pts,edges:gEdge(pts),ph:Math.random()*Math.PI*2,sp:.2,sz:15,isMe:true};
-    cosmoParts.push(myStar);
-  };
-
-  let vx=WORLD/2-200,vy=WORLD/2-160,zoom=.5;
-  let drag=false,lx=0,ly=0,hlMe=false,hlT=null;
-  function w2s(wx,wy){return[(wx-vx)*zoom,(wy-vy)*zoom];}
-  function s2w(sx,sy){return[sx/zoom+vx,sy/zoom+vy];}
-  function zTo(z,cx=W/2,cy=H/2){const[wx,wy]=s2w(cx,cy);zoom=Math.max(.06,Math.min(14,z));vx=wx-cx/zoom;vy=wy-cy/zoom;}
-  function doReset(){zoom=.5;vx=WORLD/2-W/zoom/2;vy=WORLD/2-H/zoom/2;}
-  function flyMe(){
-    const target=myStar||cosmoParts[0];
-    const tz=5,sv=vx,svy=vy,sz=zoom,ev=target.x-W/tz/2,evy=target.y-H/tz/2,t0=performance.now(),dur=900;
-    function go(now){const p=Math.min(1,(now-t0)/dur),e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;zoom=sz+(tz-sz)*e;vx=sv+(ev-sv)*e;vy=svy+(evy-svy)*e;if(p<1)requestAnimationFrame(go);else{hlMe=true;if(hlT)clearTimeout(hlT);hlT=setTimeout(()=>hlMe=false,3500);}}
-    requestAnimationFrame(go);
-  }
-
-  // Fullscreen toggle
-  const expBtn=document.getElementById('cosmosExp');
-  const cosmosUI=document.getElementById('cosmosUI');
-  function openFull(){
-    isFull=true;
-    wrap.style.cssText='position:fixed;top:0;left:0;width:100vw;height:100vh;border-radius:0;z-index:9999;background:#040b18';
-    cosmosUI.style.display='flex';
-    expBtn.style.display='none';
-    setTimeout(resize,50);
-  }
-  function closeFull(){
-    isFull=false;
-    wrap.style.cssText='position:relative;border-radius:12px;overflow:hidden;background:#040b18;height:160px';
-    cosmosUI.style.display='none';
-    expBtn.style.display='flex';
-    setTimeout(resize,50);
-  }
-  if(expBtn) expBtn.onclick=openFull;
-  const closeBtn=document.getElementById('cosmosClose');
-  if(closeBtn) closeBtn.onclick=closeFull;
-  const plusBtn=document.getElementById('cosmosPlus');
-  if(plusBtn) plusBtn.onclick=()=>zTo(zoom*1.6);
-  const minusBtn=document.getElementById('cosmosMinus');
-  if(minusBtn) minusBtn.onclick=()=>zTo(zoom*.62);
-  const resetBtn2=document.getElementById('cosmosReset');
-  if(resetBtn2) resetBtn2.onclick=doReset;
-  const meBtn=document.getElementById('cosmosMe');
-  if(meBtn) meBtn.onclick=flyMe;
-
-  cv.addEventListener('mousedown',e=>{drag=true;const r=cv.getBoundingClientRect();lx=e.clientX-r.left;ly=e.clientY-r.top;});
-  cv.addEventListener('mousemove',e=>{if(!drag)return;const r=cv.getBoundingClientRect();const nx=e.clientX-r.left,ny=e.clientY-r.top;vx-=(nx-lx)/zoom;vy-=(ny-ly)/zoom;lx=nx;ly=ny;});
-  cv.addEventListener('mouseup',()=>drag=false);
-  cv.addEventListener('wheel',e=>{e.preventDefault();const r=cv.getBoundingClientRect();zTo(zoom*(e.deltaY>0?.88:1.14),e.clientX-r.left,e.clientY-r.top);},{passive:false});
-  cv.addEventListener('touchstart',e=>{if(e.touches.length===1){drag=true;const r=cv.getBoundingClientRect();lx=e.touches[0].clientX-r.left;ly=e.touches[0].clientY-r.top;}},{passive:true});
-  cv.addEventListener('touchmove',e=>{if(!drag||e.touches.length!==1)return;const r=cv.getBoundingClientRect();const nx=e.touches[0].clientX-r.left,ny=e.touches[0].clientY-r.top;vx-=(nx-lx)/zoom;vy-=(ny-ly)/zoom;lx=nx;ly=ny;},{passive:true});
-  cv.addEventListener('touchend',()=>drag=false);
-  cv.addEventListener('click',e=>{
-    const r=cv.getBoundingClientRect();const[wx,wy]=s2w(e.clientX-r.left,e.clientY-r.top);
-    let hit=null,md=Infinity;
-    cosmoParts.forEach(p=>{const dx=p.x-wx,dy=p.y-wy,d=dx*dx+dy*dy;if(d<(35/zoom)**2&&d<md){md=d;hit=p;}});
-    const tip=document.getElementById('cosmosTip');
-    if(hit){const tl=hit.isMe?'✦ Your star':hit.isGenesis?'✦ Genesis':hit.type==='legendary'?'★ Legendary':hit.type==='rare'?'✦ Rare':'';tip.style.display='block';tip.innerHTML=`<b style="color:#fff">${hit.name}</b>${hit.city?` <span style="color:#6b7280">${hit.city}</span>`:''}${tl?`<br><span style="color:#a78bfa">${tl}${hit.constName?' · '+hit.constName:''}</span>`:''}${hit.story?`<br><i style="color:#4b5563">${hit.story}</i>`:''}`;}
-    else if(tip) tip.style.display='none';
+  // Genesis star in center
+  cosmosParts.push({
+    x: 1000, y: 1000, type: 'genesis',
+    ph: 0, sp: 0.4, sz: 20, isGenesis: true
   });
 
-  function drawStar(x,y,r,col,a,p,spk){
-    ctx.globalAlpha=.03*p*a;const h=ctx.createRadialGradient(x,y,0,x,y,r*7);h.addColorStop(0,col);h.addColorStop(1,'transparent');ctx.fillStyle=h;ctx.beginPath();ctx.arc(x,y,r*7,0,Math.PI*2);ctx.fill();
-    ctx.globalAlpha=.15*p*a;const g=ctx.createRadialGradient(x,y,0,x,y,r*2.5);g.addColorStop(0,col);g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r*2.5,0,Math.PI*2);ctx.fill();
-    if(spk){for(let i=0;i<4;i++){ctx.save();ctx.translate(x,y);ctx.rotate(i*Math.PI/4);const sl=r*5.5;const sg=ctx.createLinearGradient(-sl,0,sl,0);sg.addColorStop(0,'transparent');sg.addColorStop(.4,col+'18');sg.addColorStop(.5,col+'48');sg.addColorStop(.6,col+'18');sg.addColorStop(1,'transparent');ctx.globalAlpha=p*a*.85;ctx.fillStyle=sg;ctx.fillRect(-sl,-r*.05,sl*2,r*.1);ctx.restore();}}
-    ctx.globalAlpha=p*a;const c=ctx.createRadialGradient(x,y,0,x,y,r);c.addColorStop(0,'#fff');c.addColorStop(.25,col);c.addColorStop(1,'transparent');ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+  let vx = 900, vy = 900, zoom = 0.15;
+
+  function w2s(wx, wy) { return [(wx - vx) * zoom, (wy - vy) * zoom]; }
+  function s2w(sx, sy) { return [sx / zoom + vx, sy / zoom + vy]; }
+  function zTo(z, cx, cy) {
+    cx = cx || cW/2; cy = cy || cH/2;
+    const [wx, wy] = s2w(cx, cy);
+    zoom = Math.max(0.06, Math.min(14, z));
+    vx = wx - cx/zoom; vy = wy - cy/zoom;
   }
 
-  function frame(){
-    const t=performance.now()/1000;
-    ctx.fillStyle='#040b18';ctx.fillRect(0,0,W,H);
-    nebulas.forEach(n=>{const[sx,sy]=w2s(n.x,n.y);const rx=n.rx*zoom,ry=n.ry*zoom;if(sx+rx<0||sx-rx>W||sy+ry<0||sy-ry>H)return;ctx.save();ctx.translate(sx,sy);ctx.rotate(n.rot);ctx.scale(1,ry/rx);const g=ctx.createRadialGradient(0,0,0,0,0,rx);g.addColorStop(0,`hsla(${n.hue},45%,16%,${n.a})`);g.addColorStop(.5,`hsla(${n.hue},35%,10%,${n.a*.5})`);g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,rx,0,Math.PI*2);ctx.fill();ctx.restore();});
-    bgS.forEach(s=>{const[sx,sy]=w2s(s.x,s.y);if(sx<0||sx>W||sy<0||sy>H)return;ctx.globalAlpha=s.a*(.5+.5*Math.sin(t*s.sp+s.ph));ctx.fillStyle=s.col;ctx.beginPath();ctx.arc(sx,sy,s.r*Math.max(.25,zoom*.2),0,Math.PI*2);ctx.fill();});
-    ctx.globalAlpha=1;
-    cosmoParts.forEach(p=>{
-      const[sx,sy]=w2s(p.x,p.y);if(sx<-100||sx>W+100||sy<-100||sy>H+100)return;
-      const sz=p.sz*zoom,pulse=.6+.4*Math.abs(Math.sin(t*p.sp+p.ph)),isMe=p.isMe,isGen=p.isGenesis;
-      const col=isMe?'#c084fc':isGen?'#fff':p.type==='legendary'?'#f0ead8':p.type==='rare'?'#e8c050':`hsl(${42+Math.sin(p.ph)*12},${50+(p.br||.5)*30}%,${50+(p.br||.5)*20}%)`;
-      const a=(p.type==='normal'&&!isMe&&!isGen)?(p.br||.5)*.6:.95;
-      const bright=p.type!=='normal'||isMe||isGen;
-      if((isMe&&hlMe)||isGen&&hlMe){const rp=.5+.5*Math.abs(Math.sin(t*3));ctx.globalAlpha=rp*.4;ctx.strokeStyle=isMe?'#c084fc':'white';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(sx,sy,sz*.7+8,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=rp*.08;ctx.fillStyle=isMe?'#c084fc':'white';ctx.beginPath();ctx.arc(sx,sy,sz*.7+8,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;}
-      if(sz>18){p.edges.forEach(([ea,eb])=>{const ax=sx+p.pts[ea].x*sz*.5,ay=sy+p.pts[ea].y*sz*.5,bx=sx+p.pts[eb].x*sz*.5,by=sy+p.pts[eb].y*sz*.5;ctx.globalAlpha=.28*pulse*a;ctx.strokeStyle=isMe?'rgba(192,132,252,.6)':p.type==='normal'?'rgba(200,175,90,.4)':'rgba(220,195,100,.65)';ctx.lineWidth=Math.max(.5,sz*.012);ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();});p.pts.forEach((pt,i)=>{drawStar(sx+pt.x*sz*.5,sy+pt.y*sz*.5,Math.max(.7,sz*(i===0?.1:.065)),col,a*(i===0?1:.75),pulse,bright&&i===0);});}
-      else drawStar(sx,sy,Math.max(.5,sz*.45),col,a,pulse,bright);
-      if(isMe&&sz>16){ctx.globalAlpha=.75;ctx.fillStyle='#c084fc';ctx.font=`bold ${Math.min(11,sz*.22)}px system-ui`;ctx.textAlign='center';ctx.fillText('You ✦',sx,sy+sz*.75+8);}
-      ctx.globalAlpha=1;
+  window.addCosmosstar = function(type, constName, story) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 50 + Math.random() * 400;
+    cosmosParts.push({
+      x: 1000 + Math.cos(angle) * dist,
+      y: 1000 + Math.sin(angle) * dist,
+      type: type || 'normal', constName, story,
+      ph: Math.random() * Math.PI * 2, sp: 0.2 + Math.random() * 0.4, sz: 12
     });
-    requestAnimationFrame(frame);
+  };
+
+  // Expand button
+  const expBtn = document.getElementById('cosmosExp');
+  const cosmosUI = document.getElementById('cosmosUI');
+  const wrap = cosmosCV.parentElement;
+  let isFull = false;
+  if (expBtn) expBtn.onclick = () => {
+    isFull = true;
+    wrap.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;border-radius:0;z-index:9999;background:#040b18';
+    if (cosmosUI) cosmosUI.style.display = 'flex';
+    expBtn.style.display = 'none';
+    setTimeout(cosmosResize, 50);
+  };
+  const closeBtn = document.getElementById('cosmosClose');
+  if (closeBtn) closeBtn.onclick = () => {
+    isFull = false;
+    wrap.style.cssText = 'position:relative;border-radius:12px;overflow:hidden;background:#040b18;height:160px';
+    if (cosmosUI) cosmosUI.style.display = 'none';
+    expBtn.style.display = 'flex';
+    setTimeout(cosmosResize, 50);
+  };
+  const plusBtn = document.getElementById('cosmosPlus');
+  if (plusBtn) plusBtn.onclick = () => zTo(zoom * 1.6);
+  const minusBtn = document.getElementById('cosmosMinus');
+  if (minusBtn) minusBtn.onclick = () => zTo(zoom * 0.62);
+  const rstBtn = document.getElementById('cosmosReset');
+  if (rstBtn) rstBtn.onclick = () => { zoom = 0.15; vx = 900; vy = 900; };
+  const meBtn = document.getElementById('cosmosMe');
+  if (meBtn) meBtn.onclick = () => {
+    const my = cosmosParts.find(p => p.isMe) || cosmosParts[0];
+    const tz = 4, sv = vx, svy = vy, sz = zoom;
+    const ev = my.x - cW/tz/2, evy = my.y - cH/tz/2;
+    const t0 = performance.now(), dur = 800;
+    function fly(now) {
+      const p = Math.min(1, (now-t0)/dur), e = p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
+      zoom = sz+(tz-sz)*e; vx = sv+(ev-sv)*e; vy = svy+(evy-svy)*e;
+      if (p < 1) requestAnimationFrame(fly);
+    }
+    requestAnimationFrame(fly);
+  };
+
+  // Drag
+  let drag = false, lx = 0, ly = 0;
+  cosmosCV.addEventListener('mousedown', e => { drag=true; const r=cosmosCV.getBoundingClientRect(); lx=e.clientX-r.left; ly=e.clientY-r.top; });
+  cosmosCV.addEventListener('mousemove', e => { if(!drag)return; const r=cosmosCV.getBoundingClientRect(); const nx=e.clientX-r.left,ny=e.clientY-r.top; vx-=(nx-lx)/zoom; vy-=(ny-ly)/zoom; lx=nx; ly=ny; });
+  cosmosCV.addEventListener('mouseup', () => drag=false);
+  cosmosCV.addEventListener('touchstart', e => { if(e.touches.length===1){drag=true;const r=cosmosCV.getBoundingClientRect();lx=e.touches[0].clientX-r.left;ly=e.touches[0].clientY-r.top;} }, {passive:true});
+  cosmosCV.addEventListener('touchmove', e => { if(!drag||e.touches.length!==1)return;const r=cosmosCV.getBoundingClientRect();const nx=e.touches[0].clientX-r.left,ny=e.touches[0].clientY-r.top;vx-=(nx-lx)/zoom;vy-=(ny-ly)/zoom;lx=nx;ly=ny; }, {passive:true});
+  cosmosCV.addEventListener('touchend', () => drag=false);
+  cosmosCV.addEventListener('wheel', e => { e.preventDefault(); const r=cosmosCV.getBoundingClientRect(); zTo(zoom*(e.deltaY>0?.88:1.14),e.clientX-r.left,e.clientY-r.top); }, {passive:false});
+
+  function drawCosmosFrame() {
+    const t = performance.now() / 1000;
+    cosmosCtx.fillStyle = '#040b18';
+    cosmosCtx.fillRect(0, 0, cW, cH);
+
+    // Nebula
+    const ng = cosmosCtx.createRadialGradient(cW*0.4, cH*0.5, 0, cW*0.4, cH*0.5, cW*0.6);
+    ng.addColorStop(0, 'rgba(60,20,120,0.08)');
+    ng.addColorStop(1, 'transparent');
+    cosmosCtx.fillStyle = ng;
+    cosmosCtx.fillRect(0, 0, cW, cH);
+
+    // Background stars
+    bgStars.forEach(s => {
+      const [sx, sy] = w2s(s.x, s.y);
+      if (sx < -2 || sx > cW+2 || sy < -2 || sy > cH+2) return;
+      cosmosCtx.globalAlpha = s.a * (0.5 + 0.5 * Math.sin(t * s.sp + s.ph));
+      cosmosCtx.fillStyle = '#d4c080';
+      cosmosCtx.beginPath();
+      cosmosCtx.arc(sx, sy, s.r * Math.max(0.3, zoom * 0.3), 0, Math.PI * 2);
+      cosmosCtx.fill();
+    });
+
+    // Participants
+    cosmosParts.forEach(p => {
+      const [sx, sy] = w2s(p.x, p.y);
+      if (sx < -50 || sx > cW+50 || sy < -50 || sy > cH+50) return;
+      const sz = p.sz * zoom;
+      const pulse = 0.6 + 0.4 * Math.abs(Math.sin(t * p.sp + p.ph));
+      const col = p.isMe ? '#c084fc' : p.isGenesis ? '#ffffff' : p.type === 'legendary' ? '#f0ead8' : p.type === 'rare' ? '#e8c050' : '#a78bfa';
+
+      // Glow
+      cosmosCtx.globalAlpha = 0.1 * pulse;
+      const g = cosmosCtx.createRadialGradient(sx, sy, 0, sx, sy, sz * 3);
+      g.addColorStop(0, col); g.addColorStop(1, 'transparent');
+      cosmosCtx.fillStyle = g;
+      cosmosCtx.beginPath(); cosmosCtx.arc(sx, sy, sz * 3, 0, Math.PI * 2); cosmosCtx.fill();
+
+      // 4 rays for genesis
+      if (p.isGenesis && sz > 2) {
+        for (let i = 0; i < 4; i++) {
+          cosmosCtx.save(); cosmosCtx.translate(sx, sy); cosmosCtx.rotate(i * Math.PI / 4);
+          const sl = sz * 4;
+          const sg = cosmosCtx.createLinearGradient(-sl, 0, sl, 0);
+          sg.addColorStop(0, 'transparent'); sg.addColorStop(0.5, `rgba(255,255,255,${0.3*pulse})`); sg.addColorStop(1, 'transparent');
+          cosmosCtx.globalAlpha = 1; cosmosCtx.fillStyle = sg;
+          cosmosCtx.fillRect(-sl, -sz*0.06, sl*2, sz*0.12); cosmosCtx.restore();
+        }
+      }
+
+      // Core
+      cosmosCtx.globalAlpha = pulse;
+      cosmosCtx.fillStyle = col;
+      cosmosCtx.beginPath(); cosmosCtx.arc(sx, sy, Math.max(1, sz * 0.4), 0, Math.PI * 2); cosmosCtx.fill();
+
+      // Label
+      if (p.isMe && sz > 8) {
+        cosmosCtx.globalAlpha = 0.8; cosmosCtx.fillStyle = '#c084fc';
+        cosmosCtx.font = `bold ${Math.min(11, sz*0.6)}px system-ui`;
+        cosmosCtx.textAlign = 'center';
+        cosmosCtx.fillText('You ✦', sx, sy + sz + 10);
+      }
+    });
+
+    cosmosCtx.globalAlpha = 1;
+    requestAnimationFrame(drawCosmosFrame);
   }
-  frame();
-})();
-// addPixelToCanvas — теперь добавляет звезду в космический холст
+  drawCosmosFrame();
+}
+
+// addPixelToCanvas — добавляет звезду в холст
 function addPixelToCanvas(color, isNFT, data) {
   if (isNFT && window.addCosmosstar) {
     const type = data && data.isLegendary ? 'legendary' : data && data.isRare ? 'rare' : 'normal';
@@ -1078,12 +1118,6 @@ function addPixelToCanvas(color, isNFT, data) {
   }
 }
 /* ── LIVE COUNTER FROM BLOCKCHAIN ── */
-
-/* ── LIVE COUNTER FROM BLOCKCHAIN ── */
-let count = 0, photoCount = 0, connected = false, tickTimer = null;
-const numEl=document.getElementById('cnum');
-const numPhotosEl=document.getElementById('cnumPhotos');
-const liveRow=document.getElementById('liveRow');
 function fmt(n){
   if (n < 10000) return n.toLocaleString('en-US');
   if (n < 1000000) return (n/1000).toFixed(1).replace(/\.0$/,'') + 'K';
@@ -1186,8 +1220,8 @@ document.getElementById('walletDisc').addEventListener('click',()=>tonConnectUI.
 // После деплоя запустить:
 // node -e "const fs=require('fs');const abi=JSON.parse(fs.readFileSync('./build/VilitigoCounter_VilitigoCounterFinal.abi','utf8'));const r=abi.types.find(t=>t.name==='Register');const m=abi.types.find(t=>t.name==='MintConstellation');console.log('Register:',r?.header,'MintConstellation:',m?.header);"
 // И заменить 0 ниже на реальные опкоды:
-const REGISTER_OPCODE = 0;       // TODO: заменить после компиляции
-const MINT_OPCODE = 0;           // TODO: заменить после компиляции
+const REGISTER_OPCODE = 4169119751;       // TODO: заменить после компиляции
+const MINT_OPCODE = 2966455759;           // TODO: заменить после компиляции
 
 function bytesToBase64(bytes) {
   let binary = '';
