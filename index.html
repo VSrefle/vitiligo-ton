@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>vitiligo.ton</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+<script src="https://unpkg.com/@tonconnect/ui@2.0.9/dist/tonconnect-ui.min.js"></script>
 <script type="module">
   import { beginCell } from "https://esm.sh/@ton/core@0.56.0";
   window.TonCore = { beginCell };
@@ -1190,38 +1190,46 @@ function startTick(){
 }
 function stopTick(){clearTimeout(tickTimer);tickTimer=null;liveRow.classList.remove('show');}
 
-/* ── TON CONNECT ── */
-const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-  manifestUrl: 'https://VSrefle.github.io/vitiligo-ton/tonconnect-manifest.json',
-  buttonRootId: 'ton-connect-btn',
-  uiPreferences:{theme:'DARK'}
-});
+/* ── TON CONNECT ──
+   Wrapped in try/catch on purpose: if the TonConnect SDK ever fails to load
+   or throws (bad CDN, breaking version bump, offline, etc.), the rest of
+   this script — tabs, modals, welcome screen — must keep working. A crash
+   here used to silently kill every listener defined further down the file. */
+let tonConnectUI = null;
+try {
+  if (!window.TON_CONNECT_UI) throw new Error('TON_CONNECT_UI global not found — SDK script failed to load');
+  tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+    manifestUrl: 'https://VSrefle.github.io/vitiligo-ton/tonconnect-manifest.json',
+    buttonRootId: 'ton-connect-btn',
+    uiPreferences:{theme:'DARK'}
+  });
 
-tonConnectUI.onStatusChange(wallet => {
-  const chip=document.getElementById('walletChip');
-  const tcBtn=document.getElementById('ton-connect-btn');
-  if (wallet) {
-    const addr = wallet.account.address;
-    document.getElementById('walletAddr').textContent = addr.slice(0,5)+'…'+addr.slice(-4);
-    chip.classList.add('show'); tcBtn.style.display='none';
-    connected=true;
-    startTick();
-    if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-  } else {
-    chip.classList.remove('show'); tcBtn.style.display='';
-    connected=false;
-    stopTick();
-  }
-});
-document.getElementById('walletDisc').addEventListener('click',()=>tonConnectUI.disconnect());
+  tonConnectUI.onStatusChange(wallet => {
+    const chip=document.getElementById('walletChip');
+    const tcBtn=document.getElementById('ton-connect-btn');
+    if (wallet) {
+      const addr = wallet.account.address;
+      document.getElementById('walletAddr').textContent = addr.slice(0,5)+'…'+addr.slice(-4);
+      chip.classList.add('show'); tcBtn.style.display='none';
+      connected=true;
+      startTick();
+      if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    } else {
+      chip.classList.remove('show'); tcBtn.style.display='';
+      connected=false;
+      stopTick();
+    }
+  });
+  document.getElementById('walletDisc').addEventListener('click',()=>tonConnectUI.disconnect());
+} catch (e) {
+  console.error('[vitiligo.ton] TonConnect failed to initialize:', e);
+}
 
-/* ── TACT MESSAGE ENCODING для VilitigoCounterFinal ── */
-// Опкоды будут получены из ABI после компиляции контракта.
-// После деплоя запустить:
-// node -e "const fs=require('fs');const abi=JSON.parse(fs.readFileSync('./build/VilitigoCounter_VilitigoCounterFinal.abi','utf8'));const r=abi.types.find(t=>t.name==='Register');const m=abi.types.find(t=>t.name==='MintConstellation');console.log('Register:',r?.header,'MintConstellation:',m?.header);"
-// И заменить 0 ниже на реальные опкоды:
-const REGISTER_OPCODE = 4169119751;       // TODO: заменить после компиляции
-const MINT_OPCODE = 2966455759;           // TODO: заменить после компиляции
+/* ── TACT MESSAGE ENCODING для VilitigoCounterFinal ──
+   Опкоды подтверждены сборкой контракта (npx blueprint build → ABI),
+   02.07.2026: Register=4169119751, MintConstellation=2966455759 */
+const REGISTER_OPCODE = 4169119751;
+const MINT_OPCODE = 2966455759;
 
 function bytesToBase64(bytes) {
   let binary = '';
@@ -1229,47 +1237,53 @@ function bytesToBase64(bytes) {
   return btoa(binary);
 }
 
-function storeString(builder, val) {
+// NOTE: VilitigoCounterFinal.tact declares these as required `String` fields
+// (not `String?`), so Tact's auto-generated parser expects a plain cell ref —
+// no "Maybe" presence bit. Sending a presence bit (as an optional-string
+// encoding would) shifts every field after it and the contract will fail to
+// parse the message.
+function storeRequiredString(builder, val) {
   const { beginCell } = TonCore;
-  if (val && val.trim().length > 0) {
-    const strCell = beginCell().storeStringTail(val.trim()).endCell();
-    return builder.storeBit(1).storeRef(strCell);
-  }
-  return builder.storeBit(0);
+  const strCell = beginCell().storeStringTail((val || '').trim()).endCell();
+  return builder.storeRef(strCell);
 }
 
-// Register: queryId(uint64) + name(String?) + country(String?) + city(String?) + age(uint8)
+// Register: queryId(uint64) + name(String) + country(String) + city(String) + age(uint8)
 function buildRegisterPayload(name, country, city, age) {
   const { beginCell } = TonCore;
   let b = beginCell()
     .storeUint(REGISTER_OPCODE, 32)
     .storeUint(0, 64); // queryId
-  b = storeString(b, name);
-  b = storeString(b, country);
-  b = storeString(b, city);
+  b = storeRequiredString(b, name);
+  b = storeRequiredString(b, country);
+  b = storeRequiredString(b, city);
   b = b.storeUint(age || 0, 8);
   return bytesToBase64(b.endCell().toBoc());
 }
 
-// MintConstellation: queryId(uint64) + constName(String?) + isRare(bool) + isLegendary(bool)
-//                  + discoveryNumber(uint8) + story(String?) + pixelColor(String?)
+// MintConstellation: queryId(uint64) + constName(String) + isRare(bool) + isLegendary(bool)
+//                  + discoveryNumber(uint8) + story(String) + pixelColor(String)
 function buildMintPayload(constName, isRare, isLegendary, discoveryNumber, story, pixelColor) {
   const { beginCell } = TonCore;
   let b = beginCell()
     .storeUint(MINT_OPCODE, 32)
     .storeUint(0, 64) // queryId
-  b = storeString(b, constName);
+  b = storeRequiredString(b, constName);
   b = b.storeBit(isRare ? 1 : 0);
   b = b.storeBit(isLegendary ? 1 : 0);
   b = b.storeUint(discoveryNumber || 0, 8);
-  b = storeString(b, story);
-  b = storeString(b, pixelColor);
+  b = storeRequiredString(b, story);
+  b = storeRequiredString(b, pixelColor);
   return bytesToBase64(b.endCell().toBoc());
 }
 
 /* ── SEND TX ── */
 async function sendTon(statusId, onSuccess, payload) {
   const el=document.getElementById(statusId);
+  if(!tonConnectUI){
+    if(el){el.className='tx-status error';el.textContent='✕ Wallet connect is unavailable right now. Please reload the page.';}
+    return;
+  }
   if(!tonConnectUI.connected){tonConnectUI.openModal();return;}
   el.className='tx-status pending'; el.textContent='⏳ Waiting for confirmation…';
   try {
@@ -1337,6 +1351,7 @@ document.getElementById('modalMintClose').addEventListener('click',()=>closeModa
 
 let counted=false;
 document.getElementById('modalCountConfirm').addEventListener('click',()=>{
+  if(!tonConnectUI){showToast('Wallet connect is unavailable right now. Please reload the page.');return;}
   if(!connected){tonConnectUI.openModal();return;}
   const name = document.getElementById('fieldName')?.value || '';
   const country = document.getElementById('fieldCountry')?.value || '';
@@ -1738,6 +1753,7 @@ Make the name completely unique and not based on any real constellation.`
 }
 
 mintBtn.addEventListener('click',()=>{
+  if(!tonConnectUI){showToast('Wallet connect is unavailable right now. Please reload the page.');return;}
   if(!connected){
     tonConnectUI.openModal();
     showToast('Connect your wallet to continue ✦');
@@ -1750,6 +1766,7 @@ mintBtn.addEventListener('click',()=>{
 let nftCount=0;
 let myNfts = [];
 document.getElementById('modalMintConfirm').addEventListener('click',()=>{
+  if(!tonConnectUI){showToast('Wallet connect is unavailable right now. Please reload the page.');return;}
   if(!connected){tonConnectUI.openModal();return;}
   const constName = currentConst ? currentConst.name.split('·')[0].trim() : '';
   const isRare = currentConst ? (currentConst.rare || false) : false;
