@@ -1127,6 +1127,17 @@ function fmt(n){
 function fmtExact(n){ return n.toLocaleString('en-US'); }
 
 const MILESTONES = [100, 1000, 10000, 100000];
+// count/photoCount used to be implicit globals (only ever assigned inside
+// loadCounterFromChain's async success branch). updateMilestone() runs
+// synchronously at page load, before that network call resolves, so
+// referencing `count` threw "count is not defined" — an uncaught
+// ReferenceError that silently killed every listener defined later in this
+// script (nav tabs, Count me in, wallet button, everything). Declaring them
+// here with safe defaults fixes that at the root.
+let count = 0;
+let photoCount = 0;
+const numEl = document.getElementById('cnum');
+const numPhotosEl = document.getElementById('cnumPhotos');
 function updateMilestone(){
   let goal = MILESTONES.find(m => m > count) || MILESTONES[MILESTONES.length-1];
   const prevGoal = MILESTONES[MILESTONES.indexOf(goal)-1] || 0;
@@ -2064,29 +2075,9 @@ document.addEventListener('click', e => {
 
 // Start canvas pulse animation — must be last, after all variables are defined
 
-// ── GENESIS STAR ── The first transaction · The one who started counting
-const GENESIS_DATE = new Date('2026-07-01').getTime();
-const GENESIS_FADE_YEARS = 1;
-const genesisAge = Math.min(1, (Date.now() - GENESIS_DATE) / (GENESIS_FADE_YEARS * 365.24 * 24 * 3600 * 1000));
-const genesisBrightness = 1 - (genesisAge * 0.7);
-
-const genesisIdx = Math.floor(ROWS / 2) * COLS + Math.floor(COLS / 2);
-pixels[genesisIdx] = {
-  color: 'white',
-  op: 1,
-  isNFT: true,
-  isGenesis: true,
-  genesisBrightness,
-  data: {
-    constName: 'Genesis Star',
-    story: 'The first. The one who started counting.',
-    isRare: true,
-    isLegendary: true,
-    isGenesis: true
-  }
-};
-
+// Genesis star is created inside the cosmic canvas IIFE above (see "Genesis star in center").
 // Canvas pulse animation handled inside cosmic canvas IIFE above
+
 </script>
 </body>
 </html>
