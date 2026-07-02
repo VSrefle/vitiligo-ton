@@ -35,7 +35,7 @@ html,body{
 .welcome{
   position:fixed;inset:0;z-index:50;background:var(--bg);
   display:flex;flex-direction:column;align-items:center;
-  justify-content:center;padding:36px 28px;text-align:center;
+  justify-content:center;padding:36px 28px 150px;text-align:center;
   transition:opacity .6s ease;
 }
 .welcome.fade{opacity:0;pointer-events:none}
@@ -477,7 +477,6 @@ html,body{
   <div id="obDots" style="position:absolute;top:20px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:10">
     <div class="ob-dot active" id="dot0"></div>
     <div class="ob-dot" id="dot1"></div>
-    <div class="ob-dot" id="dot2"></div>
   </div>
 
   <!-- SCREEN 1 -->
@@ -485,28 +484,19 @@ html,body{
     <div class="welcome-glow"><div class="welcome-star">✦</div></div>
     <div class="ob-number">100,000,000</div>
     <div class="ob-title">People with vitiligo<br>in the world</div>
-    <div class="ob-body">Nobody has ever counted for real.<br>No survey. No exact number.<br>Just estimates.</div>
-    <button class="welcome-btn" onclick="goOb(1)">We can change that →</button>
+    <div class="ob-body">Nobody has ever counted for real — just estimates. Upload a photo and it becomes your own constellation, forever on the blockchain.</div>
   </div>
 
   <!-- SCREEN 2 -->
   <div class="ob-screen" id="ob1" style="display:none">
-    <div class="welcome-glow" style="background:radial-gradient(ellipse at 50% 40%, rgba(245,158,11,.2) 0%, transparent 70%)">
-      <div class="welcome-star">🌟</div>
-    </div>
-    <div class="ob-title">Your vitiligo<br>becomes a constellation</div>
-    <div class="ob-body">Upload a photo — the algorithm finds your patches and builds a personal star map. Unique. Yours. Forever on the blockchain.</div>
-    <button class="welcome-btn" onclick="goOb(2)">Tell me more →</button>
-  </div>
-
-  <!-- SCREEN 3 -->
-  <div class="ob-screen" id="ob2" style="display:none">
     <div class="welcome-glow"><div class="welcome-star">✦</div></div>
     <div class="ob-title">Every star on this canvas<br>is a real person</div>
     <div class="ob-body">Together we are a constellation that cannot be faked. Each star pulses. Tap any pixel — see whose it is.</div>
-    <button class="welcome-btn" id="welcomeBtn" onclick="closeWelcome()">I have vitiligo ✦</button>
-    <div class="welcome-skip" id="welcomeSkip" onclick="closeWelcome()">just look around first</div>
   </div>
+
+  <!-- BUTTON — fixed position, same for every screen, so it never jumps -->
+  <button class="welcome-btn" id="obNextBtn" onclick="goOb(1)" style="position:absolute;left:28px;right:28px;bottom:76px">We can change that →</button>
+  <div class="welcome-skip" id="welcomeSkip" onclick="closeWelcome()" style="display:none;position:absolute;left:28px;right:28px;bottom:52px">just look around first</div>
 
 </div>
 
@@ -756,9 +746,9 @@ html,body{
 <div class="modal-backdrop" id="modalCount">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">You're joining the count</div>
+    <div class="modal-title">Step 1 of 2 — Join the count</div>
     <div class="ton-amount">1 TON</div>
-    <div class="modal-desc">Your vitiligo photo becomes a unique constellation — forever on the TON blockchain. Your star lights up on the shared canvas.</div>
+    <div class="modal-desc">This registers you as a real, counted person — forever on the TON blockchain. Step 2 (minting your photo as a constellation) is a separate 1 TON right after this.</div>
     <div class="tx-status" id="txCount"></div>
     <button class="modal-btn" id="modalCountConfirm">Confirm — 1 TON</button>
     <button class="modal-btn secondary" id="modalCountClose">Cancel</button>
@@ -769,7 +759,7 @@ html,body{
 <div class="modal-backdrop" id="modalMint">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">Join the count forever</div>
+    <div class="modal-title">Step 2 of 2 — Mint your constellation</div>
     <div class="ton-amount">1 TON</div>
     <div class="modal-desc">Your vitiligo becomes a unique constellation — forever on the TON blockchain. Your star lights up on the shared canvas of everyone who has vitiligo.</div>
     <div class="tx-status" id="txMint"></div>
@@ -831,7 +821,7 @@ html,body{
         <div style="min-width:32px;height:32px;border-radius:50%;background:rgba(147,51,234,.2);border:1px solid rgba(147,51,234,.4);display:flex;align-items:center;justify-content:center;color:#a78bfa;font-size:14px;font-weight:600">3</div>
         <div>
           <div style="color:white;font-size:14px;font-weight:500;margin-bottom:2px">Press "Count me in ✦"</div>
-          <div style="color:#6b7280;font-size:13px">Connect your TON wallet (Tonkeeper) and confirm 1 TON</div>
+          <div style="color:#6b7280;font-size:13px">Connect your TON wallet (Tonkeeper) and confirm two 1 TON payments — join the count, then mint your constellation</div>
         </div>
       </div>
 
@@ -1315,19 +1305,29 @@ async function sendTon(statusId, onSuccess, payload) {
 /* ── WELCOME ── */
 // ── ONBOARDING ──
 function goOb(n) {
-  [0,1,2].forEach(i => {
+  [0,1].forEach(i => {
     const screen = document.getElementById('ob' + i);
     const dot = document.getElementById('dot' + i);
     if (screen) screen.style.display = i === n ? 'flex' : 'none';
     if (dot) dot.classList.toggle('active', i === n);
   });
+  const btn = document.getElementById('obNextBtn');
+  const skip = document.getElementById('welcomeSkip');
+  if (n === 1) {
+    btn.textContent = 'I have vitiligo ✦';
+    btn.onclick = closeWelcome;
+    skip.style.display = 'block';
+  } else {
+    btn.textContent = 'We can change that →';
+    btn.onclick = () => goOb(1);
+    skip.style.display = 'none';
+  }
 }
 
 function closeWelcome(){
   document.getElementById('welcome').classList.add('fade');
   setTimeout(()=>{document.getElementById('welcome').style.display='none';},600);
 }
-document.getElementById('welcomeBtn').addEventListener('click',closeWelcome);
 document.getElementById('welcomeSkip').addEventListener('click',closeWelcome);
 
 /* ── SOCIAL PROOF TOAST: removed — fake activity conflicts with project's honesty principle ── */
@@ -1352,15 +1352,59 @@ function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 
 // "I have vitiligo" — goes straight to photo upload on Stars tab
+// registered = has this wallet already sent a successful Register tx (step 1)?
+// Persisted per-wallet in localStorage since that's the only signal we have
+// client-side without adding another chain read. If Register bounces on-chain,
+// worst case is the user is asked to try Step 1 again — safe failure mode.
+function regKey(addr){ return 'vitiligo_registered_' + addr; }
+function isRegisteredLocal(){
+  const addr = tonConnectUI?.account?.address;
+  return !!(addr && localStorage.getItem(regKey(addr)) === '1');
+}
+function markRegisteredLocal(){
+  const addr = tonConnectUI?.account?.address;
+  if (addr) localStorage.setItem(regKey(addr), '1');
+}
+
+function hasProfile(){
+  const name = document.getElementById('fieldName')?.value.trim();
+  const country = document.getElementById('fieldCountry')?.value.trim();
+  const city = document.getElementById('fieldCity')?.value.trim();
+  const age = document.getElementById('fieldAge')?.value;
+  return !!(name && country && city && age);
+}
+let pendingAfterProfile = null;
+// Single gate used by both "Count me in" (home) and the mint button (Stars):
+// profile must be complete -> then Register (step 1) -> then run onDone (step 2 / navigation).
+function ensureProfileAndRegistered(onDone){
+  if(!tonConnectUI){showToast('Wallet connect is unavailable right now. Please reload the page.');return;}
+  if(!connected){ tonConnectUI.openModal(); showToast('Connect your wallet first ✦'); return; }
+  if(!hasProfile()){
+    showToast('Please fill your name, country, city and age first ✦');
+    pendingAfterProfile = () => ensureProfileAndRegistered(onDone);
+    document.querySelector('[data-page="profile"]').click();
+    return;
+  }
+  if(!isRegisteredLocal()){
+    pendingAfterRegister = onDone;
+    openModal('modalCount');
+    return;
+  }
+  onDone();
+}
+
 document.getElementById('countBtn').addEventListener('click',()=>{
-  document.querySelector('[data-page="stars"]').click();
-  showToast('Upload a photo of your vitiligo to get started ✦');
+  ensureProfileAndRegistered(()=>{
+    document.querySelector('[data-page="stars"]').click();
+    showToast('Upload a photo of your vitiligo to mint your constellation ✦');
+  });
 });
 
 document.getElementById('modalCountClose').addEventListener('click',()=>closeModal('modalCount'));
 document.getElementById('modalMintClose').addEventListener('click',()=>closeModal('modalMint'));
 
 let counted=false;
+let pendingAfterRegister = null;
 document.getElementById('modalCountConfirm').addEventListener('click',()=>{
   if(!tonConnectUI){showToast('Wallet connect is unavailable right now. Please reload the page.');return;}
   if(!connected){tonConnectUI.openModal();return;}
@@ -1371,6 +1415,7 @@ document.getElementById('modalCountConfirm').addEventListener('click',()=>{
   const payload = buildRegisterPayload(name, country, city, age);
   sendTon('txCount',()=>{
     closeModal('modalCount');
+    markRegisteredLocal();
     if(!counted){
       counted=true; count++;
       numEl.textContent=fmt(count); numEl.title=fmtExact(count)+' people';
@@ -1379,8 +1424,9 @@ document.getElementById('modalCountConfirm').addEventListener('click',()=>{
       const btn=document.getElementById('countBtn');
       btn.textContent='✓ You\'re counted!'; btn.classList.add('done'); btn.disabled=true;
       addPixelToCanvas('#9333ea',false,null);
-      showToast('Your star is on the canvas ✦');
+      showToast('You\'re counted! Now upload a photo to mint your constellation ✦');
     }
+    if (pendingAfterRegister) { const fn = pendingAfterRegister; pendingAfterRegister = null; fn(); }
   }, payload);
 });
 
@@ -1764,19 +1810,18 @@ Make the name completely unique and not based on any real constellation.`
 }
 
 mintBtn.addEventListener('click',()=>{
-  if(!tonConnectUI){showToast('Wallet connect is unavailable right now. Please reload the page.');return;}
-  if(!connected){
-    tonConnectUI.openModal();
-    showToast('Connect your wallet to continue ✦');
-    return;
-  }
   lastStoryText = document.getElementById('storyInput').value.trim();
-  openModal('modalMint');
+  ensureProfileAndRegistered(()=> openModal('modalMint'));
 });
 
 let nftCount=0;
 let myNfts = [];
 document.getElementById('modalMintConfirm').addEventListener('click',()=>{
+  if (!isRegisteredLocal() || !hasProfile()) {
+    closeModal('modalMint');
+    ensureProfileAndRegistered(()=> openModal('modalMint'));
+    return;
+  }
   if(!tonConnectUI){showToast('Wallet connect is unavailable right now. Please reload the page.');return;}
   if(!connected){tonConnectUI.openModal();return;}
   const constName = currentConst ? currentConst.name.split('·')[0].trim() : '';
@@ -1939,7 +1984,12 @@ document.getElementById('saveBtn').addEventListener('click',()=>{
   const n=document.getElementById('fieldName').value;
   if(n) document.getElementById('profileName').textContent=n;
   if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-  if(tg) tg.showAlert('Profile saved!'); else alert('Profile saved!');
+  if(!hasProfile()){
+    showToast('Please fill in name, country, city and age ✦');
+    return;
+  }
+  if(tg) tg.showAlert('Profile saved!'); else showToast('Profile saved ✦');
+  if(pendingAfterProfile){ const fn=pendingAfterProfile; pendingAfterProfile=null; fn(); }
 });
 
 /* ── INVITE / REFERRAL ── */
