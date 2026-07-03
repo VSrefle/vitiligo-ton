@@ -1288,6 +1288,14 @@ function stopTick(){clearTimeout(tickTimer);tickTimer=null;liveRow.classList.rem
    inject a fresh <script> tag rather than just re-checking the same dead
    load. */
 let tonConnectUI = null;
+// 'connected' was previously assigned (connected=true/false) inside
+// onStatusChange below but never declared anywhere — reading it before
+// onStatusChange had fired even once threw "ReferenceError: connected is
+// not defined" inside async functions like sendTon(), which silently
+// aborted them with zero visible feedback. This is almost certainly the
+// root cause of the original "Confirm button does nothing" bug. Found
+// 03.07.2026 via the newly added unhandledrejection listener.
+let connected = false;
 
 function loadTonConnectScript() {
   if (window.TON_CONNECT_UI) return Promise.resolve();
