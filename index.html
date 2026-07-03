@@ -1378,27 +1378,38 @@ function storeRequiredString(builder, val) {
   return builder.storeRef(strCell);
 }
 
-// JoinAndMint (PRIMARY single-payment path): queryId(uint64) + name(String) + country(String)
-//   + city(String) + age(uint8) + constName(String) + isRare(bool) + isLegendary(bool)
-//   + discoveryNumber(uint8) + story(String) + pixelColor(String)
-// Field order MUST match the .tact message struct exactly.
+// Cell layout verified 03.07.2026 directly against the compiled
+// build/VilitigoCounter_VilitigoCounter.ts (loadJoinAndMint), NOT guessed —
+// a single cell can only hold 4 refs, and this message has 6 String fields
+// (6 refs), so Tact's compiler splits it into a root cell + one
+// continuation cell. Getting this wrong previously threw "Too many
+// references" (root cell) while trying to cram all 6 string refs into one
+// cell. Confirmed real layout:
+//   root cell:   opcode(32) + queryId(64) + name(ref) + country(ref) + ref-to-continuation   [3 refs]
+//   continuation: city(ref) + age(8) + constName(ref) + isRare(bit) + isLegendary(bit)
+//                 + discoveryNumber(8) + story(ref) + pixelColor(ref)                          [4 refs]
 function buildJoinAndMintPayload(name, country, city, age, constName, isRare, isLegendary, discoveryNumber, story, pixelColor) {
   const { beginCell } = window.TonCore || {};
   if (!beginCell) throw new Error('TonCore.beginCell unavailable — payment SDK failed to load');
-  let b = beginCell()
+
+  let b1 = beginCell();
+  b1 = storeRequiredString(b1, city);
+  b1 = b1.storeUint(age || 0, 8);
+  b1 = storeRequiredString(b1, constName);
+  b1 = b1.storeBit(isRare ? 1 : 0);
+  b1 = b1.storeBit(isLegendary ? 1 : 0);
+  b1 = b1.storeUint(discoveryNumber || 0, 8);
+  b1 = storeRequiredString(b1, story);
+  b1 = storeRequiredString(b1, pixelColor);
+
+  let b0 = beginCell()
     .storeUint(JOIN_AND_MINT_OPCODE, 32)
     .storeUint(0, 64); // queryId
-  b = storeRequiredString(b, name);
-  b = storeRequiredString(b, country);
-  b = storeRequiredString(b, city);
-  b = b.storeUint(age || 0, 8);
-  b = storeRequiredString(b, constName);
-  b = b.storeBit(isRare ? 1 : 0);
-  b = b.storeBit(isLegendary ? 1 : 0);
-  b = b.storeUint(discoveryNumber || 0, 8);
-  b = storeRequiredString(b, story);
-  b = storeRequiredString(b, pixelColor);
-  return bytesToBase64(b.endCell().toBoc());
+  b0 = storeRequiredString(b0, name);
+  b0 = storeRequiredString(b0, country);
+  b0 = b0.storeRef(b1.endCell());
+
+  return bytesToBase64(b0.endCell().toBoc());
 }
 
 /* ── SEND TX ── */
