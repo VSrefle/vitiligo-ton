@@ -7,8 +7,17 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://unpkg.com/@tonconnect/ui@2.0.9/dist/tonconnect-ui.min.js"></script>
 <script type="module">
-  import { beginCell, Cell } from "https://esm.sh/@ton/core@0.56.0";
-  window.TonCore = { beginCell, Cell };
+  import { beginCell } from "https://esm.sh/@ton/core@0.56.0";
+  window.TonCore = { beginCell };
+  // Cell is only used by the optional Map city-list feature. Loaded
+  // separately and defensively so that if this fails for any reason
+  // (CDN hiccup, export mismatch, etc.) it can NEVER take down beginCell —
+  // which every single payment depends on. A previous version imported
+  // both in one statement, which meant a Cell failure would silently break
+  // ALL payments with zero visible error. Never again.
+  import("https://esm.sh/@ton/core@0.56.0").then(mod => {
+    if (mod.Cell) window.TonCore.Cell = mod.Cell;
+  }).catch(e => console.warn('[vitiligo.ton] Cell import failed — Map city list will stay empty, payments unaffected:', e));
   window.dispatchEvent(new Event('toncore-ready'));
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1273,36 +1282,60 @@ function stopTick(){clearTimeout(tickTimer);tickTimer=null;liveRow.classList.rem
    Wrapped in try/catch on purpose: if the TonConnect SDK ever fails to load
    or throws (bad CDN, breaking version bump, offline, etc.), the rest of
    this script — tabs, modals, welcome screen — must keep working. A crash
-   here used to silently kill every listener defined further down the file. */
+   here used to silently kill every listener defined further down the file.
+   initTonConnect() is retryable: a <script src> tag that fails to load
+   (e.g. a slow/flaky connection) never retries on its own, so on retry we
+   inject a fresh <script> tag rather than just re-checking the same dead
+   load. */
 let tonConnectUI = null;
-try {
-  if (!window.TON_CONNECT_UI) throw new Error('TON_CONNECT_UI global not found — SDK script failed to load');
-  tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-    manifestUrl: 'https://VSrefle.github.io/vitiligo-ton/tonconnect-manifest.json',
-    buttonRootId: 'ton-connect-btn',
-    uiPreferences:{theme:'DARK'}
-  });
 
-  tonConnectUI.onStatusChange(wallet => {
-    const chip=document.getElementById('walletChip');
-    const tcBtn=document.getElementById('ton-connect-btn');
-    if (wallet) {
-      const addr = wallet.account.address;
-      document.getElementById('walletAddr').textContent = addr.slice(0,5)+'…'+addr.slice(-4);
-      chip.classList.add('show'); tcBtn.style.display='none';
-      connected=true;
-      startTick();
-      if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-    } else {
-      chip.classList.remove('show'); tcBtn.style.display='';
-      connected=false;
-      stopTick();
-    }
+function loadTonConnectScript() {
+  if (window.TON_CONNECT_UI) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://unpkg.com/@tonconnect/ui@2.0.9/dist/tonconnect-ui.min.js';
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('TonConnect script failed to load'));
+    document.head.appendChild(s);
   });
-  document.getElementById('walletDisc').addEventListener('click',()=>tonConnectUI.disconnect());
-} catch (e) {
-  console.error('[vitiligo.ton] TonConnect failed to initialize:', e);
 }
+
+async function initTonConnect() {
+  if (tonConnectUI) return tonConnectUI;
+  try {
+    await loadTonConnectScript();
+    if (!window.TON_CONNECT_UI) throw new Error('TON_CONNECT_UI global not found — SDK script failed to load');
+    tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+      manifestUrl: 'https://VSrefle.github.io/vitiligo-ton/tonconnect-manifest.json',
+      buttonRootId: 'ton-connect-btn',
+      uiPreferences:{theme:'DARK'}
+    });
+
+    tonConnectUI.onStatusChange(wallet => {
+      const chip=document.getElementById('walletChip');
+      const tcBtn=document.getElementById('ton-connect-btn');
+      if (wallet) {
+        const addr = wallet.account.address;
+        document.getElementById('walletAddr').textContent = addr.slice(0,5)+'…'+addr.slice(-4);
+        chip.classList.add('show'); tcBtn.style.display='none';
+        connected=true;
+        startTick();
+        if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+      } else {
+        chip.classList.remove('show'); tcBtn.style.display='';
+        connected=false;
+        stopTick();
+      }
+    });
+    document.getElementById('walletDisc').addEventListener('click',()=>tonConnectUI.disconnect());
+    return tonConnectUI;
+  } catch (e) {
+    console.error('[vitiligo.ton] TonConnect failed to initialize:', e);
+    tonConnectUI = null;
+    return null;
+  }
+}
+initTonConnect();
 
 /* ── TACT MESSAGE ENCODING для VilitigoCounterFinal ──
    JoinAndMint опкод подтверждён сборкой контракта (npx blueprint build → ABI), 03.07.2026.
@@ -1352,8 +1385,9 @@ function buildJoinAndMintPayload(name, country, city, age, constName, isRare, is
 /* ── SEND TX ── */
 async function sendTon(statusId, onSuccess, payload) {
   const el=document.getElementById(statusId);
+  if(!tonConnectUI){ await initTonConnect(); }
   if(!tonConnectUI){
-    if(el){el.className='tx-status error';el.textContent='✕ Wallet connect is unavailable right now. Please reload the page.';}
+    if(el){el.className='tx-status error';el.textContent='✕ Wallet connect is unavailable — check your connection and reload the page.';}
     return;
   }
   if(!tonConnectUI.connected){ closeModal('modalMint'); tonConnectUI.openModal(); return; }
@@ -1449,8 +1483,12 @@ let pendingAfterProfile = null;
 // profile must be complete, wallet connected — then run onDone.
 // No separate registration step anymore: profile + constellation data are
 // sent together in one JoinAndMint transaction (1 TON total).
-function ensureProfile(onDone){
-  if(!tonConnectUI){showToast('Wallet connect is unavailable right now. Please reload the page.');return;}
+async function ensureProfile(onDone){
+  if(!tonConnectUI){
+    showToast('Connecting wallet service, one moment…');
+    await initTonConnect();
+  }
+  if(!tonConnectUI){showToast('Wallet connect is unavailable — check your connection and reload the page.');return;}
   if(!connected){ tonConnectUI.openModal(); showToast('Connect your wallet first ✦'); return; }
   if(!hasProfile()){
     showToast('Please fill your name, country, city and age first ✦');
@@ -1880,26 +1918,30 @@ mintBtn.addEventListener('click',()=>{
 
 let nftCount=0;
 let myNfts = [];
-document.getElementById('modalMintConfirm').addEventListener('click',()=>{
+document.getElementById('modalMintConfirm').addEventListener('click', async ()=>{
   if (!hasProfile()) {
     closeModal('modalMint');
     ensureProfile(()=> openModal('modalMint'));
     return;
   }
-  if(!tonConnectUI){showToast('Wallet connect is unavailable right now. Please reload the page.');return;}
+  if(!tonConnectUI){ await initTonConnect(); }
+  if(!tonConnectUI){showToast('Wallet connect is unavailable — check your connection and reload the page.');return;}
   if(!connected){ closeModal('modalMint'); tonConnectUI.openModal(); return; }
-  const name = document.getElementById('fieldName')?.value || '';
-  const country = document.getElementById('fieldCountry')?.value || '';
-  const city = document.getElementById('fieldCity')?.value || '';
-  const age = parseInt(document.getElementById('fieldAge')?.value || '0');
-  const constName = currentConst ? currentConst.name.split('·')[0].trim() : '';
-  const isRare = currentConst ? (currentConst.rare || false) : false;
-  const isLegendary = currentConst ? (currentConst.isRealDiscovery || false) : false;
-  const discoveryNumber = currentConst ? (currentConst.discoveryNumber || 0) : 0;
-  const story = lastStoryText || '';
-  const pixelColor = nftPixelColor || '#9333ea';
-  const payload = buildJoinAndMintPayload(name, country, city, age, constName, isRare, isLegendary, discoveryNumber, story, pixelColor);
-  sendTon('txMint',()=>{
+  try {
+    if (!currentConst) { showToast('Something went wrong with your constellation — try uploading the photo again.'); return; }
+    const name = document.getElementById('fieldName')?.value || '';
+    const country = document.getElementById('fieldCountry')?.value || '';
+    const city = document.getElementById('fieldCity')?.value || '';
+    const age = parseInt(document.getElementById('fieldAge')?.value || '0');
+    const constName = currentConst.name.split('·')[0].trim();
+    const isRare = currentConst.rare || false;
+    const isLegendary = currentConst.isRealDiscovery || false;
+    const discoveryNumber = currentConst.discoveryNumber || 0;
+    const story = lastStoryText || '';
+    const pixelColor = nftPixelColor || '#9333ea';
+    if (!TonCore || !TonCore.beginCell) { showToast('Payment setup failed to load — please reload the page and try again.'); return; }
+    const payload = buildJoinAndMintPayload(name, country, city, age, constName, isRare, isLegendary, discoveryNumber, story, pixelColor);
+    sendTon('txMint',()=>{
     closeModal('modalMint');
     const wasAlreadyJoined = isJoinedLocal();
     markJoinedLocal();
@@ -1965,6 +2007,10 @@ document.getElementById('modalMintConfirm').addEventListener('click',()=>{
       },350);
     },900);
   }, payload);
+  } catch(e) {
+    console.error('[vitiligo.ton] Confirm payment failed:', e);
+    showToast('Something went wrong preparing the payment. Please try again — if it keeps happening, reload the page.');
+  }
 });
 
 function openNftDetail(nftData, showActions){
