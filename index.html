@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>vitiligo.ton</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://unpkg.com/@tonconnect/ui@2.0.9/dist/tonconnect-ui.min.js"></script>
+<script src="https://unpkg.com/@tonconnect/ui@3.0.0/dist/tonconnect-ui.min.js"></script>
 <script type="module">
   import { beginCell } from "https://esm.sh/@ton/core@0.56.0";
   window.TonCore = { beginCell };
@@ -621,7 +621,7 @@ html,body{
     <div class="const-info" id="constInfo">
       <div class="const-name" id="constName"></div>
       <div class="const-desc" id="constDesc"></div>
-      <div style="font-size:12px;color:#6b7280;text-align:center;margin-top:8px">Your constellation will be revealed after payment ✦</div>
+      <div style="font-size:12px;color:#6b7280;text-align:center;margin-top:8px">Confirm 1 TON to mint this constellation permanently on-chain ✦</div>
     </div>
 
     <div class="story-wrap" id="storyWrap">
@@ -674,22 +674,17 @@ html,body{
         <div class="bonus-icon">⭐</div>
         <div class="bonus-text">
           <div class="bonus-title">Friend joins & counts in</div>
-          <div class="bonus-desc">Their star appears on the canvas</div>
-        </div>
-      </div>
-      <div class="bonus-row">
-        <div class="bonus-icon">✦</div>
-        <div class="bonus-text">
-          <div class="bonus-title">Your invite badge grows</div>
-          <div class="bonus-desc">Shown on your profile as a constellation guide</div>
+          <div class="bonus-desc">Their star appears on the canvas — for everyone to see, including you</div>
         </div>
       </div>
     </div>
 
-    <div class="invited-list-title">People you brought in</div>
-    <div id="invitedList">
-      <div class="invite-empty">No invites yet — share your link above ✦</div>
-    </div>
+    <!-- "People you brought in" removed 03.07.2026: the contract has no
+         referral field, so this list could never show anything but "No
+         invites yet" — even for someone who successfully brought in ten
+         friends. That's a quiet honesty problem for a project built on the
+         promise of a real count. Bring this back once a backend indexer
+         (see HANDOFF, item 5) can actually attribute joins to referrers. -->
   </div>
 </div>
 
@@ -886,9 +881,11 @@ html,body{
 <div class="toast" id="toast"></div>
 
 <script>
-// TODO: this still points at the OLD contract (without JoinAndMint).
-// Update after redeploying VilitigoCounterFinal.tact with the new message.
-const CONTRACT_ADDRESS = 'EQACgMT-OVuTdxjTJhgNjakguf8-yV8l9YEla3Z46UIsqLv2'; // задеплоен 03.07.2026, содержит JoinAndMint
+// This IS the current contract, deployed 03.07.2026, includes JoinAndMint.
+// (An earlier TODO here warning that this "still points at the old contract"
+// was stale — left over from before that deploy — and was removed 03.07.2026
+// to avoid a future edit mistakenly reverting a working address.)
+const CONTRACT_ADDRESS = 'EQACgMT-OVuTdxjTJhgNjakguf8-yV8l9YEla3Z46UIsqLv2';
 const TON_AMOUNT = '1000000000';
 const BOT_USERNAME = 'vitiligo_ton_bot';
 
@@ -1296,7 +1293,7 @@ function loadTonConnectScript() {
   if (window.TON_CONNECT_UI) return Promise.resolve();
   return new Promise((resolve, reject) => {
     const s = document.createElement('script');
-    s.src = 'https://unpkg.com/@tonconnect/ui@2.0.9/dist/tonconnect-ui.min.js';
+    s.src = 'https://unpkg.com/@tonconnect/ui@3.0.0/dist/tonconnect-ui.min.js';
     s.onload = () => resolve();
     s.onerror = () => reject(new Error('TonConnect script failed to load'));
     document.head.appendChild(s);
@@ -1309,7 +1306,7 @@ async function initTonConnect() {
     await loadTonConnectScript();
     if (!window.TON_CONNECT_UI) throw new Error('TON_CONNECT_UI global not found — SDK script failed to load');
     tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-      manifestUrl: 'https://VSrefle.github.io/vitiligo-ton/tonconnect-manifest.json',
+      manifestUrl: 'https://vsrefle.github.io/vitiligo-ton/tonconnect-manifest.json',
       buttonRootId: 'ton-connect-btn',
       uiPreferences:{theme:'DARK'}
     });
@@ -1400,16 +1397,22 @@ async function sendTon(statusId, onSuccess, payload) {
   if(!tonConnectUI.connected){ updateDebugInfo('sendTon STOPPED: tonConnectUI.connected is false'); closeModal('modalMint'); tonConnectUI.openModal(); return; }
   el.className='tx-status pending'; el.textContent='⏳ Waiting for confirmation…';
   updateDebugInfo('calling tonConnectUI.sendTransaction()...');
+  const watchdog = setTimeout(()=>{
+    updateDebugInfo('⏱️ still waiting 15s after sendTransaction() — if you already confirmed in the wallet, the payment likely went through on-chain even though this screen has not heard back yet. Check tonviewer before retrying.');
+    if (el) el.textContent = '⏳ Still waiting… if you already confirmed in your wallet, check the block explorer before sending again.';
+  }, 15000);
   try {
     await tonConnectUI.sendTransaction({
       validUntil:Math.floor(Date.now()/1000)+300,
       messages:[{address:CONTRACT_ADDRESS,amount:TON_AMOUNT,payload: payload || ''}]
     });
+    clearTimeout(watchdog);
     updateDebugInfo('sendTransaction SUCCEEDED');
     el.className='tx-status success'; el.textContent='✓ Transaction confirmed!';
     if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
     setTimeout(()=>{el.className='tx-status';onSuccess();},1400);
   } catch(e) {
+    clearTimeout(watchdog);
     updateDebugInfo('sendTransaction THREW: ' + (e?.message || e));
     el.className='tx-status error';
     el.textContent=e.message?.includes('cancel')?'✕ Cancelled':'✕ Failed. Try again.';
@@ -1464,6 +1467,16 @@ document.getElementById('addNftBtn').addEventListener('click',()=>{
 window.addEventListener('error', (e) => {
   const bar = document.getElementById('persistentDebug');
   if (bar) { bar.style.display='block'; bar.textContent = '🔴 GLOBAL ERROR: ' + e.message + ' (' + e.filename + ':' + e.lineno + ')\n' + bar.textContent; }
+});
+// NOTE: window.onerror above only catches synchronous throws. Anything that
+// rejects inside an async function/promise (e.g. a failed await deep inside
+// TonConnect's internals) fires 'unhandledrejection' instead and was
+// previously invisible to the debug panel — added 03.07.2026 while chasing
+// the Confirm button hang.
+window.addEventListener('unhandledrejection', (e) => {
+  const bar = document.getElementById('persistentDebug');
+  const msg = e.reason?.message || e.reason || 'unknown';
+  if (bar) { bar.style.display='block'; bar.textContent = '🔴 UNHANDLED PROMISE REJECTION: ' + msg + '\n' + bar.textContent; }
 });
 
 function updateDebugInfo(stage){
