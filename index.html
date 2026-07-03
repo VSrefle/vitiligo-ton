@@ -752,6 +752,8 @@ html,body{
 </div>
 
 <!-- NAV -->
+<div id="persistentDebug" style="position:fixed;left:0;right:0;bottom:64px;z-index:9999;background:rgba(0,0,0,.92);color:#0f0;font-family:monospace;font-size:10px;padding:6px 10px;line-height:1.5;word-break:break-all;display:none;max-height:35vh;overflow-y:auto"></div>
+
 <nav class="nav">
   <button class="nav-item active" data-page="home">
     <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home
@@ -779,6 +781,7 @@ html,body{
     <div class="ton-amount">1 TON</div>
     <div class="modal-desc">Your vitiligo becomes a unique constellation — forever on the TON blockchain. Your star lights up on the shared canvas of everyone who has vitiligo.</div>
     <div class="tx-status" id="txMint"></div>
+    <div id="debugInfo" style="font-size:10px;font-family:monospace;color:#666;text-align:left;background:rgba(255,255,255,.04);border-radius:8px;padding:8px;margin-bottom:10px;line-height:1.5;word-break:break-all"></div>
     <button class="modal-btn" id="modalMintConfirm">Confirm — 1 TON</button>
     <button class="modal-btn secondary" id="modalMintClose">Cancel</button>
   </div>
@@ -1387,22 +1390,27 @@ function buildJoinAndMintPayload(name, country, city, age, constName, isRare, is
 /* ── SEND TX ── */
 async function sendTon(statusId, onSuccess, payload) {
   const el=document.getElementById(statusId);
+  updateDebugInfo('sendTon() called');
   if(!tonConnectUI){ await initTonConnect(); }
   if(!tonConnectUI){
+    updateDebugInfo('sendTon STOPPED: tonConnectUI null');
     if(el){el.className='tx-status error';el.textContent='✕ Wallet connect is unavailable — check your connection and reload the page.';}
     return;
   }
-  if(!tonConnectUI.connected){ closeModal('modalMint'); tonConnectUI.openModal(); return; }
+  if(!tonConnectUI.connected){ updateDebugInfo('sendTon STOPPED: tonConnectUI.connected is false'); closeModal('modalMint'); tonConnectUI.openModal(); return; }
   el.className='tx-status pending'; el.textContent='⏳ Waiting for confirmation…';
+  updateDebugInfo('calling tonConnectUI.sendTransaction()...');
   try {
     await tonConnectUI.sendTransaction({
       validUntil:Math.floor(Date.now()/1000)+300,
       messages:[{address:CONTRACT_ADDRESS,amount:TON_AMOUNT,payload: payload || ''}]
     });
+    updateDebugInfo('sendTransaction SUCCEEDED');
     el.className='tx-status success'; el.textContent='✓ Transaction confirmed!';
     if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
     setTimeout(()=>{el.className='tx-status';onSuccess();},1400);
   } catch(e) {
+    updateDebugInfo('sendTransaction THREW: ' + (e?.message || e));
     el.className='tx-status error';
     el.textContent=e.message?.includes('cancel')?'✕ Cancelled':'✕ Failed. Try again.';
     if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
@@ -1453,7 +1461,34 @@ document.getElementById('addNftBtn').addEventListener('click',()=>{
 });
 
 /* ── MODALS ── */
-function openModal(id){document.getElementById(id).classList.add('open');}
+window.addEventListener('error', (e) => {
+  const bar = document.getElementById('persistentDebug');
+  if (bar) { bar.style.display='block'; bar.textContent = '🔴 GLOBAL ERROR: ' + e.message + ' (' + e.filename + ':' + e.lineno + ')\n' + bar.textContent; }
+});
+
+function updateDebugInfo(stage){
+  const el = document.getElementById('debugInfo');
+  const lines = [
+    'stage: ' + stage,
+    'connected: ' + connected,
+    'tonConnectUI: ' + (tonConnectUI ? 'exists' : 'NULL'),
+    'tonConnectUI.connected: ' + (tonConnectUI ? tonConnectUI.connected : 'n/a'),
+    'wallet addr: ' + (tonConnectUI?.account?.address ? tonConnectUI.account.address.slice(0,10)+'…' : 'none'),
+    'window.TonCore: ' + (window.TonCore ? 'exists' : 'MISSING'),
+    'window.TonCore.beginCell: ' + (window.TonCore?.beginCell ? 'exists' : 'MISSING'),
+    'currentConst: ' + (typeof currentConst !== 'undefined' && currentConst ? 'set (' + currentConst.name + ')' : 'NULL'),
+    'hasProfile(): ' + (typeof hasProfile === 'function' ? hasProfile() : '?'),
+    'time: ' + new Date().toLocaleTimeString()
+  ];
+  const text = lines.join(' | ');
+  if (el) el.textContent = text;
+  const bar = document.getElementById('persistentDebug');
+  if (bar) {
+    bar.style.display = 'block';
+    bar.textContent = '▶ ' + stage + '\n' + bar.textContent;
+  }
+}
+function openModal(id){document.getElementById(id).classList.add('open'); if(id==='modalMint') updateDebugInfo('modal opened');}
 function closeModal(id){document.getElementById(id)?.classList.remove('open');}
 
 // "I have vitiligo" — goes straight to photo upload on Stars tab
@@ -1921,16 +1956,19 @@ mintBtn.addEventListener('click',()=>{
 let nftCount=0;
 let myNfts = [];
 document.getElementById('modalMintConfirm').addEventListener('click', async ()=>{
+  updateDebugInfo('CLICKED confirm button');
   if (!hasProfile()) {
+    updateDebugInfo('STOPPED: hasProfile() is false');
     closeModal('modalMint');
     ensureProfile(()=> openModal('modalMint'));
     return;
   }
-  if(!tonConnectUI){ await initTonConnect(); }
-  if(!tonConnectUI){showToast('Wallet connect is unavailable — check your connection and reload the page.');return;}
-  if(!connected){ closeModal('modalMint'); tonConnectUI.openModal(); return; }
+  if(!tonConnectUI){ updateDebugInfo('tonConnectUI null, retrying init...'); await initTonConnect(); }
+  if(!tonConnectUI){ updateDebugInfo('STOPPED: tonConnectUI still null after retry'); showToast('Wallet connect is unavailable — check your connection and reload the page.');return;}
+  if(!connected){ updateDebugInfo('STOPPED: not connected, opening wallet modal'); closeModal('modalMint'); tonConnectUI.openModal(); return; }
   try {
-    if (!currentConst) { showToast('Something went wrong with your constellation — try uploading the photo again.'); return; }
+    if (!currentConst) { updateDebugInfo('STOPPED: currentConst is null'); showToast('Something went wrong with your constellation — try uploading the photo again.'); return; }
+    updateDebugInfo('building payload...');
     const name = document.getElementById('fieldName')?.value || '';
     const country = document.getElementById('fieldCountry')?.value || '';
     const city = document.getElementById('fieldCity')?.value || '';
@@ -1941,8 +1979,9 @@ document.getElementById('modalMintConfirm').addEventListener('click', async ()=>
     const discoveryNumber = currentConst.discoveryNumber || 0;
     const story = lastStoryText || '';
     const pixelColor = nftPixelColor || '#9333ea';
-    if (!window.TonCore || !window.TonCore.beginCell) { showToast('Payment setup failed to load — please reload the page and try again.'); return; }
+    if (!window.TonCore || !window.TonCore.beginCell) { updateDebugInfo('STOPPED: window.TonCore missing'); showToast('Payment setup failed to load — please reload the page and try again.'); return; }
     const payload = buildJoinAndMintPayload(name, country, city, age, constName, isRare, isLegendary, discoveryNumber, story, pixelColor);
+    updateDebugInfo('payload built, calling sendTon...');
     sendTon('txMint',()=>{
     closeModal('modalMint');
     const wasAlreadyJoined = isJoinedLocal();
@@ -2011,6 +2050,7 @@ document.getElementById('modalMintConfirm').addEventListener('click', async ()=>
   }, payload);
   } catch(e) {
     console.error('[vitiligo.ton] Confirm payment failed:', e);
+    updateDebugInfo('EXCEPTION: ' + (e?.message || e));
     showToast('Something went wrong preparing the payment. Please try again — if it keeps happening, reload the page.');
   }
 });
