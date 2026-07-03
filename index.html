@@ -1355,7 +1355,8 @@ function bytesToBase64(bytes) {
 // encoding would) shifts every field after it and the contract will fail to
 // parse the message.
 function storeRequiredString(builder, val) {
-  const { beginCell } = TonCore;
+  const { beginCell } = window.TonCore || {};
+  if (!beginCell) throw new Error('TonCore.beginCell unavailable — payment SDK failed to load');
   const strCell = beginCell().storeStringTail((val || '').trim()).endCell();
   return builder.storeRef(strCell);
 }
@@ -1365,7 +1366,8 @@ function storeRequiredString(builder, val) {
 //   + discoveryNumber(uint8) + story(String) + pixelColor(String)
 // Field order MUST match the .tact message struct exactly.
 function buildJoinAndMintPayload(name, country, city, age, constName, isRare, isLegendary, discoveryNumber, story, pixelColor) {
-  const { beginCell } = TonCore;
+  const { beginCell } = window.TonCore || {};
+  if (!beginCell) throw new Error('TonCore.beginCell unavailable — payment SDK failed to load');
   let b = beginCell()
     .storeUint(JOIN_AND_MINT_OPCODE, 32)
     .storeUint(0, 64); // queryId
@@ -1939,7 +1941,7 @@ document.getElementById('modalMintConfirm').addEventListener('click', async ()=>
     const discoveryNumber = currentConst.discoveryNumber || 0;
     const story = lastStoryText || '';
     const pixelColor = nftPixelColor || '#9333ea';
-    if (!TonCore || !TonCore.beginCell) { showToast('Payment setup failed to load — please reload the page and try again.'); return; }
+    if (!window.TonCore || !window.TonCore.beginCell) { showToast('Payment setup failed to load — please reload the page and try again.'); return; }
     const payload = buildJoinAndMintPayload(name, country, city, age, constName, isRare, isLegendary, discoveryNumber, story, pixelColor);
     sendTon('txMint',()=>{
     closeModal('modalMint');
@@ -2187,7 +2189,7 @@ function decodeCellString(cellEntry) {
   try {
     const bytes = cellEntry?.bytes;
     if (!bytes) return '';
-    const cell = TonCore.Cell.fromBoc(base64ToBytes(bytes))[0];
+    const cell = window.TonCore.Cell.fromBoc(base64ToBytes(bytes))[0];
     return cell.beginParse().loadStringTail();
   } catch(e) { console.warn('decodeCellString failed', e); return ''; }
 }
