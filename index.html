@@ -1356,7 +1356,7 @@ async function sendTon(statusId, onSuccess, payload) {
     if(el){el.className='tx-status error';el.textContent='✕ Wallet connect is unavailable right now. Please reload the page.';}
     return;
   }
-  if(!tonConnectUI.connected){tonConnectUI.openModal();return;}
+  if(!tonConnectUI.connected){ closeModal('modalMint'); tonConnectUI.openModal(); return; }
   el.className='tx-status pending'; el.textContent='⏳ Waiting for confirmation…';
   try {
     await tonConnectUI.sendTransaction({
@@ -1418,7 +1418,7 @@ document.getElementById('addNftBtn').addEventListener('click',()=>{
 
 /* ── MODALS ── */
 function openModal(id){document.getElementById(id).classList.add('open');}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
+function closeModal(id){document.getElementById(id)?.classList.remove('open');}
 
 // "I have vitiligo" — goes straight to photo upload on Stars tab
 // "joined" = has this wallet already completed JoinAndMint at least once?
@@ -1887,7 +1887,7 @@ document.getElementById('modalMintConfirm').addEventListener('click',()=>{
     return;
   }
   if(!tonConnectUI){showToast('Wallet connect is unavailable right now. Please reload the page.');return;}
-  if(!connected){tonConnectUI.openModal();return;}
+  if(!connected){ closeModal('modalMint'); tonConnectUI.openModal(); return; }
   const name = document.getElementById('fieldName')?.value || '';
   const country = document.getElementById('fieldCountry')?.value || '';
   const city = document.getElementById('fieldCity')?.value || '';
