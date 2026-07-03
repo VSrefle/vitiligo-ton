@@ -1273,6 +1273,15 @@ async function loadCounterFromChain() {
 loadCounterFromChain();
 updateMilestone();
 
+// Same undeclared-variable bug as 'connected' below — tickTimer was read/
+// assigned in startTick()/stopTick() but never declared. Found 03.07.2026
+// right after fixing 'connected', via the same unhandledrejection listener.
+// Third instance of the same bug as connected/tickTimer — liveRow was
+// referenced in startTick()/stopTick() but never declared. Caught
+// proactively via static scope analysis on 03.07.2026, before it could
+// cause a third round of the same crash live.
+const liveRow = document.getElementById('liveRow');
+let tickTimer = null;
 function startTick(){
   if(tickTimer)return; liveRow.classList.add('show');
 }
