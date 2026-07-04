@@ -120,6 +120,12 @@ html,body{
 /* LAYOUT */
 .page{display:none;min-height:100vh;padding-bottom:72px;position:relative;z-index:1}
 .page.active{display:block}
+/* Home's content is now intentionally compact (fits one screen without
+   scrolling, see 04.07.2026 redesign) — forcing it to still stretch to
+   min-height:100vh left an ugly empty gap at the bottom. Other pages keep
+   the full-height behavior since their empty states rely on it for
+   vertical centering. */
+#page-home{min-height:0}
 
 /* HOME */
 .home{padding:0 18px}
@@ -555,47 +561,49 @@ html,body{
       </div>
     </div>
 
-    <!-- Added 04.07.2026 — purely decorative, no taps/zoom (that lives on
-         Constellation now). Multi-depth parallax starfield drifting slowly
-         + one soft pulsing core, meant to read as "space, stars, infinity"
-         without needing any new art assets. -->
-    <div style="height:130px;border-radius:12px;overflow:hidden;position:relative;margin-bottom:16px;background:#040b18">
-      <canvas id="heroCosmos" style="width:100%;height:100%;display:block"></canvas>
+    <!-- Added 04.07.2026 — cosmos animation now serves as a literal
+         backdrop for the counters (merged into one block, not two stacked
+         ones) to save vertical space so Home fits on screen without
+         scrolling. Purely decorative, no taps/zoom (that lives on
+         Constellation now). -->
+    <div style="position:relative;border-radius:20px;overflow:hidden;margin:10px 0 14px;background:#040b18;border:.5px solid rgba(147,51,234,.15)">
+      <canvas id="heroCosmos" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas>
+      <div class="dual-counter" style="position:relative;background:transparent;border:none;margin-bottom:0">
+        <div class="counter-block">
+          <div class="cnum" id="cnum">0</div>
+          <div class="clabel">people counted</div>
+          <div class="live-row" id="liveRow"><div class="wdot" style="background:var(--green)"></div>live</div>
+        </div>
+        <div class="counter-divider"></div>
+        <div class="counter-block">
+          <div class="cnum cnum-gold" id="cnumPhotos">0</div>
+          <div class="clabel">constellations minted</div>
+        </div>
+      </div>
     </div>
 
-    <div class="dual-counter">
-      <div class="counter-block">
-        <div class="cnum" id="cnum">0</div>
-        <div class="clabel">people counted</div>
-        <div class="live-row" id="liveRow"><div class="wdot" style="background:var(--green)"></div>live</div>
-      </div>
-      <div class="counter-divider"></div>
-      <div class="counter-block">
-        <div class="cnum cnum-gold" id="cnumPhotos">0</div>
-        <div class="clabel">constellations minted</div>
-      </div>
-    </div>
-
-    <div class="milestone-bar">
-      <div class="milestone-label" id="milestoneLabel">Goal: 100 people</div>
+    <div style="background:rgba(147,51,234,.1);border:1px solid rgba(147,51,234,.22);border-radius:12px;padding:14px 16px;margin-bottom:16px">
+      <div style="font-size:10px;color:#a78bfa;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px" id="milestoneLabel">Goal: 100 people</div>
+      <div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:8px" id="milestoneSub">0 / 100</div>
       <div class="milestone-track"><div class="milestone-fill" id="milestoneFill"></div></div>
-      <div class="milestone-sub" id="milestoneSub">0 / 100</div>
     </div>
 
-    <!-- Added 04.07.2026 to fill out Home once the star canvas moved to
-         Constellation — real numbers only, no invented activity. -->
-    <div id="discoveryTeaserHome" style="background:rgba(147,51,234,.1);border:1px solid rgba(147,51,234,.22);border-radius:12px;padding:12px 16px;margin-bottom:14px;text-align:center">
-      <div style="font-size:10px;color:#a78bfa;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Real constellations discovered</div>
-      <div style="font-size:18px;font-weight:700;color:white" id="discoveryCountHome">0 <span style="font-size:12px;color:#a78bfa;font-weight:400">of 88</span></div>
-      <div style="height:4px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:6px">
-        <div id="discoveryBarHome" style="height:100%;background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:2px;width:0%;transition:width .6s ease"></div>
+    <!-- Discovery + city teasers now sit side by side instead of stacked
+         — same information, half the vertical space. -->
+    <div style="display:flex;gap:10px;margin-bottom:16px">
+      <div id="discoveryTeaserHome" style="flex:1;background:rgba(147,51,234,.1);border:1px solid rgba(147,51,234,.22);border-radius:12px;padding:10px 12px;text-align:center">
+        <div style="font-size:9px;color:#a78bfa;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px">Constellations</div>
+        <div style="font-size:16px;font-weight:700;color:white" id="discoveryCountHome">0 <span style="font-size:11px;color:#a78bfa;font-weight:400">of 88</span></div>
+        <div style="height:4px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:6px">
+          <div id="discoveryBarHome" style="height:100%;background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:2px;width:0%;transition:width .6s ease"></div>
+        </div>
       </div>
-    </div>
 
-    <div id="cityTeaserHome" style="display:none;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px 16px;margin-bottom:20px">
-      <div style="font-size:10px;color:#a78bfa;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Top cities</div>
-      <div id="cityTeaserList" style="font-size:13px;color:#e9d5ff;line-height:1.8"></div>
-      <div class="page-sub" id="cityTeaserLink" style="margin-top:8px;cursor:pointer;color:#a78bfa;font-size:12px">See the full map →</div>
+      <div id="cityTeaserHome" style="display:none;flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px 12px">
+        <div style="font-size:9px;color:#a78bfa;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">Top cities</div>
+        <div id="cityTeaserList" style="font-size:12px;color:#e9d5ff;line-height:1.6"></div>
+        <div class="page-sub" id="cityTeaserLink" style="margin-top:4px;cursor:pointer;color:#a78bfa;font-size:11px">See map →</div>
+      </div>
     </div>
 
     <h1 class="headline">People with vitiligo<br>are <em>unique by design</em></h1>
