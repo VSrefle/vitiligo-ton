@@ -2675,9 +2675,16 @@ async function loadCitiesFromChain() {
           if (typeof debugMode !== 'undefined' && debugMode) updateDebugInfo('getCityCount(' + i + ') unexpected shape: ' + JSON.stringify(entry).slice(0, 300));
           continue;
         }
-        const cityName = decodeCellString(elements[0][1]);
-        const countHex = elements[1][1];
-        const cnt = countHex ? parseInt(countHex, 16) : 0;
+        // Real shape confirmed 04.07.2026 via the on-screen debug panel —
+        // each tuple element is an @type-tagged object, not a simple
+        // [type, value] pair: city is {slice:{bytes:...}}, count is
+        // {number:{number:"1"}} as a DECIMAL string, not hex. Previous
+        // version assumed the simpler array format used by top-level
+        // scalar getters (totalCount etc.), which don't apply inside a
+        // nested tuple.
+        const cityName = decodeCellString(elements[0]?.slice);
+        const countRaw = elements[1]?.number?.number;
+        const cnt = countRaw ? parseInt(countRaw, 10) : 0;
         if (typeof debugMode !== 'undefined' && debugMode) updateDebugInfo('getCityCount(' + i + ') parsed: city="' + cityName + '" count=' + cnt);
         if (cityName && cnt > 0) cities.push({ city: cityName, count: cnt });
       } catch(e) {
