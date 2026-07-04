@@ -414,16 +414,17 @@ html,body{
 .form-input:focus{border-color:rgba(147,51,234,.45)}
 .form-input::placeholder{color:rgba(255,255,255,.14)}
 
-.nft-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;padding-bottom:12px}
-.nft-card{aspect-ratio:1;border-radius:14px;position:relative;overflow:hidden;cursor:pointer;background:#020110;border:.5px solid rgba(147,51,234,.15);transition:all .2s}
+.nft-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:8px;padding-bottom:12px}
+.nft-card{border-radius:14px;overflow:hidden;cursor:pointer;background:#020110;border:.5px solid rgba(147,51,234,.15);transition:all .2s}
 .nft-card:active{transform:scale(.96)}
 .nft-card.rare{border:1px solid rgba(251,191,36,.6);box-shadow:0 0 16px rgba(251,191,36,.25)}
+.nft-media{position:relative;aspect-ratio:1;width:100%}
 .nft-rare-badge{position:absolute;top:5px;right:5px;background:linear-gradient(135deg,#fbbf24,#f59e0b);border-radius:6px;padding:2px 6px;font-size:8px;color:#1a1207;font-weight:600}
-.nft-info-bar{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:14px 6px 5px}
-.nft-name{font-size:9px;color:#ede8ff;font-weight:500}
-.nft-story{font-size:9px;color:rgba(192,132,252,.5);margin-top:1px;font-style:italic;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.nft-info-bar{position:static;background:#0a0620;padding:8px 10px 10px}
+.nft-name{font-size:11px;color:#ede8ff;font-weight:600;margin-bottom:3px}
+.nft-story{font-size:10px;color:rgba(192,132,252,.55);margin-top:0;font-style:italic;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .gift-fab{position:absolute;bottom:6px;right:6px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:10px;border:.5px solid rgba(255,255,255,.15)}
-.nft-add{border:1.5px dashed rgba(147,51,234,.25);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px}
+.nft-add{aspect-ratio:.8;border:1.5px dashed rgba(147,51,234,.25);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px}
 .nft-add span{font-size:10px;color:rgba(192,132,252,.3)}
 
 /* NAV */
@@ -785,22 +786,12 @@ html,body{
     <button class="btn-main" id="updateOnChainBtn" style="display:none;margin-bottom:16px;background:transparent;border:1px solid rgba(147,51,234,.4);color:var(--purple-light)">Update on-chain profile · 0.02 TON</button>
     <div class="tx-status" id="txUpdateProfile" style="margin-bottom:16px"></div>
 
-    <label class="form-label">My constellations</label>
+    <label class="form-label">My constellations <span id="constCount" style="color:#a78bfa;font-weight:400"></span></label>
     <div class="nft-grid" id="nftGrid">
       <div class="nft-card nft-add" id="addNftBtn">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(192,132,252,.3)" stroke-width="1.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         <span>Add photo · 1 TON</span>
       </div>
-    </div>
-
-    <div class="sky-card" id="skyCard" style="margin-top:16px">
-      <canvas id="mySkyCanvas"></canvas>
-      <div id="skyEmpty" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px">
-        <div style="font-size:28px;opacity:0.15">✦</div>
-        <div style="font-size:12px;color:#6b7280;text-align:center;line-height:1.6">Your constellation will appear here<br>after you upload your photo</div>
-      </div>
-      <div class="sky-count" id="skyCount" style="display:none">0 constellations</div>
-      <div class="sky-label" id="skyLabel" style="display:none">your personal night sky</div>
     </div>
 
     <div style="border:1px solid rgba(147,51,234,.18);background:rgba(147,51,234,.05);border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:12px;line-height:1.6;color:#9c93b8">
@@ -2338,6 +2329,7 @@ document.getElementById('modalMintConfirm').addEventListener('click', async ()=>
     const grid=document.getElementById('nftGrid');
     const card=document.createElement('div');
     card.className='nft-card' + (gold ? ' rare' : '');
+    const media=document.createElement('div'); media.className='nft-media';
     const mc=document.createElement('canvas'); mc.width=80; mc.height=80;
     mc.style.cssText='width:100%;height:100%;display:block';
     const mctx=mc.getContext('2d');
@@ -2352,16 +2344,18 @@ document.getElementById('modalMintConfirm').addEventListener('click', async ()=>
       mctx.fillStyle=g; mctx.beginPath(); mctx.arc(sx,sy,sz*4,0,Math.PI*2); mctx.fill();
       mctx.fillStyle='rgba(255,252,255,.95)'; mctx.beginPath(); mctx.arc(sx,sy,sz,0,Math.PI*2); mctx.fill();
     });
-    card.appendChild(mc);
+    media.appendChild(mc);
     if(gold){
       const badge=document.createElement('div'); badge.className='nft-rare-badge'; badge.textContent='★ RARE';
-      card.appendChild(badge);
+      media.appendChild(badge);
     }
+    const giftFab = document.createElement('div'); giftFab.className='gift-fab'; giftFab.textContent='🎁';
+    media.appendChild(giftFab);
+    card.appendChild(media);
     const infoBar = document.createElement('div'); infoBar.className='nft-info-bar';
     infoBar.innerHTML = `<div class="nft-name">${currentConst.name.split('·')[0].trim()}</div>${lastStoryText?`<div class="nft-story">"${lastStoryText}"</div>`:''}`;
     card.appendChild(infoBar);
-    const giftFab = document.createElement('div'); giftFab.className='gift-fab'; giftFab.textContent='🎁';
-    card.appendChild(giftFab);
+
 
     const nftData = {name: currentConst.name.split('·')[0].trim(), story: lastStoryText, rare: gold, constData: currentConst};
     myNfts.push(nftData);
@@ -2371,7 +2365,7 @@ document.getElementById('modalMintConfirm').addEventListener('click', async ()=>
     });
 
     grid.insertBefore(card,document.getElementById('addNftBtn'));
-    drawMySky();
+    refreshConstCount();
 
     setTimeout(()=>{
       document.querySelector('[data-page="home"]').click();
@@ -2431,53 +2425,17 @@ document.getElementById('modalNftShare').addEventListener('click',()=>{
   openModal('shareSheet');
 });
 
-function drawMySky(){
-  const canvas = document.getElementById('mySkyCanvas');
-  const w = canvas.offsetWidth || 300, h = w/1.6;
-  canvas.width=w; canvas.height=h;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle='#020110'; ctx.fillRect(0,0,w,h);
-  for(let i=0;i<40;i++){
-    const x=Math.random()*w, y=Math.random()*h;
-    ctx.fillStyle=`rgba(200,190,255,${.05+Math.random()*.15})`;
-    ctx.beginPath();ctx.arc(x,y,Math.random()<.7?.5:1,0,Math.PI*2);ctx.fill();
-  }
-  if(myNfts.length===0){
-    document.getElementById('skyCount').textContent = '0 constellations';
-    // Show sky content, hide empty state
-    document.getElementById('skyEmpty').style.display = 'none';
-    document.getElementById('skyCount').style.display = 'block';
-    document.getElementById('skyLabel').style.display = 'block';
-    return;
-  }
-  const offsets = [{ox:.1,oy:.12,sc:.32},{ox:.55,oy:.1,sc:.3},{ox:.25,oy:.5,sc:.3},{ox:.6,oy:.5,sc:.28},{ox:.05,oy:.55,sc:.25}];
-  let totalStars = 0;
-  myNfts.slice(0,5).forEach((nft,ci)=>{
-    const off = offsets[ci % offsets.length];
-    const pts = nft.constData.stars;
-    const gold = nft.rare;
-    totalStars += pts.length;
-    ctx.strokeStyle = gold?'rgba(251,191,36,.3)':'rgba(168,85,247,.25)';
-    ctx.lineWidth=.6;ctx.setLineDash([2,4]);
-    ctx.beginPath();
-    pts.forEach((p,i)=>{
-      const x=(off.ox+p.x*off.sc)*w, y=(off.oy+p.y*off.sc)*h;
-      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-    });
-    ctx.stroke();ctx.setLineDash([]);
-    pts.forEach((p,i)=>{
-      const x=(off.ox+p.x*off.sc)*w, y=(off.oy+p.y*off.sc)*h;
-      const sz=i===0?2.8:1.3+Math.random()*.5;
-      const g=ctx.createRadialGradient(x,y,0,x,y,sz*4);
-      g.addColorStop(0,gold?'rgba(253,230,138,.45)':'rgba(200,180,255,.35)');
-      g.addColorStop(1,'transparent');
-      ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,sz*4,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='rgba(255,252,255,.9)';ctx.beginPath();ctx.arc(x,y,sz,0,Math.PI*2);ctx.fill();
-    });
-  });
-  document.getElementById('skyCount').textContent = totalStars + ' stars';
+// Replaces the old drawMySky()/"your personal night sky" canvas section
+// (removed 04.07.2026 — it duplicated the card grid above in a buggier
+// way and its count never updated after a getUser-restored constellation
+// was added, always showing "0 constellations" even with a real one).
+// Just keeps a simple count next to the "My constellations" label instead.
+function refreshConstCount(){
+  const el = document.getElementById('constCount');
+  if (!el) return;
+  el.textContent = myNfts.length ? `(${myNfts.length})` : '';
 }
-setTimeout(drawMySky, 200);
+refreshConstCount();
 
 document.getElementById('resetBtn').addEventListener('click',()=>{
   uploadArea.style.display=''; resultWrap.style.display='none';
@@ -2717,6 +2675,7 @@ function renderRestoredNftCard(nftData) {
   const gold = nftData.rare;
   const card = document.createElement('div');
   card.className = 'nft-card' + (gold ? ' rare' : '');
+  const media = document.createElement('div'); media.className = 'nft-media';
   const mc = document.createElement('canvas'); mc.width = 80; mc.height = 80;
   mc.style.cssText = 'width:100%;height:100%;display:block';
   const mctx = mc.getContext('2d');
@@ -2731,16 +2690,18 @@ function renderRestoredNftCard(nftData) {
     mctx.fillStyle = g; mctx.beginPath(); mctx.arc(sx, sy, sz * 4, 0, Math.PI * 2); mctx.fill();
     mctx.fillStyle = 'rgba(255,252,255,.95)'; mctx.beginPath(); mctx.arc(sx, sy, sz, 0, Math.PI * 2); mctx.fill();
   });
-  card.appendChild(mc);
+  media.appendChild(mc);
   if (gold) {
     const badge = document.createElement('div'); badge.className = 'nft-rare-badge'; badge.textContent = '★ RARE';
-    card.appendChild(badge);
+    media.appendChild(badge);
   }
+  card.appendChild(media);
   const infoBar = document.createElement('div'); infoBar.className = 'nft-info-bar';
   infoBar.innerHTML = `<div class="nft-name">${nftData.name}</div>${nftData.story ? `<div class="nft-story">"${nftData.story}"</div>` : ''}`;
   card.appendChild(infoBar);
   card.addEventListener('click', () => openNftDetail(nftData));
   grid.insertBefore(card, addBtn);
+  refreshConstCount();
 }
 
 async function loadCitiesFromChain() {
