@@ -643,6 +643,14 @@ html,body{
       <div class="pstep" id="ps4"><div class="pstep-dot"></div><div class="pstep-label">Save</div></div>
     </div>
 
+    <!-- Added 04.07.2026 — shown only to already-counted people, right
+         above the same upload flow used for the original mint, so it's
+         clear this is for trying again (a fresh roll at a rarer
+         constellation, another 1 TON), not a sign they aren't counted yet. -->
+    <div id="alreadyCountedNote" style="display:none;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#6ee7b7;text-align:center">
+      ✦ You're already counted — this is for making another constellation, for a chance at something rarer
+    </div>
+
     <div class="upload-area" id="uploadArea">
       <div class="upload-icon">✦</div>
       <div class="upload-text">Tap to upload a photo<br>with your vitiligo patch</div>
@@ -787,7 +795,8 @@ html,body{
     <select class="form-input" id="fieldAge" style="color:#e9d5ff;background:#12103a;border:1px solid rgba(147,51,234,.3)">
       <option value="" disabled selected style="color:#6b7280">Select your age</option>
     </select>
-    <button class="btn-main" id="saveBtn" style="margin-top:20px;margin-bottom:16px">Save profile</button>
+    <button class="btn-main" id="saveBtn" style="margin-top:20px;margin-bottom:6px">Save profile</button>
+    <div style="font-size:11px;color:#6b7280;text-align:center;margin-bottom:16px">Saves on this device only — doesn't change what's on the blockchain</div>
 
     <!-- Only shown once the wallet has minted before — lets someone fix a
          wrong/empty name·country·city·age on-chain via the new
@@ -795,7 +804,8 @@ html,body{
          fields (fieldName/fieldCountry/fieldCity/fieldAge) are never
          retroactively sent on-chain by themselves — this button is the
          explicit, deliberate action that does that. -->
-    <button class="btn-main" id="updateOnChainBtn" style="display:none;margin-bottom:16px;background:transparent;border:1px solid rgba(147,51,234,.4);color:var(--purple-light)">Update on-chain profile · 0.02 TON</button>
+    <button class="btn-main" id="updateOnChainBtn" style="display:none;margin-bottom:6px;background:transparent;border:1px solid rgba(147,51,234,.4);color:var(--purple-light)">Update on-chain profile · 0.02 TON</button>
+    <div id="updateOnChainHint" style="display:none;font-size:11px;color:#6b7280;text-align:center;margin-bottom:16px">This is what everyone else actually sees — city, map, and story</div>
     <div class="tx-status" id="txUpdateProfile" style="margin-bottom:16px"></div>
 
     <div style="border:1px solid rgba(147,51,234,.18);background:rgba(147,51,234,.05);border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:12px;line-height:1.6;color:#9c93b8">
@@ -1859,6 +1869,15 @@ document.getElementById('countBtn').addEventListener('click',()=>{
 function refreshCountedBanner(){
   const banner = document.getElementById('countedBanner');
   const btn = document.getElementById('countBtn');
+  const note = document.getElementById('alreadyCountedNote');
+  const mintBtnEl = document.getElementById('mintBtn');
+  if (note) note.style.display = isJoinedLocal() ? 'block' : 'none';
+  // Only touch mintBtn's label when it isn't mid-flow (i.e. not disabled
+  // from an in-progress upload, not showing the post-mint "✓ Counted!"
+  // state) — this just sets the correct default/reset label.
+  if (mintBtnEl && !mintBtnEl.classList.contains('done') && mintBtnEl.disabled) {
+    mintBtnEl.textContent = isJoinedLocal() ? 'Make another constellation ✦' : 'Count me in ✦';
+  }
   if (!banner || !btn) return;
   if (isJoinedLocal()) {
     banner.style.display = 'block';
@@ -2447,7 +2466,7 @@ document.getElementById('resetBtn').addEventListener('click',()=>{
   constInfo.style.display='none'; storyWrap.style.display='none';
   rarityBanner.style.display='none';
   mintBtn.disabled=true;
-  mintBtn.textContent='Count me in ✦'; mintBtn.classList.remove('done');
+  mintBtn.textContent = isJoinedLocal() ? 'Make another constellation ✦' : 'Count me in ✦'; mintBtn.classList.remove('done');
   resetBtn.style.display='none'; fileInput.value=''; setStep(1);
   currentConst=null; nftPixelColor=null;
   document.getElementById('storyInput').value='';
@@ -2486,8 +2505,10 @@ document.getElementById('saveBtn').addEventListener('click',()=>{
 // on load, after Save Profile, and after wallet connect changes.
 function refreshUpdateProfileButtonVisibility(){
   const btn = document.getElementById('updateOnChainBtn');
+  const hint = document.getElementById('updateOnChainHint');
   if (!btn) return;
   btn.style.display = isJoinedLocal() ? 'block' : 'none';
+  if (hint) hint.style.display = isJoinedLocal() ? 'block' : 'none';
 }
 refreshUpdateProfileButtonVisibility();
 
