@@ -5,10 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>vitiligo.ton</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+<script src="https://unpkg.com/@tonconnect/ui@3.0.0/dist/tonconnect-ui.min.js"></script>
 <script type="module">
   import { beginCell } from "https://esm.sh/@ton/core@0.56.0";
   window.TonCore = { beginCell };
+  // Cell and Address are only used by optional features (Map city-list,
+  // reloading a previously-minted constellation into Profile). Loaded
+  // separately and defensively so that if this fails for any reason
+  // (CDN hiccup, export mismatch, etc.) it can NEVER take down beginCell —
+  // which every single payment depends on. A previous version imported
+  // both in one statement, which meant a Cell failure would silently break
+  // ALL payments with zero visible error. Never again.
+  import("https://esm.sh/@ton/core@0.56.0").then(mod => {
+    if (mod.Cell) window.TonCore.Cell = mod.Cell;
+    if (mod.Address) window.TonCore.Address = mod.Address;
+  }).catch(e => console.warn('[vitiligo.ton] Cell/Address import failed — Map city list and profile reload will stay empty, payments unaffected:', e));
   window.dispatchEvent(new Event('toncore-ready'));
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -33,7 +44,7 @@ html,body{
 
 /* WELCOME */
 .welcome{
-  position:fixed;inset:0;z-index:50;background:var(--bg);
+  position:fixed;inset:0;z-index:150;background:var(--bg);
   display:flex;flex-direction:column;align-items:center;
   justify-content:center;padding:36px 28px;text-align:center;
   transition:opacity .6s ease;
@@ -57,16 +68,17 @@ html,body{
   width:100%;background:var(--purple);color:#fff;border:none;
   border-radius:40px;padding:16px;font-size:15px;font-weight:500;
   cursor:pointer;font-family:'Space Grotesk',sans-serif;
-  box-shadow:0 0 36px rgba(147,51,234,.45);transition:all .2s;
+  box-shadow:0 4px 20px rgba(147,51,234,.35);transition:all .2s;
 }
 .welcome-btn:active{transform:scale(.97)}
 .welcome-skip{margin-top:14px;font-size:12px;color:rgba(255,255,255,.22);cursor:pointer}
-.ob-screen{display:flex;flex-direction:column;align-items:center;text-align:center;width:100%}
+.ob-screen{display:flex;flex-direction:column;align-items:center;text-align:center;width:100%;min-height:520px}
+.ob-screen .welcome-btn{margin-top:auto}
 .ob-number{font-size:44px;font-weight:800;color:white;letter-spacing:-2px;margin-bottom:8px;margin-top:16px}
 .ob-title{font-size:24px;font-weight:600;color:#fff;line-height:1.3;margin-bottom:16px}
 .ob-body{font-size:14px;color:rgba(220,200,255,.5);line-height:1.7;margin-bottom:36px;max-width:280px}
 .ob-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.2);transition:all .3s ease}
-.ob-dot.active{width:20px;border-radius:3px;background:#9333ea}
+.ob-dot.active{width:20px;border-radius:2px;background:#9333ea}
 
 /* SOCIAL TOAST */
 .social-toast{
@@ -287,7 +299,7 @@ html,body{
   background:radial-gradient(circle,rgba(168,85,247,.25),transparent 70%);
   pointer-events:none;
 }
-.invite-icon{font-size:32px;margin-bottom:10px;position:relative}
+.invite-icon{font-size:30px;margin-bottom:10px;position:relative}
 .invite-title{font-family:'Outfit',sans-serif;font-size:16px;color:#ede8ff;margin-bottom:6px;position:relative}
 .invite-text{font-size:12px;color:rgba(192,132,252,.5);line-height:1.5;margin-bottom:18px;position:relative}
 
@@ -360,7 +372,7 @@ html,body{
 .profile-handle{font-size:13px;color:var(--muted)}
 
 .sky-card{
-  background:#030112;border-radius:20px;
+  background:#020110;border-radius:20px;
   border:.5px solid rgba(147,51,234,.25);
   aspect-ratio:1.6;position:relative;overflow:hidden;margin-bottom:18px;
 }
@@ -388,7 +400,7 @@ html,body{
 .nft-rare-badge{position:absolute;top:5px;right:5px;background:linear-gradient(135deg,#fbbf24,#f59e0b);border-radius:6px;padding:2px 6px;font-size:8px;color:#1a1207;font-weight:600}
 .nft-info-bar{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:14px 6px 5px}
 .nft-name{font-size:9px;color:#ede8ff;font-weight:500}
-.nft-story{font-size:8px;color:rgba(192,132,252,.5);margin-top:1px;font-style:italic;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.nft-story{font-size:9px;color:rgba(192,132,252,.5);margin-top:1px;font-style:italic;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .gift-fab{position:absolute;bottom:6px;right:6px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:10px;border:.5px solid rgba(255,255,255,.15)}
 .nft-add{border:1.5px dashed rgba(147,51,234,.25);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px}
 .nft-add span{font-size:10px;color:rgba(192,132,252,.3)}
@@ -449,7 +461,7 @@ html,body{
 
 /* SHARE SHEET */
 .sheet-preview{background:rgba(0,0,0,.3);border-radius:14px;padding:14px;border:.5px solid rgba(147,51,234,.25);margin-bottom:16px;display:flex;gap:12px;align-items:center}
-.sheet-preview-icon{font-size:28px}
+.sheet-preview-icon{font-size:30px}
 .sheet-preview-title{font-size:13px;color:#ede8ff;margin-bottom:3px}
 .sheet-preview-sub{font-size:10px;color:rgba(192,132,252,.4)}
 .sheet-options{display:flex;flex-direction:column;gap:8px}
@@ -459,9 +471,10 @@ html,body{
 /* TOAST */
 .toast{
   position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(16px);
-  background:#9333ea;color:#fff;border-radius:40px;
-  padding:10px 20px;font-size:12px;font-weight:500;
-  white-space:nowrap;opacity:0;transition:all .35s;z-index:150;pointer-events:none;
+  background:rgba(20,10,35,.95);color:var(--text);border:.5px solid rgba(147,51,234,.35);
+  border-radius:12px;
+  padding:9px 16px;font-size:12px;font-weight:400;text-align:center;
+  max-width:280px;opacity:0;transition:all .35s;z-index:150;pointer-events:none;
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
@@ -485,7 +498,7 @@ html,body{
     <div class="welcome-glow"><div class="welcome-star">✦</div></div>
     <div class="ob-number">100,000,000</div>
     <div class="ob-title">People with vitiligo<br>in the world</div>
-    <div class="ob-body">Nobody has ever counted for real.<br>No survey. No exact number.<br>Just estimates.</div>
+    <div class="ob-body">Nobody has ever counted for real — no survey, no exact number, just estimates repeated for decades. We're building the first real count, one honest person at a time, permanently recorded on the blockchain.</div>
     <button class="welcome-btn" onclick="goOb(1)">We can change that →</button>
   </div>
 
@@ -495,7 +508,7 @@ html,body{
       <div class="welcome-star">🌟</div>
     </div>
     <div class="ob-title">Your vitiligo<br>becomes a constellation</div>
-    <div class="ob-body">Upload a photo — the algorithm finds your patches and builds a personal star map. Unique. Yours. Forever on the blockchain.</div>
+    <div class="ob-body">Upload a photo — the algorithm finds your patches and turns them into a personal star map. No two are alike. Yours is minted once, and it's yours forever, safe on the TON blockchain.</div>
     <button class="welcome-btn" onclick="goOb(2)">Tell me more →</button>
   </div>
 
@@ -503,10 +516,11 @@ html,body{
   <div class="ob-screen" id="ob2" style="display:none">
     <div class="welcome-glow"><div class="welcome-star">✦</div></div>
     <div class="ob-title">Every star on this canvas<br>is a real person</div>
-    <div class="ob-body">Together we are a constellation that cannot be faked. Each star pulses. Tap any pixel — see whose it is.</div>
-    <button class="welcome-btn" id="welcomeBtn" onclick="closeWelcome()">I have vitiligo ✦</button>
-    <div class="welcome-skip" id="welcomeSkip" onclick="closeWelcome()">just look around first</div>
+    <div class="ob-body">Together we are a constellation that cannot be faked. Each star pulses with a life behind it. Tap any pixel — see whose it is, where they're from, and their story.</div>
+    <button class="welcome-btn" id="welcomeBtn">I have vitiligo ✦</button>
   </div>
+
+  <div class="welcome-skip" id="welcomeSkip" style="display:none;position:absolute;left:28px;right:28px;bottom:28px">just look around first</div>
 
 </div>
 
@@ -518,7 +532,6 @@ html,body{
   <div class="home">
     <div class="topbar">
       <span class="logo">vitiligo.ton</span>
-      <button onclick="openModal('modalHelp')" style="background:none;border:1px solid rgba(147,51,234,.3);color:#a78bfa;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">?</button>
       <div id="ton-connect-btn"></div>
       <div class="wallet-chip" id="walletChip">
         <div class="wdot"></div>
@@ -527,17 +540,12 @@ html,body{
       </div>
     </div>
 
-    <div class="canvas-wrap" style="position:relative;border-radius:12px;overflow:hidden;background:#040b18;height:160px">
-      <canvas id="cosmosCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;touch-action:none;cursor:grab"></canvas>
-      <div id="cosmosExp" style="position:absolute;bottom:8px;right:8px;width:28px;height:28px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.35);color:#a78bfa;border-radius:7px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;user-select:none">⛶</div>
-      <div id="cosmosUI" style="position:fixed;top:12px;right:12px;flex-direction:column;gap:6px;z-index:10001;display:none">
-        <div id="cosmosClose" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:9px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</div>
-        <div id="cosmosPlus" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:9px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">+</div>
-        <div id="cosmosMinus" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:9px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">−</div>
-        <div id="cosmosReset" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:9px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center">✦</div>
-        <div id="cosmosMe" style="width:34px;height:34px;background:rgba(124,58,237,.35);border:1px solid rgba(167,139,250,.7);color:#ddd6fe;border-radius:9px;font-size:9px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;letter-spacing:.5px">ME</div>
-      </div>
-      <div id="cosmosTip" style="position:absolute;bottom:8px;left:8px;background:rgba(4,11,24,.97);border:1px solid rgba(124,58,237,.3);border-radius:8px;padding:8px 12px;font-size:11px;color:#e9d5ff;pointer-events:none;display:none;z-index:10;max-width:180px;line-height:1.5"></div>
+    <!-- Added 04.07.2026 — purely decorative, no taps/zoom (that lives on
+         Constellation now). Multi-depth parallax starfield drifting slowly
+         + one soft pulsing core, meant to read as "space, stars, infinity"
+         without needing any new art assets. -->
+    <div style="height:130px;border-radius:12px;overflow:hidden;position:relative;margin-bottom:16px;background:#040b18">
+      <canvas id="heroCosmos" style="width:100%;height:100%;display:block"></canvas>
     </div>
 
     <div class="dual-counter">
@@ -557,6 +565,22 @@ html,body{
       <div class="milestone-label" id="milestoneLabel">Goal: 100 people</div>
       <div class="milestone-track"><div class="milestone-fill" id="milestoneFill"></div></div>
       <div class="milestone-sub" id="milestoneSub">0 / 100</div>
+    </div>
+
+    <!-- Added 04.07.2026 to fill out Home once the star canvas moved to
+         Constellation — real numbers only, no invented activity. -->
+    <div id="discoveryTeaserHome" style="background:rgba(147,51,234,.1);border:1px solid rgba(147,51,234,.22);border-radius:12px;padding:12px 16px;margin-bottom:14px;text-align:center">
+      <div style="font-size:10px;color:#a78bfa;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Real constellations discovered</div>
+      <div style="font-size:18px;font-weight:700;color:white" id="discoveryCountHome">0 <span style="font-size:12px;color:#a78bfa;font-weight:400">of 88</span></div>
+      <div style="height:4px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:6px">
+        <div id="discoveryBarHome" style="height:100%;background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:2px;width:0%;transition:width .6s ease"></div>
+      </div>
+    </div>
+
+    <div id="cityTeaserHome" style="display:none;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px 16px;margin-bottom:20px">
+      <div style="font-size:10px;color:#a78bfa;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Top cities</div>
+      <div id="cityTeaserList" style="font-size:13px;color:#e9d5ff;line-height:1.8"></div>
+      <div class="page-sub" id="cityTeaserLink" style="margin-top:8px;cursor:pointer;color:#a78bfa;font-size:12px">See the full map →</div>
     </div>
 
     <h1 class="headline">People with vitiligo<br>are <em>unique by design</em></h1>
@@ -609,7 +633,7 @@ html,body{
     <div class="const-info" id="constInfo">
       <div class="const-name" id="constName"></div>
       <div class="const-desc" id="constDesc"></div>
-      <div style="font-size:12px;color:#6b7280;text-align:center;margin-top:8px">Your constellation will be revealed after payment ✦</div>
+      <div style="font-size:12px;color:#6b7280;text-align:center;margin-top:8px">Confirm 1 TON to mint this constellation permanently on-chain ✦</div>
     </div>
 
     <div class="story-wrap" id="storyWrap">
@@ -620,6 +644,25 @@ html,body{
 
     <button class="btn-main" id="mintBtn" disabled>Count me in ✦</button>
     <button class="btn-ghost" id="resetBtn" style="display:none;margin-top:0">Try another photo</button>
+
+    <!-- Moved here from Home 04.07.2026 — the personal upload/mint flow
+         above is the primary reason someone visits this tab; browsing
+         everyone else's stars is a secondary, related action, so it lives
+         below rather than competing with Home's counters for attention. -->
+    <div class="page-title" style="font-size:16px;margin-top:32px">Everyone's sky</div>
+    <div class="page-sub" style="margin-bottom:16px">Tap any star to see whose it is</div>
+    <div class="canvas-wrap" style="position:relative;border-radius:12px;overflow:hidden;background:#040b18;height:220px">
+      <canvas id="cosmosCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;touch-action:none;cursor:grab"></canvas>
+      <div id="cosmosExp" style="position:absolute;bottom:8px;right:8px;width:28px;height:28px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.35);color:#a78bfa;border-radius:8px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;user-select:none">⛶</div>
+      <div id="cosmosUI" style="position:fixed;top:12px;right:12px;flex-direction:column;gap:6px;z-index:10001;display:none">
+        <div id="cosmosClose" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</div>
+        <div id="cosmosPlus" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">+</div>
+        <div id="cosmosMinus" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">−</div>
+        <div id="cosmosReset" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center">✦</div>
+        <div id="cosmosMe" style="width:34px;height:34px;background:rgba(124,58,237,.35);border:1px solid rgba(167,139,250,.7);color:#ddd6fe;border-radius:8px;font-size:9px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;letter-spacing:.5px">ME</div>
+      </div>
+      <div id="cosmosTip" style="position:absolute;bottom:8px;left:8px;background:rgba(4,11,24,.97);border:1px solid rgba(124,58,237,.3);border-radius:8px;padding:8px 12px;font-size:11px;color:#e9d5ff;pointer-events:none;display:none;z-index:10;max-width:180px;line-height:1.5"></div>
+    </div>
   </div>
 </div>
 
@@ -662,22 +705,17 @@ html,body{
         <div class="bonus-icon">⭐</div>
         <div class="bonus-text">
           <div class="bonus-title">Friend joins & counts in</div>
-          <div class="bonus-desc">Their star appears on the canvas</div>
-        </div>
-      </div>
-      <div class="bonus-row">
-        <div class="bonus-icon">✦</div>
-        <div class="bonus-text">
-          <div class="bonus-title">Your invite badge grows</div>
-          <div class="bonus-desc">Shown on your profile as a constellation guide</div>
+          <div class="bonus-desc">Their star appears on the canvas — for everyone to see, including you</div>
         </div>
       </div>
     </div>
 
-    <div class="invited-list-title">People you brought in</div>
-    <div id="invitedList">
-      <div class="invite-empty">No invites yet — share your link above ✦</div>
-    </div>
+    <!-- "People you brought in" removed 03.07.2026: the contract has no
+         referral field, so this list could never show anything but "No
+         invites yet" — even for someone who successfully brought in ten
+         friends. That's a quiet honesty problem for a project built on the
+         promise of a real count. Bring this back once a backend indexer
+         (see HANDOFF, item 5) can actually attribute joins to referrers. -->
   </div>
 </div>
 
@@ -688,16 +726,6 @@ html,body{
       <div class="avatar" id="profileAvatar">🌟<div class="avatar-badge" id="profileBadge">⭐</div></div>
       <div class="profile-name" id="profileName">Your name</div>
       <div class="profile-handle" id="profileHandle">@telegram_user</div>
-    </div>
-
-    <div class="sky-card" id="skyCard">
-      <canvas id="mySkyCanvas"></canvas>
-      <div id="skyEmpty" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px">
-        <div style="font-size:28px;opacity:0.15">✦</div>
-        <div style="font-size:12px;color:#6b7280;text-align:center;line-height:1.6">Your constellation will appear here<br>after you upload your photo</div>
-      </div>
-      <div class="sky-count" id="skyCount" style="display:none">0 constellations</div>
-      <div class="sky-label" id="skyLabel" style="display:none">your personal night sky</div>
     </div>
 
     <label class="form-label">Name</label>
@@ -716,6 +744,17 @@ html,body{
     <select class="form-input" id="fieldAge" style="color:#e9d5ff;background:#12103a;border:1px solid rgba(147,51,234,.3)">
       <option value="" disabled selected style="color:#6b7280">Select your age</option>
     </select>
+    <button class="btn-main" id="saveBtn" style="margin-top:20px;margin-bottom:16px">Save profile</button>
+
+    <!-- Only shown once the wallet has minted before — lets someone fix a
+         wrong/empty name·country·city·age on-chain via the new
+         UpdateProfile message, added 04.07.2026. Locally-saved profile
+         fields (fieldName/fieldCountry/fieldCity/fieldAge) are never
+         retroactively sent on-chain by themselves — this button is the
+         explicit, deliberate action that does that. -->
+    <button class="btn-main" id="updateOnChainBtn" style="display:none;margin-bottom:16px;background:transparent;border:1px solid rgba(147,51,234,.4);color:var(--purple-light)">Update on-chain profile · 0.02 TON</button>
+    <div class="tx-status" id="txUpdateProfile" style="margin-bottom:16px"></div>
+
     <label class="form-label">My constellations</label>
     <div class="nft-grid" id="nftGrid">
       <div class="nft-card nft-add" id="addNftBtn">
@@ -723,22 +762,39 @@ html,body{
         <span>Add photo · 1 TON</span>
       </div>
     </div>
-    <button class="btn-main" id="saveBtn" style="margin-top:20px;margin-bottom:16px">Save profile</button>
 
-    <a href="https://t.me/vitiligo_ton" target="_blank" style="display:block;text-align:center;padding:14px;border:1px solid rgba(147,51,234,.3);border-radius:12px;color:#a78bfa;font-size:14px;text-decoration:none;margin-bottom:12px">
+    <div class="sky-card" id="skyCard" style="margin-top:16px">
+      <canvas id="mySkyCanvas"></canvas>
+      <div id="skyEmpty" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px">
+        <div style="font-size:28px;opacity:0.15">✦</div>
+        <div style="font-size:12px;color:#6b7280;text-align:center;line-height:1.6">Your constellation will appear here<br>after you upload your photo</div>
+      </div>
+      <div class="sky-count" id="skyCount" style="display:none">0 constellations</div>
+      <div class="sky-label" id="skyLabel" style="display:none">your personal night sky</div>
+    </div>
+
+    <div style="border:1px solid rgba(147,51,234,.18);background:rgba(147,51,234,.05);border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:12px;line-height:1.6;color:#9c93b8">
+      <b style="color:#c4a8f5">Fun fact:</b> vitiligo.ton isn't just a name — it's a real TON domain, pointing straight at this contract. You can send TON there directly from any wallet, no app needed, and it lands here.
+    </div>
+
+    <a href="https://t.me/vitiligo_ton" target="_blank" style="display:block;text-align:center;padding:14px;border:1px solid rgba(147,51,234,.3);border-radius:12px;color:#a78bfa;font-size:14px;text-decoration:none;margin-bottom:8px">
       💬 Write to the team
     </a>
-    <div style="text-align:center;font-size:11px;color:#6b7280;margin-bottom:32px">Ideas, feedback, questions — we read everything</div>
+    <button onclick="openModal('modalHelp')" style="display:block;width:100%;text-align:center;padding:14px;border:1px solid rgba(147,51,234,.2);border-radius:12px;color:#6b7280;font-size:14px;background:none;cursor:pointer;margin-bottom:32px">
+      ? How it works
+    </button>
   </div>
 </div>
 
 <!-- NAV -->
+<div id="persistentDebug" style="position:fixed;left:0;right:0;bottom:64px;z-index:9999;background:rgba(0,0,0,.92);color:#0f0;font-family:monospace;font-size:10px;padding:6px 10px;line-height:1.5;word-break:break-all;display:none;max-height:35vh;overflow-y:auto"></div>
+
 <nav class="nav">
   <button class="nav-item active" data-page="home">
     <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home
   </button>
   <button class="nav-item" data-page="stars">
-    <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Stars
+    <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Constellation
   </button>
   <button class="nav-item" data-page="map">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.4 7.4 12.5 7.7 12.8a.5.5 0 0 0 .6 0C12.6 22.5 20 15.4 20 10a8 8 0 0 0-8-8z"/></svg>Map
@@ -752,19 +808,7 @@ html,body{
 </nav>
 
 <!-- MODAL: COUNT -->
-<div class="modal-backdrop" id="modalCount">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">You're joining the count</div>
-    <div class="ton-amount">1 TON</div>
-    <div class="modal-desc">Your vitiligo photo becomes a unique constellation — forever on the TON blockchain. Your star lights up on the shared canvas.</div>
-    <div class="tx-status" id="txCount"></div>
-    <button class="modal-btn" id="modalCountConfirm">Confirm — 1 TON</button>
-    <button class="modal-btn secondary" id="modalCountClose">Cancel</button>
-  </div>
-</div>
-
-<!-- MODAL: MINT -->
+<!-- MODAL: JOIN + MINT (single 1 TON payment) -->
 <div class="modal-backdrop" id="modalMint">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -772,6 +816,7 @@ html,body{
     <div class="ton-amount">1 TON</div>
     <div class="modal-desc">Your vitiligo becomes a unique constellation — forever on the TON blockchain. Your star lights up on the shared canvas of everyone who has vitiligo.</div>
     <div class="tx-status" id="txMint"></div>
+    <div id="debugInfo" style="font-size:10px;font-family:monospace;color:#666;text-align:left;background:rgba(255,255,255,.04);border-radius:8px;padding:8px;margin-bottom:10px;line-height:1.5;word-break:break-all"></div>
     <button class="modal-btn" id="modalMintConfirm">Confirm — 1 TON</button>
     <button class="modal-btn secondary" id="modalMintClose">Cancel</button>
   </div>
@@ -785,8 +830,10 @@ html,body{
       <canvas id="modalNftCanvas"></canvas>
     </div>
     <div class="modal-nft-title" id="modalNftTitle">✦ Constellation</div>
+    <div class="modal-nft-owner" id="modalNftOwner" style="display:none;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#fbbf24;text-align:center;margin-bottom:6px;font-weight:600">✦ Owner: —</div>
+    <div class="modal-nft-desc" id="modalNftDesc" style="font-size:13px;line-height:1.65;color:#c9b8f0;font-style:italic;padding:0 6px;margin-bottom:10px"></div>
     <div class="modal-nft-story" id="modalNftStory">No story added yet.</div>
-    <div class="modal-nft-actions">
+    <div class="modal-nft-actions" id="modalNftActions">
       <div class="modal-nft-btn" id="modalNftShare">Share</div>
       <div class="modal-nft-btn primary" id="modalNftGift">🎁 Gift to friend</div>
     </div>
@@ -838,7 +885,7 @@ html,body{
         <div style="min-width:32px;height:32px;border-radius:50%;background:rgba(147,51,234,.2);border:1px solid rgba(147,51,234,.4);display:flex;align-items:center;justify-content:center;color:#a78bfa;font-size:14px;font-weight:600">✦</div>
         <div>
           <div style="color:white;font-size:14px;font-weight:500;margin-bottom:2px">Your star appears on the canvas</div>
-          <div style="color:#6b7280;font-size:13px">Your constellation is revealed — unique, yours, forever on the blockchain</div>
+          <div style="color:#6b7280;font-size:13px">On the shared canvas you're a single star among everyone else. Tap it any time to reveal your full constellation — its shape, its name, its story.</div>
         </div>
       </div>
 
@@ -874,9 +921,28 @@ html,body{
 <div class="toast" id="toast"></div>
 
 <script>
-const CONTRACT_ADDRESS = 'EQA5YKHElhutrH7klW_Ep7AZ-Rm6vuKNyenJdxc9ST4I7AWP';
+// This IS the current contract, deployed 04.07.2026, includes JoinAndMint
+// AND UpdateProfile (added to let people correct name/country/city/age
+// after their first registration — see UpdateProfile in the .tact file).
+const CONTRACT_ADDRESS = 'EQCt4zv8F2-s0eMAy-SD0Nk5CoH1V9ilzx0K8QqT0xAzyWrd';
 const TON_AMOUNT = '1000000000';
 const BOT_USERNAME = 'vitiligo_ton_bot';
+
+// ── POPULATE AGE SELECT ──
+// Moved here 04.07.2026 — this used to run near the end of the script,
+// long after the Telegram/profile-restore code below tried to set
+// fieldAge.value from a saved profile. Since the <select> had zero
+// <option> elements at that point, the assignment silently failed and
+// invalidated the select's selection state; when the options were
+// finally added later, the browser auto-selected the first one (age 5)
+// instead of leaving the real saved age in place. That's why a saved
+// age of 36 would come back as 5 after a reload.
+const ageSelect = document.getElementById('fieldAge');
+for (let a = 5; a <= 104; a++) {
+  const opt = document.createElement('option');
+  opt.value = a; opt.textContent = a;
+  ageSelect.appendChild(opt);
+}
 
 /* ── TELEGRAM ── */
 const tg = window.Telegram?.WebApp;
@@ -899,6 +965,20 @@ if (tg) {
     referrerId = startParam.replace('ref_', '');
   }
 }
+// Restore a previously saved profile, if any — runs after the Telegram
+// block above (regardless of whether tg exists) so a real saved profile
+// takes priority over Telegram's auto-filled name instead of being
+// silently overwritten by it, and still works when opened in a plain
+// browser with no Telegram context at all.
+try {
+  const savedProfile = JSON.parse(localStorage.getItem('vt_profile') || 'null');
+  if (savedProfile) {
+    if (savedProfile.name) { document.getElementById('fieldName').value = savedProfile.name; document.getElementById('profileName').textContent = savedProfile.name; }
+    if (savedProfile.country) document.getElementById('fieldCountry').value = savedProfile.country;
+    if (savedProfile.city) document.getElementById('fieldCity').value = savedProfile.city;
+    if (savedProfile.age) document.getElementById('fieldAge').value = savedProfile.age;
+  }
+} catch(e) { /* no saved profile yet, or storage unavailable */ }
 const refLink = `t.me/${BOT_USERNAME}?start=ref_${myTelegramId || 'you'}`;
 document.getElementById('refLinkText').textContent = refLink;
 
@@ -935,155 +1015,288 @@ function drawSF() {
 }
 drawSF();
 
-/* ── COSMIC CANVAS ── */
+/* ── HERO COSMOS (Home only, purely decorative — no taps/zoom) ──
+   Three depth layers of stars drift horizontally at different speeds
+   (parallax = sense of infinite depth), plus one slow-pulsing core glow.
+   Self-contained IIFE so it can never collide with the interactive
+   cosmos canvas over on the Constellation tab. */
 (function(){
-  const cv=document.getElementById('cosmosCanvas');
-  if(!cv) return;
-  const ctx=cv.getContext('2d');
-  const DPR=window.devicePixelRatio||1;
-  const wrap=cv.parentElement;
-  let W,H,isFull=false;
-
-  function resize(){
-    W=wrap.clientWidth;H=wrap.clientHeight;
-    cv.width=W*DPR;cv.height=H*DPR;
-    ctx.setTransform(DPR,0,0,DPR,0,0);
+  const cv = document.getElementById('heroCosmos');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const DPR = window.devicePixelRatio || 1;
+  let W, H;
+  function resize() {
+    const wrap = cv.parentElement;
+    W = wrap.clientWidth; H = wrap.clientHeight;
+    if (!W || !H) return;
+    cv.width = W * DPR; cv.height = H * DPR;
+    cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   }
   resize();
+  window.addEventListener('resize', resize);
 
-  function mkR(s){let r=s|0;return()=>{r=(Math.imul(r,1664525)+1013904223)|0;return(r>>>0)/4294967296};}
-  const WORLD=3000,rr=mkR(42);
-  const NAMES=['Aisha','Min','Sara','Carlos','Fatima','Yuki','Ivan','Priya','Lucas','Anna','Omar'];
-  const CITIES=['Moscow','Tokyo','Cairo','São Paulo','Mumbai','Berlin','Seoul','Norilsk','Paris'];
-  const CONSTS=['Orion','Cassiopeia','Lyra','Cygnus','Perseus','Leo','Scorpius'];
-  const MYTHIC=['Velin · The Wanderer','Sarath · The Bridge','Korel · The Witness'];
-
-  function gPts(seed,n){const r=mkR(seed);return Array.from({length:n},()=>{const a=r()*Math.PI*2,d=.2+r()*.8;return{x:Math.cos(a)*d,y:Math.sin(a)*d};});}
-  function gEdge(pts){const e=[],u=new Set();for(let i=0;i<pts.length;i++){let b=-1,m=Infinity;for(let j=0;j<pts.length;j++){if(i===j)continue;const k=`${Math.min(i,j)}-${Math.max(i,j)}`;if(u.has(k))continue;const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=dx*dx+dy*dy;if(d<m){m=d;b=j;}}if(b>=0){const k=`${Math.min(i,b)}-${Math.max(i,b)}`;if(!u.has(k)){u.add(k);e.push([i,b]);}}}return e;}
-
-  const nebulas=Array.from({length:5},(_,i)=>{const r=mkR(i*199);return{x:200+r()*(WORLD-400),y:200+r()*(WORLD-400),rx:400+r()*600,ry:250+r()*400,hue:205+r()*45,a:.013+r()*.016,rot:r()*Math.PI};});
-  const bgS=Array.from({length:700},()=>({x:rr()*WORLD,y:rr()*WORLD,r:.1+rr()*.5,a:.04+rr()*.16,col:rr()<.25?'#d4c080':rr()<.5?'#a0a8c0':'#fff',ph:rr()*Math.PI*2,sp:.03+rr()*.1}));
-
-  // Participants — will load from chain, for now random
-  const cosmoParts=[];
-  const gp=gPts(0,8);
-  cosmoParts.push({x:WORLD/2,y:WORLD/2,type:'genesis',name:'Viktor',city:'Norilsk',constName:'Genesis Star',story:'The one who started counting',pts:gp,edges:gEdge(gp),ph:0,sp:.3,sz:24,isGenesis:true});
-  for(let i=1;i<220;i++){
-    const v=rr(),type=v<.003?'legendary':v<.1?'rare':'normal',n=4+Math.floor(rr()*6),pts=gPts(i*23+7,n);
-    cosmoParts.push({x:40+rr()*(WORLD-80),y:40+rr()*(WORLD-80),type,name:NAMES[Math.floor(rr()*NAMES.length)],city:CITIES[Math.floor(rr()*CITIES.length)],constName:type==='legendary'?CONSTS[Math.floor(rr()*CONSTS.length)]:type==='rare'?MYTHIC[Math.floor(rr()*MYTHIC.length)]:'',story:rr()<.3?`"Appeared when I was ${Math.floor(10+rr()*30)}"`:rr()<.4?'"with love"':'',pts,edges:gEdge(pts),ph:rr()*Math.PI*2,sp:.1+rr()*.35,sz:type==='legendary'?20:type==='rare'?15:7+rr()*8,br:.3+rr()*.7});
+  function makeLayer(count, speed, size, alpha) {
+    return Array.from({length: count}, () => ({
+      x: Math.random(), y: Math.random(),
+      speed, size: size * (0.6 + Math.random() * 0.8),
+      a: alpha * (0.5 + Math.random() * 0.5),
+      ph: Math.random() * Math.PI * 2
+    }));
   }
+  const layers = [
+    makeLayer(30, 0.00006, 0.6, 0.35),
+    makeLayer(20, 0.00014, 1.0, 0.55),
+    makeLayer(12, 0.00028, 1.6, 0.8)
+  ];
 
-  // My star — set when user mints
-  let myStar=null;
+  let t = 0;
+  function frame() {
+    t++;
+    if (W && H) {
+      ctx.clearRect(0, 0, W, H);
+      const pulse = 0.5 + Math.sin(t * 0.01) * 0.5;
+      const cx = W * 0.7, cy = H * 0.4;
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.5);
+      g.addColorStop(0, `rgba(147,51,234,${(0.10 + pulse * 0.06).toFixed(2)})`);
+      g.addColorStop(0.5, `rgba(88,28,135,${(0.05 + pulse * 0.03).toFixed(2)})`);
+      g.addColorStop(1, 'transparent');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
 
-  // Add star to cosmos when user counts in
-  window.addCosmosstar = function(type,constName,story){
-    const pts=gPts(Date.now(),5+Math.floor(Math.random()*5));
-    myStar={x:100+Math.random()*(WORLD-200),y:100+Math.random()*(WORLD-200),type:type||'normal',name:'You',city:'',constName:constName||'',story:story||'',pts,edges:gEdge(pts),ph:Math.random()*Math.PI*2,sp:.2,sz:15,isMe:true};
-    cosmoParts.push(myStar);
-  };
-
-  let vx=WORLD/2-200,vy=WORLD/2-160,zoom=.5;
-  let drag=false,lx=0,ly=0,hlMe=false,hlT=null;
-  function w2s(wx,wy){return[(wx-vx)*zoom,(wy-vy)*zoom];}
-  function s2w(sx,sy){return[sx/zoom+vx,sy/zoom+vy];}
-  function zTo(z,cx=W/2,cy=H/2){const[wx,wy]=s2w(cx,cy);zoom=Math.max(.06,Math.min(14,z));vx=wx-cx/zoom;vy=wy-cy/zoom;}
-  function doReset(){zoom=.5;vx=WORLD/2-W/zoom/2;vy=WORLD/2-H/zoom/2;}
-  function flyMe(){
-    const target=myStar||cosmoParts[0];
-    const tz=5,sv=vx,svy=vy,sz=zoom,ev=target.x-W/tz/2,evy=target.y-H/tz/2,t0=performance.now(),dur=900;
-    function go(now){const p=Math.min(1,(now-t0)/dur),e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;zoom=sz+(tz-sz)*e;vx=sv+(ev-sv)*e;vy=svy+(evy-svy)*e;if(p<1)requestAnimationFrame(go);else{hlMe=true;if(hlT)clearTimeout(hlT);hlT=setTimeout(()=>hlMe=false,3500);}}
-    requestAnimationFrame(go);
-  }
-
-  // Fullscreen toggle
-  const expBtn=document.getElementById('cosmosExp');
-  const cosmosUI=document.getElementById('cosmosUI');
-  function openFull(){
-    isFull=true;
-    wrap.style.cssText='position:fixed;top:0;left:0;width:100vw;height:100vh;border-radius:0;z-index:9999;background:#040b18';
-    cosmosUI.style.display='flex';
-    expBtn.style.display='none';
-    setTimeout(resize,50);
-  }
-  function closeFull(){
-    isFull=false;
-    wrap.style.cssText='position:relative;border-radius:12px;overflow:hidden;background:#040b18;height:160px';
-    cosmosUI.style.display='none';
-    expBtn.style.display='flex';
-    setTimeout(resize,50);
-  }
-  if(expBtn) expBtn.onclick=openFull;
-  const closeBtn=document.getElementById('cosmosClose');
-  if(closeBtn) closeBtn.onclick=closeFull;
-  const plusBtn=document.getElementById('cosmosPlus');
-  if(plusBtn) plusBtn.onclick=()=>zTo(zoom*1.6);
-  const minusBtn=document.getElementById('cosmosMinus');
-  if(minusBtn) minusBtn.onclick=()=>zTo(zoom*.62);
-  const resetBtn2=document.getElementById('cosmosReset');
-  if(resetBtn2) resetBtn2.onclick=doReset;
-  const meBtn=document.getElementById('cosmosMe');
-  if(meBtn) meBtn.onclick=flyMe;
-
-  cv.addEventListener('mousedown',e=>{drag=true;const r=cv.getBoundingClientRect();lx=e.clientX-r.left;ly=e.clientY-r.top;});
-  cv.addEventListener('mousemove',e=>{if(!drag)return;const r=cv.getBoundingClientRect();const nx=e.clientX-r.left,ny=e.clientY-r.top;vx-=(nx-lx)/zoom;vy-=(ny-ly)/zoom;lx=nx;ly=ny;});
-  cv.addEventListener('mouseup',()=>drag=false);
-  cv.addEventListener('wheel',e=>{e.preventDefault();const r=cv.getBoundingClientRect();zTo(zoom*(e.deltaY>0?.88:1.14),e.clientX-r.left,e.clientY-r.top);},{passive:false});
-  cv.addEventListener('touchstart',e=>{if(e.touches.length===1){drag=true;const r=cv.getBoundingClientRect();lx=e.touches[0].clientX-r.left;ly=e.touches[0].clientY-r.top;}},{passive:true});
-  cv.addEventListener('touchmove',e=>{if(!drag||e.touches.length!==1)return;const r=cv.getBoundingClientRect();const nx=e.touches[0].clientX-r.left,ny=e.touches[0].clientY-r.top;vx-=(nx-lx)/zoom;vy-=(ny-ly)/zoom;lx=nx;ly=ny;},{passive:true});
-  cv.addEventListener('touchend',()=>drag=false);
-  cv.addEventListener('click',e=>{
-    const r=cv.getBoundingClientRect();const[wx,wy]=s2w(e.clientX-r.left,e.clientY-r.top);
-    let hit=null,md=Infinity;
-    cosmoParts.forEach(p=>{const dx=p.x-wx,dy=p.y-wy,d=dx*dx+dy*dy;if(d<(35/zoom)**2&&d<md){md=d;hit=p;}});
-    const tip=document.getElementById('cosmosTip');
-    if(hit){const tl=hit.isMe?'✦ Your star':hit.isGenesis?'✦ Genesis':hit.type==='legendary'?'★ Legendary':hit.type==='rare'?'✦ Rare':'';tip.style.display='block';tip.innerHTML=`<b style="color:#fff">${hit.name}</b>${hit.city?` <span style="color:#6b7280">${hit.city}</span>`:''}${tl?`<br><span style="color:#a78bfa">${tl}${hit.constName?' · '+hit.constName:''}</span>`:''}${hit.story?`<br><i style="color:#4b5563">${hit.story}</i>`:''}`;}
-    else if(tip) tip.style.display='none';
-  });
-
-  function drawStar(x,y,r,col,a,p,spk){
-    ctx.globalAlpha=.03*p*a;const h=ctx.createRadialGradient(x,y,0,x,y,r*7);h.addColorStop(0,col);h.addColorStop(1,'transparent');ctx.fillStyle=h;ctx.beginPath();ctx.arc(x,y,r*7,0,Math.PI*2);ctx.fill();
-    ctx.globalAlpha=.15*p*a;const g=ctx.createRadialGradient(x,y,0,x,y,r*2.5);g.addColorStop(0,col);g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r*2.5,0,Math.PI*2);ctx.fill();
-    if(spk){for(let i=0;i<4;i++){ctx.save();ctx.translate(x,y);ctx.rotate(i*Math.PI/4);const sl=r*5.5;const sg=ctx.createLinearGradient(-sl,0,sl,0);sg.addColorStop(0,'transparent');sg.addColorStop(.4,col+'18');sg.addColorStop(.5,col+'48');sg.addColorStop(.6,col+'18');sg.addColorStop(1,'transparent');ctx.globalAlpha=p*a*.85;ctx.fillStyle=sg;ctx.fillRect(-sl,-r*.05,sl*2,r*.1);ctx.restore();}}
-    ctx.globalAlpha=p*a;const c=ctx.createRadialGradient(x,y,0,x,y,r);c.addColorStop(0,'#fff');c.addColorStop(.25,col);c.addColorStop(1,'transparent');ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
-  }
-
-  function frame(){
-    const t=performance.now()/1000;
-    ctx.fillStyle='#040b18';ctx.fillRect(0,0,W,H);
-    nebulas.forEach(n=>{const[sx,sy]=w2s(n.x,n.y);const rx=n.rx*zoom,ry=n.ry*zoom;if(sx+rx<0||sx-rx>W||sy+ry<0||sy-ry>H)return;ctx.save();ctx.translate(sx,sy);ctx.rotate(n.rot);ctx.scale(1,ry/rx);const g=ctx.createRadialGradient(0,0,0,0,0,rx);g.addColorStop(0,`hsla(${n.hue},45%,16%,${n.a})`);g.addColorStop(.5,`hsla(${n.hue},35%,10%,${n.a*.5})`);g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,rx,0,Math.PI*2);ctx.fill();ctx.restore();});
-    bgS.forEach(s=>{const[sx,sy]=w2s(s.x,s.y);if(sx<0||sx>W||sy<0||sy>H)return;ctx.globalAlpha=s.a*(.5+.5*Math.sin(t*s.sp+s.ph));ctx.fillStyle=s.col;ctx.beginPath();ctx.arc(sx,sy,s.r*Math.max(.25,zoom*.2),0,Math.PI*2);ctx.fill();});
-    ctx.globalAlpha=1;
-    cosmoParts.forEach(p=>{
-      const[sx,sy]=w2s(p.x,p.y);if(sx<-100||sx>W+100||sy<-100||sy>H+100)return;
-      const sz=p.sz*zoom,pulse=.6+.4*Math.abs(Math.sin(t*p.sp+p.ph)),isMe=p.isMe,isGen=p.isGenesis;
-      const col=isMe?'#c084fc':isGen?'#fff':p.type==='legendary'?'#f0ead8':p.type==='rare'?'#e8c050':`hsl(${42+Math.sin(p.ph)*12},${50+(p.br||.5)*30}%,${50+(p.br||.5)*20}%)`;
-      const a=(p.type==='normal'&&!isMe&&!isGen)?(p.br||.5)*.6:.95;
-      const bright=p.type!=='normal'||isMe||isGen;
-      if((isMe&&hlMe)||isGen&&hlMe){const rp=.5+.5*Math.abs(Math.sin(t*3));ctx.globalAlpha=rp*.4;ctx.strokeStyle=isMe?'#c084fc':'white';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(sx,sy,sz*.7+8,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=rp*.08;ctx.fillStyle=isMe?'#c084fc':'white';ctx.beginPath();ctx.arc(sx,sy,sz*.7+8,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;}
-      if(sz>18){p.edges.forEach(([ea,eb])=>{const ax=sx+p.pts[ea].x*sz*.5,ay=sy+p.pts[ea].y*sz*.5,bx=sx+p.pts[eb].x*sz*.5,by=sy+p.pts[eb].y*sz*.5;ctx.globalAlpha=.28*pulse*a;ctx.strokeStyle=isMe?'rgba(192,132,252,.6)':p.type==='normal'?'rgba(200,175,90,.4)':'rgba(220,195,100,.65)';ctx.lineWidth=Math.max(.5,sz*.012);ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();});p.pts.forEach((pt,i)=>{drawStar(sx+pt.x*sz*.5,sy+pt.y*sz*.5,Math.max(.7,sz*(i===0?.1:.065)),col,a*(i===0?1:.75),pulse,bright&&i===0);});}
-      else drawStar(sx,sy,Math.max(.5,sz*.45),col,a,pulse,bright);
-      if(isMe&&sz>16){ctx.globalAlpha=.75;ctx.fillStyle='#c084fc';ctx.font=`bold ${Math.min(11,sz*.22)}px system-ui`;ctx.textAlign='center';ctx.fillText('You ✦',sx,sy+sz*.75+8);}
-      ctx.globalAlpha=1;
-    });
+      layers.forEach(layer => {
+        layer.forEach(s => {
+          s.x -= s.speed;
+          if (s.x < -0.02) s.x = 1.02;
+          const twinkle = 0.6 + 0.4 * Math.sin(t * 0.03 + s.ph);
+          ctx.beginPath();
+          ctx.arc(s.x * W, s.y * H, s.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(225,215,255,${(s.a * twinkle).toFixed(2)})`;
+          ctx.fill();
+        });
+      });
+    }
     requestAnimationFrame(frame);
   }
   frame();
 })();
-// addPixelToCanvas — теперь добавляет звезду в космический холст
+
+/* ── SIMPLE STAR CANVAS ── */
+const cosmosCV = document.getElementById('cosmosCanvas');
+if (cosmosCV) {
+  const cosmosCtx = cosmosCV.getContext('2d');
+  const DPR = window.devicePixelRatio || 1;
+  let cW, cH;
+  const cosmosParts = [];
+
+  function cosmosResize() {
+    const wrap = cosmosCV.parentElement;
+    cW = wrap.clientWidth; cH = wrap.clientHeight;
+    cosmosCV.width = cW * DPR; cosmosCV.height = cH * DPR;
+    cosmosCV.style.width = cW + 'px'; cosmosCV.style.height = cH + 'px';
+    cosmosCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.cosmosResize = cosmosResize;
+  cosmosResize();
+
+  // Generate background stars
+  const bgStars = Array.from({length: 120}, () => ({
+    x: Math.random() * 2000, y: Math.random() * 2000,
+    r: 0.3 + Math.random() * 1.2,
+    a: 0.1 + Math.random() * 0.4,
+    ph: Math.random() * Math.PI * 2,
+    sp: 0.3 + Math.random() * 0.7
+  }));
+
+  // Genesis star in center — placeholder data until the real founder
+  // transaction happens, at which point this gets swapped for the actual
+  // minted constellation shape + an "Owner: Viktor Shishchak" founder badge.
+  cosmosParts.push({
+    x: 1000, y: 1000, type: 'genesis',
+    constName: 'Genesis Star',
+    story: 'The first. The one who started counting.',
+    owner: 'Viktor Shishchak',
+    constData: {
+      stars: [{x:.5,y:.15},{x:.72,y:.32},{x:.65,y:.6},{x:.5,y:.85},{x:.35,y:.6},{x:.28,y:.32}],
+      lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0]]
+    },
+    ph: 0, sp: 0.4, sz: 20, isGenesis: true
+  });
+
+  let vx = 900, vy = 900, zoom = 0.15;
+
+  function w2s(wx, wy) { return [(wx - vx) * zoom, (wy - vy) * zoom]; }
+  function s2w(sx, sy) { return [sx / zoom + vx, sy / zoom + vy]; }
+  function zTo(z, cx, cy) {
+    cx = cx || cW/2; cy = cy || cH/2;
+    const [wx, wy] = s2w(cx, cy);
+    zoom = Math.max(0.06, Math.min(14, z));
+    vx = wx - cx/zoom; vy = wy - cy/zoom;
+  }
+
+  window.addCosmosstar = function(type, constName, story, constData) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 50 + Math.random() * 400;
+    cosmosParts.push({
+      x: 1000 + Math.cos(angle) * dist,
+      y: 1000 + Math.sin(angle) * dist,
+      type: type || 'normal', constName, story, constData,
+      isMe: true, // addCosmosstar is only ever called right after the current
+                  // user's own successful mint, so this point is always "me"
+      ph: Math.random() * Math.PI * 2, sp: 0.2 + Math.random() * 0.4, sz: 12
+    });
+  };
+
+  // Expand button
+  const expBtn = document.getElementById('cosmosExp');
+  const cosmosUI = document.getElementById('cosmosUI');
+  const wrap = cosmosCV.parentElement;
+  let isFull = false;
+  if (expBtn) expBtn.onclick = () => {
+    isFull = true;
+    wrap.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;border-radius:0;z-index:9999;background:#040b18';
+    if (cosmosUI) cosmosUI.style.display = 'flex';
+    expBtn.style.display = 'none';
+    setTimeout(cosmosResize, 50);
+  };
+  const closeBtn = document.getElementById('cosmosClose');
+  if (closeBtn) closeBtn.onclick = () => {
+    isFull = false;
+    wrap.style.cssText = 'position:relative;border-radius:12px;overflow:hidden;background:#040b18;height:160px';
+    if (cosmosUI) cosmosUI.style.display = 'none';
+    expBtn.style.display = 'flex';
+    setTimeout(cosmosResize, 50);
+  };
+  const plusBtn = document.getElementById('cosmosPlus');
+  if (plusBtn) plusBtn.onclick = () => zTo(zoom * 1.6);
+  const minusBtn = document.getElementById('cosmosMinus');
+  if (minusBtn) minusBtn.onclick = () => zTo(zoom * 0.62);
+  const rstBtn = document.getElementById('cosmosReset');
+  if (rstBtn) rstBtn.onclick = () => { zoom = 0.15; vx = 900; vy = 900; };
+  const meBtn = document.getElementById('cosmosMe');
+  if (meBtn) meBtn.onclick = () => {
+    const my = cosmosParts.find(p => p.isMe) || cosmosParts[0];
+    const tz = 4, sv = vx, svy = vy, sz = zoom;
+    const ev = my.x - cW/tz/2, evy = my.y - cH/tz/2;
+    const t0 = performance.now(), dur = 800;
+    function fly(now) {
+      const p = Math.min(1, (now-t0)/dur), e = p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
+      zoom = sz+(tz-sz)*e; vx = sv+(ev-sv)*e; vy = svy+(evy-svy)*e;
+      if (p < 1) requestAnimationFrame(fly);
+    }
+    requestAnimationFrame(fly);
+  };
+
+  // Drag
+  let drag = false, lx = 0, ly = 0, downX = 0, downY = 0, moved = 0;
+  function hitTestAndReveal(sx, sy) {
+    // sx/sy are canvas-local screen coords; convert to world space and find
+    // the nearest star within a tap-friendly radius (radius shrinks in world
+    // units as you zoom in, so the tap target feels consistent on screen).
+    const [wx, wy] = s2w(sx, sy);
+    const radius = 22 / zoom;
+    let best = null, bestDist = radius;
+    cosmosParts.forEach(p => {
+      const d = Math.hypot(p.x - wx, p.y - wy);
+      if (d < bestDist) { bestDist = d; best = p; }
+    });
+    if (best && best.constData) {
+      openNftDetail({
+        name: best.constName || (best.isGenesis ? 'Genesis Star' : 'Unnamed star'),
+        story: best.story || '',
+        rare: best.type === 'rare' || best.type === 'legendary',
+        constData: best.constData,
+        owner: best.owner || null
+      }, false);
+    }
+  }
+  cosmosCV.addEventListener('mousedown', e => { drag=true; const r=cosmosCV.getBoundingClientRect(); lx=e.clientX-r.left; ly=e.clientY-r.top; downX=lx; downY=ly; moved=0; });
+  cosmosCV.addEventListener('mousemove', e => { if(!drag)return; const r=cosmosCV.getBoundingClientRect(); const nx=e.clientX-r.left,ny=e.clientY-r.top; vx-=(nx-lx)/zoom; vy-=(ny-ly)/zoom; moved+=Math.hypot(nx-lx,ny-ly); lx=nx; ly=ny; });
+  cosmosCV.addEventListener('mouseup', e => { drag=false; if(moved<6){ const r=cosmosCV.getBoundingClientRect(); hitTestAndReveal(e.clientX-r.left, e.clientY-r.top); } });
+  cosmosCV.addEventListener('touchstart', e => { if(e.touches.length===1){drag=true;const r=cosmosCV.getBoundingClientRect();lx=e.touches[0].clientX-r.left;ly=e.touches[0].clientY-r.top;downX=lx;downY=ly;moved=0;} }, {passive:true});
+  cosmosCV.addEventListener('touchmove', e => { if(!drag||e.touches.length!==1)return;const r=cosmosCV.getBoundingClientRect();const nx=e.touches[0].clientX-r.left,ny=e.touches[0].clientY-r.top;vx-=(nx-lx)/zoom;vy-=(ny-ly)/zoom;moved+=Math.hypot(nx-lx,ny-ly);lx=nx;ly=ny; }, {passive:true});
+  cosmosCV.addEventListener('touchend', e => { drag=false; if(moved<6){ hitTestAndReveal(downX, downY); } });
+  cosmosCV.addEventListener('wheel', e => { e.preventDefault(); const r=cosmosCV.getBoundingClientRect(); zTo(zoom*(e.deltaY>0?.88:1.14),e.clientX-r.left,e.clientY-r.top); }, {passive:false});
+
+  function drawCosmosFrame() {
+    const t = performance.now() / 1000;
+    cosmosCtx.fillStyle = '#040b18';
+    cosmosCtx.fillRect(0, 0, cW, cH);
+
+    // Nebula
+    const ng = cosmosCtx.createRadialGradient(cW*0.4, cH*0.5, 0, cW*0.4, cH*0.5, cW*0.6);
+    ng.addColorStop(0, 'rgba(60,20,120,0.08)');
+    ng.addColorStop(1, 'transparent');
+    cosmosCtx.fillStyle = ng;
+    cosmosCtx.fillRect(0, 0, cW, cH);
+
+    // Background stars
+    bgStars.forEach(s => {
+      const [sx, sy] = w2s(s.x, s.y);
+      if (sx < -2 || sx > cW+2 || sy < -2 || sy > cH+2) return;
+      cosmosCtx.globalAlpha = s.a * (0.5 + 0.5 * Math.sin(t * s.sp + s.ph));
+      cosmosCtx.fillStyle = '#d4c080';
+      cosmosCtx.beginPath();
+      cosmosCtx.arc(sx, sy, s.r * Math.max(0.3, zoom * 0.3), 0, Math.PI * 2);
+      cosmosCtx.fill();
+    });
+
+    // Participants
+    cosmosParts.forEach(p => {
+      const [sx, sy] = w2s(p.x, p.y);
+      if (sx < -50 || sx > cW+50 || sy < -50 || sy > cH+50) return;
+      const sz = p.sz * zoom;
+      const pulse = 0.6 + 0.4 * Math.abs(Math.sin(t * p.sp + p.ph));
+      const col = p.isMe ? '#c084fc' : p.isGenesis ? '#ffffff' : p.type === 'legendary' ? '#f0ead8' : p.type === 'rare' ? '#e8c050' : '#a78bfa';
+
+      // Glow
+      cosmosCtx.globalAlpha = 0.1 * pulse;
+      const g = cosmosCtx.createRadialGradient(sx, sy, 0, sx, sy, sz * 3);
+      g.addColorStop(0, col); g.addColorStop(1, 'transparent');
+      cosmosCtx.fillStyle = g;
+      cosmosCtx.beginPath(); cosmosCtx.arc(sx, sy, sz * 3, 0, Math.PI * 2); cosmosCtx.fill();
+
+      // 4 rays for genesis
+      if (p.isGenesis && sz > 2) {
+        for (let i = 0; i < 4; i++) {
+          cosmosCtx.save(); cosmosCtx.translate(sx, sy); cosmosCtx.rotate(i * Math.PI / 4);
+          const sl = sz * 4;
+          const sg = cosmosCtx.createLinearGradient(-sl, 0, sl, 0);
+          sg.addColorStop(0, 'transparent'); sg.addColorStop(0.5, `rgba(255,255,255,${0.3*pulse})`); sg.addColorStop(1, 'transparent');
+          cosmosCtx.globalAlpha = 1; cosmosCtx.fillStyle = sg;
+          cosmosCtx.fillRect(-sl, -sz*0.06, sl*2, sz*0.12); cosmosCtx.restore();
+        }
+      }
+
+      // Core
+      cosmosCtx.globalAlpha = pulse;
+      cosmosCtx.fillStyle = col;
+      cosmosCtx.beginPath(); cosmosCtx.arc(sx, sy, Math.max(1, sz * 0.4), 0, Math.PI * 2); cosmosCtx.fill();
+
+      // Label
+      if (p.isMe && sz > 8) {
+        cosmosCtx.globalAlpha = 0.8; cosmosCtx.fillStyle = '#c084fc';
+        cosmosCtx.font = `bold ${Math.min(11, sz*0.6)}px system-ui`;
+        cosmosCtx.textAlign = 'center';
+        cosmosCtx.fillText('You ✦', sx, sy + sz + 10);
+      }
+    });
+
+    cosmosCtx.globalAlpha = 1;
+    requestAnimationFrame(drawCosmosFrame);
+  }
+  drawCosmosFrame();
+}
+
+// addPixelToCanvas — добавляет звезду в холст
 function addPixelToCanvas(color, isNFT, data) {
   if (isNFT && window.addCosmosstar) {
     const type = data && data.isLegendary ? 'legendary' : data && data.isRare ? 'rare' : 'normal';
-    window.addCosmosstar(type, data && data.constName, data && data.story);
+    window.addCosmosstar(type, data && data.constName, data && data.story, data && data.constData);
   }
 }
 /* ── LIVE COUNTER FROM BLOCKCHAIN ── */
-
-/* ── LIVE COUNTER FROM BLOCKCHAIN ── */
-let count = 0, photoCount = 0, connected = false, tickTimer = null;
-const numEl=document.getElementById('cnum');
-const numPhotosEl=document.getElementById('cnumPhotos');
-const liveRow=document.getElementById('liveRow');
 function fmt(n){
   if (n < 10000) return n.toLocaleString('en-US');
   if (n < 1000000) return (n/1000).toFixed(1).replace(/\.0$/,'') + 'K';
@@ -1093,6 +1306,22 @@ function fmt(n){
 function fmtExact(n){ return n.toLocaleString('en-US'); }
 
 const MILESTONES = [100, 1000, 10000, 100000];
+// count/photoCount used to be implicit globals (only ever assigned inside
+// loadCounterFromChain's async success branch). updateMilestone() runs
+// synchronously at page load, before that network call resolves, so
+// referencing `count` threw "count is not defined" — an uncaught
+// ReferenceError that silently killed every listener defined later in this
+// script (nav tabs, Count me in, wallet button, everything). Declaring them
+// here with safe defaults fixes that at the root.
+let count = 0;
+let photoCount = 0;
+// Which of the 88 real constellations have been discovered — synced from the
+// contract's realConstellationsMap() bitmap (bit i = constellation i+1 taken).
+// Declared here (not near REAL_CONSTS further down) so chain-sync code can
+// safely populate it right after page load without a temporal-dead-zone error.
+let discoveredReal = new Set();
+const numEl = document.getElementById('cnum');
+const numPhotosEl = document.getElementById('cnumPhotos');
 function updateMilestone(){
   let goal = MILESTONES.find(m => m > count) || MILESTONES[MILESTONES.length-1];
   const prevGoal = MILESTONES[MILESTONES.indexOf(goal)-1] || 0;
@@ -1102,22 +1331,85 @@ function updateMilestone(){
   document.getElementById('milestoneSub').textContent = `${fmt(count)} / ${fmt(goal)}`;
 }
 
+// Shared rate-limited queue for every toncenter.com call in this app.
+// toncenter's free, unauthenticated tier allows only 1 request/second
+// (https://toncenter.com/) — this app fires several get-method calls
+// (totalCount, photoCount, realConstellationsMap, and one per city on the
+// Map tab) close together on load, which silently exceeded that limit and
+// made some of them fail. On failure the UI just displayed 0, which was
+// indistinguishable from a genuinely-empty counter until a real
+// transaction made the true count nonzero — that's why "People counted"
+// could show 0 the day after a real, confirmed on-chain transaction.
+// Found 04.07.2026. Every call site below now goes through tonFetch()
+// instead of calling fetch() directly, so calls are always spaced out and
+// retried once on failure rather than firing in a burst.
+let _tonQueue = Promise.resolve();
+function tonFetch(body) {
+  const run = async () => {
+    for (let attempt = 0; attempt <= 1; attempt++) {
+      try {
+        const res = await fetch('https://toncenter.com/api/v2/runGetMethod', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (data?.result?.exit_code === 0) return data;
+        if (attempt === 0) { await new Promise(r=>setTimeout(r, 1200)); continue; }
+        return data;
+      } catch(e) {
+        if (attempt === 0) { await new Promise(r=>setTimeout(r, 1200)); continue; }
+        throw e;
+      }
+    }
+  };
+  const result = _tonQueue.then(run);
+  _tonQueue = result.catch(()=>{}).then(() => new Promise(r => setTimeout(r, 1150)));
+  return result;
+}
+
+// Fetches which of the 88 real constellations are already taken, globally,
+// across every participant — fixes a real bug where this used to live only
+// in per-browser memory (reset on every reload, never shared between users,
+// meaning two different people could both be told they'd "discovered" the
+// same constellation). Uses BigInt because 88 bits exceeds what a JS Number
+// can represent exactly.
+async function loadDiscoveredRealFromChain() {
+  try {
+    const data = await tonFetch({ address: CONTRACT_ADDRESS, method: 'realConstellationsMap', stack: [] });
+    const exitCode = data?.result?.exit_code;
+    const hex = data?.result?.stack?.[0]?.[1];
+    if (exitCode === 0 && hex) {
+      const bitmap = BigInt(hex.startsWith('0x') ? hex : '0x' + hex);
+      discoveredReal.clear();
+      for (let i = 0; i < 88; i++) {
+        if ((bitmap & (1n << BigInt(i))) !== 0n) discoveredReal.add(i);
+      }
+      updateDiscoveryProgress();
+    } else {
+      console.warn('realConstellationsMap get-method failed, exit_code:', exitCode);
+    }
+  } catch(e) { console.log('Real constellations map load failed', e); }
+}
+loadDiscoveredRealFromChain();
+
 function updateDiscoveryProgress() {
   const found = discoveredReal.size;
   const el = document.getElementById('discoveryCount');
   const bar = document.getElementById('discoveryBar');
   if (el) el.innerHTML = `${found} <span style="font-size:14px;color:#a78bfa;font-weight:400">of 88</span>`;
   if (bar) bar.style.width = Math.min(100, (found / 88) * 100) + '%';
+  // Home teaser — added 04.07.2026, mirrors the same numbers shown on the
+  // Constellation tab so Home isn't just bare counters.
+  const elHome = document.getElementById('discoveryCountHome');
+  const barHome = document.getElementById('discoveryBarHome');
+  if (elHome) elHome.innerHTML = `${found} <span style="font-size:12px;color:#a78bfa;font-weight:400">of 88</span>`;
+  if (barHome) barHome.style.width = Math.min(100, (found / 88) * 100) + '%';
 }
 
 async function loadCounterFromChain() {
   try {
-    const res = await fetch(`https://toncenter.com/api/v2/runGetMethod`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ address: CONTRACT_ADDRESS, method: 'totalCount', stack: [] })
-    });
-    const data = await res.json();
+    const data = await tonFetch({ address: CONTRACT_ADDRESS, method: 'totalCount', stack: [] });
     const exitCode = data?.result?.exit_code;
     const hex = data?.result?.stack?.[0]?.[1];
     if (exitCode === 0 && hex) {
@@ -1131,12 +1423,7 @@ async function loadCounterFromChain() {
   } catch(e) { console.log('Counter load failed', e); }
 
   try {
-    const res2 = await fetch(`https://toncenter.com/api/v2/runGetMethod`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ address: CONTRACT_ADDRESS, method: 'photoCount', stack: [] })
-    });
-    const data2 = await res2.json();
+    const data2 = await tonFetch({ address: CONTRACT_ADDRESS, method: 'photoCount', stack: [] });
     const exitCode2 = data2?.result?.exit_code;
     const hex2 = data2?.result?.stack?.[0]?.[1];
     if (exitCode2 === 0 && hex2) {
@@ -1151,43 +1438,101 @@ async function loadCounterFromChain() {
 loadCounterFromChain();
 updateMilestone();
 
+// Same undeclared-variable bug as 'connected' below — tickTimer was read/
+// assigned in startTick()/stopTick() but never declared. Found 03.07.2026
+// right after fixing 'connected', via the same unhandledrejection listener.
+// Third instance of the same bug as connected/tickTimer — liveRow was
+// referenced in startTick()/stopTick() but never declared. Caught
+// proactively via static scope analysis on 03.07.2026, before it could
+// cause a third round of the same crash live.
+const liveRow = document.getElementById('liveRow');
+let tickTimer = null;
 function startTick(){
   if(tickTimer)return; liveRow.classList.add('show');
 }
 function stopTick(){clearTimeout(tickTimer);tickTimer=null;liveRow.classList.remove('show');}
 
-/* ── TON CONNECT ── */
-const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-  manifestUrl: 'https://VSrefle.github.io/vitiligo-ton/tonconnect-manifest.json',
-  buttonRootId: 'ton-connect-btn',
-  uiPreferences:{theme:'DARK'}
-});
+/* ── TON CONNECT ──
+   Wrapped in try/catch on purpose: if the TonConnect SDK ever fails to load
+   or throws (bad CDN, breaking version bump, offline, etc.), the rest of
+   this script — tabs, modals, welcome screen — must keep working. A crash
+   here used to silently kill every listener defined further down the file.
+   initTonConnect() is retryable: a <script src> tag that fails to load
+   (e.g. a slow/flaky connection) never retries on its own, so on retry we
+   inject a fresh <script> tag rather than just re-checking the same dead
+   load. */
+let tonConnectUI = null;
+// 'connected' was previously assigned (connected=true/false) inside
+// onStatusChange below but never declared anywhere — reading it before
+// onStatusChange had fired even once threw "ReferenceError: connected is
+// not defined" inside async functions like sendTon(), which silently
+// aborted them with zero visible feedback. This is almost certainly the
+// root cause of the original "Confirm button does nothing" bug. Found
+// 03.07.2026 via the newly added unhandledrejection listener.
+let connected = false;
 
-tonConnectUI.onStatusChange(wallet => {
-  const chip=document.getElementById('walletChip');
-  const tcBtn=document.getElementById('ton-connect-btn');
-  if (wallet) {
-    const addr = wallet.account.address;
-    document.getElementById('walletAddr').textContent = addr.slice(0,5)+'…'+addr.slice(-4);
-    chip.classList.add('show'); tcBtn.style.display='none';
-    connected=true;
-    startTick();
-    if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-  } else {
-    chip.classList.remove('show'); tcBtn.style.display='';
-    connected=false;
-    stopTick();
+function loadTonConnectScript() {
+  if (window.TON_CONNECT_UI) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://unpkg.com/@tonconnect/ui@3.0.0/dist/tonconnect-ui.min.js';
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('TonConnect script failed to load'));
+    document.head.appendChild(s);
+  });
+}
+
+async function initTonConnect() {
+  if (tonConnectUI) return tonConnectUI;
+  try {
+    await loadTonConnectScript();
+    if (!window.TON_CONNECT_UI) throw new Error('TON_CONNECT_UI global not found — SDK script failed to load');
+    tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+      manifestUrl: 'https://vsrefle.github.io/vitiligo-ton/tonconnect-manifest.json',
+      buttonRootId: 'ton-connect-btn',
+      uiPreferences:{theme:'DARK'}
+    });
+
+    tonConnectUI.onStatusChange(wallet => {
+      const chip=document.getElementById('walletChip');
+      const tcBtn=document.getElementById('ton-connect-btn');
+      if (wallet) {
+        const addr = wallet.account.address;
+        document.getElementById('walletAddr').textContent = addr.slice(0,5)+'…'+addr.slice(-4);
+        chip.classList.add('show'); tcBtn.style.display='none';
+        connected=true;
+        startTick();
+        if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        if (typeof refreshUpdateProfileButtonVisibility === 'function') refreshUpdateProfileButtonVisibility();
+        if (typeof myNfts !== 'undefined' && myNfts.length === 0 && typeof loadMyConstellationFromChain === 'function') {
+          loadMyConstellationFromChain();
+        }
+      } else {
+        chip.classList.remove('show'); tcBtn.style.display='';
+        connected=false;
+        stopTick();
+        if (typeof refreshUpdateProfileButtonVisibility === 'function') refreshUpdateProfileButtonVisibility();
+      }
+    });
+    document.getElementById('walletDisc').addEventListener('click',()=>tonConnectUI.disconnect());
+    return tonConnectUI;
+  } catch (e) {
+    console.error('[vitiligo.ton] TonConnect failed to initialize:', e);
+    tonConnectUI = null;
+    return null;
   }
-});
-document.getElementById('walletDisc').addEventListener('click',()=>tonConnectUI.disconnect());
+}
+initTonConnect();
 
-/* ── TACT MESSAGE ENCODING для VilitigoCounterFinal ── */
-// Опкоды будут получены из ABI после компиляции контракта.
-// После деплоя запустить:
-// node -e "const fs=require('fs');const abi=JSON.parse(fs.readFileSync('./build/VilitigoCounter_VilitigoCounterFinal.abi','utf8'));const r=abi.types.find(t=>t.name==='Register');const m=abi.types.find(t=>t.name==='MintConstellation');console.log('Register:',r?.header,'MintConstellation:',m?.header);"
-// И заменить 0 ниже на реальные опкоды:
-const REGISTER_OPCODE = 0;       // TODO: заменить после компиляции
-const MINT_OPCODE = 0;           // TODO: заменить после компиляции
+/* ── TACT MESSAGE ENCODING для VilitigoCounterFinal ──
+   JoinAndMint опкод подтверждён сборкой контракта (npx blueprint build → ABI), 03.07.2026.
+   Register/MintConstellation остаются в .tact для совместимости, но фронтенд
+   их больше не вызывает — весь путь идёт через один JoinAndMint. */
+const JOIN_AND_MINT_OPCODE = 2274933188;
+// Opcode for the new UpdateProfile message, confirmed 04.07.2026 directly
+// from the compiled build/VilitigoCounter_VilitigoCounter.ts (loadUpdateProfile),
+// same way JOIN_AND_MINT_OPCODE was confirmed — not guessed.
+const UPDATE_PROFILE_OPCODE = 1706447584;
 
 function bytesToBase64(bytes) {
   let binary = '';
@@ -1195,58 +1540,101 @@ function bytesToBase64(bytes) {
   return btoa(binary);
 }
 
-function storeString(builder, val) {
-  const { beginCell } = TonCore;
-  if (val && val.trim().length > 0) {
-    const strCell = beginCell().storeStringTail(val.trim()).endCell();
-    return builder.storeBit(1).storeRef(strCell);
-  }
-  return builder.storeBit(0);
+// NOTE: VilitigoCounterFinal.tact declares these as required `String` fields
+// (not `String?`), so Tact's auto-generated parser expects a plain cell ref —
+// no "Maybe" presence bit. Sending a presence bit (as an optional-string
+// encoding would) shifts every field after it and the contract will fail to
+// parse the message.
+function storeRequiredString(builder, val) {
+  const { beginCell } = window.TonCore || {};
+  if (!beginCell) throw new Error('TonCore.beginCell unavailable — payment SDK failed to load');
+  const strCell = beginCell().storeStringTail((val || '').trim()).endCell();
+  return builder.storeRef(strCell);
 }
 
-// Register: queryId(uint64) + name(String?) + country(String?) + city(String?) + age(uint8)
-function buildRegisterPayload(name, country, city, age) {
-  const { beginCell } = TonCore;
-  let b = beginCell()
-    .storeUint(REGISTER_OPCODE, 32)
+// Cell layout verified 03.07.2026 directly against the compiled
+// build/VilitigoCounter_VilitigoCounter.ts (loadJoinAndMint), NOT guessed —
+// a single cell can only hold 4 refs, and this message has 6 String fields
+// (6 refs), so Tact's compiler splits it into a root cell + one
+// continuation cell. Getting this wrong previously threw "Too many
+// references" (root cell) while trying to cram all 6 string refs into one
+// cell. Confirmed real layout:
+//   root cell:   opcode(32) + queryId(64) + name(ref) + country(ref) + ref-to-continuation   [3 refs]
+//   continuation: city(ref) + age(8) + constName(ref) + isRare(bit) + isLegendary(bit)
+//                 + discoveryNumber(8) + story(ref) + pixelColor(ref)                          [4 refs]
+function buildJoinAndMintPayload(name, country, city, age, constName, isRare, isLegendary, discoveryNumber, story, pixelColor) {
+  const { beginCell } = window.TonCore || {};
+  if (!beginCell) throw new Error('TonCore.beginCell unavailable — payment SDK failed to load');
+
+  let b1 = beginCell();
+  b1 = storeRequiredString(b1, city);
+  b1 = b1.storeUint(age || 0, 8);
+  b1 = storeRequiredString(b1, constName);
+  b1 = b1.storeBit(isRare ? 1 : 0);
+  b1 = b1.storeBit(isLegendary ? 1 : 0);
+  b1 = b1.storeUint(discoveryNumber || 0, 8);
+  b1 = storeRequiredString(b1, story);
+  b1 = storeRequiredString(b1, pixelColor);
+
+  let b0 = beginCell()
+    .storeUint(JOIN_AND_MINT_OPCODE, 32)
     .storeUint(0, 64); // queryId
-  b = storeString(b, name);
-  b = storeString(b, country);
-  b = storeString(b, city);
+  b0 = storeRequiredString(b0, name);
+  b0 = storeRequiredString(b0, country);
+  b0 = b0.storeRef(b1.endCell());
+
+  return bytesToBase64(b0.endCell().toBoc());
+}
+
+// UpdateProfile: queryId(64) + name(ref) + country(ref) + city(ref) + age(8 bits).
+// Only 3 String refs needed — fits in a single cell (limit is 4), unlike
+// JoinAndMint which needs a continuation cell for its 6 String fields.
+// Layout confirmed 04.07.2026 against the compiled loadUpdateProfile, same
+// way JoinAndMint's layout was confirmed earlier — not guessed.
+function buildUpdateProfilePayload(name, country, city, age) {
+  const { beginCell } = window.TonCore || {};
+  if (!beginCell) throw new Error('TonCore.beginCell unavailable — payment SDK failed to load');
+  let b = beginCell()
+    .storeUint(UPDATE_PROFILE_OPCODE, 32)
+    .storeUint(0, 64); // queryId
+  b = storeRequiredString(b, name);
+  b = storeRequiredString(b, country);
+  b = storeRequiredString(b, city);
   b = b.storeUint(age || 0, 8);
   return bytesToBase64(b.endCell().toBoc());
 }
 
-// MintConstellation: queryId(uint64) + constName(String?) + isRare(bool) + isLegendary(bool)
-//                  + discoveryNumber(uint8) + story(String?) + pixelColor(String?)
-function buildMintPayload(constName, isRare, isLegendary, discoveryNumber, story, pixelColor) {
-  const { beginCell } = TonCore;
-  let b = beginCell()
-    .storeUint(MINT_OPCODE, 32)
-    .storeUint(0, 64) // queryId
-  b = storeString(b, constName);
-  b = b.storeBit(isRare ? 1 : 0);
-  b = b.storeBit(isLegendary ? 1 : 0);
-  b = b.storeUint(discoveryNumber || 0, 8);
-  b = storeString(b, story);
-  b = storeString(b, pixelColor);
-  return bytesToBase64(b.endCell().toBoc());
-}
-
 /* ── SEND TX ── */
-async function sendTon(statusId, onSuccess, payload) {
+async function sendTon(statusId, onSuccess, payload, amount) {
+  amount = amount || TON_AMOUNT;
   const el=document.getElementById(statusId);
-  if(!tonConnectUI.connected){tonConnectUI.openModal();return;}
+  updateDebugInfo('sendTon() called');
+  if(!tonConnectUI){ await initTonConnect(); }
+  if(!tonConnectUI){
+    updateDebugInfo('sendTon STOPPED: tonConnectUI null');
+    if(el){el.className='tx-status error';el.textContent='✕ Wallet connect is unavailable — check your connection and reload the page.';}
+    return;
+  }
+  if(!tonConnectUI.connected){ updateDebugInfo('sendTon STOPPED: tonConnectUI.connected is false'); closeModal('modalMint'); tonConnectUI.openModal(); return; }
   el.className='tx-status pending'; el.textContent='⏳ Waiting for confirmation…';
+  updateDebugInfo('calling tonConnectUI.sendTransaction()...');
+  const watchdog = setTimeout(()=>{
+    updateDebugInfo('⏱️ still waiting 15s after sendTransaction() — if you already confirmed in the wallet, the payment likely went through on-chain even though this screen has not heard back yet. Check tonviewer before retrying.');
+    if (el) el.textContent = '⏳ Still waiting… if you already confirmed in your wallet, check the block explorer before sending again.';
+  }, 15000);
   try {
     await tonConnectUI.sendTransaction({
       validUntil:Math.floor(Date.now()/1000)+300,
-      messages:[{address:CONTRACT_ADDRESS,amount:TON_AMOUNT,payload: payload || ''}]
+      messages:[{address:CONTRACT_ADDRESS,amount:amount,payload: payload || ''}]
     });
+    clearTimeout(watchdog);
+    updateDebugInfo('sendTransaction SUCCEEDED');
     el.className='tx-status success'; el.textContent='✓ Transaction confirmed!';
     if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
     setTimeout(()=>{el.className='tx-status';onSuccess();},1400);
   } catch(e) {
+    clearTimeout(watchdog);
+    updateDebugInfo('sendTransaction THREW: ' + (e?.message || e));
     el.className='tx-status error';
     el.textContent=e.message?.includes('cancel')?'✕ Cancelled':'✕ Failed. Try again.';
     if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
@@ -1262,14 +1650,25 @@ function goOb(n) {
     if (screen) screen.style.display = i === n ? 'flex' : 'none';
     if (dot) dot.classList.toggle('active', i === n);
   });
+  const skip = document.getElementById('welcomeSkip');
+  if (skip) skip.style.display = n === 2 ? 'block' : 'none';
 }
 
-function closeWelcome(){
+function closeWelcome(goToStars){
   document.getElementById('welcome').classList.add('fade');
   setTimeout(()=>{document.getElementById('welcome').style.display='none';},600);
+  // Previously this force-navigated straight to the photo-upload screen
+  // right after onboarding, skipping Home (the default landing page) and
+  // its counter/mission context — landing on "tap to upload a photo" with
+  // zero transition felt disorienting. Now both onboarding paths land on
+  // Home, same as a fresh visit. The "Count me in ✦" button on Home
+  // already takes people to the photo step deliberately, when they're ready.
+  if (goToStars) {
+    showToast("You're one of us ✦");
+  }
 }
-document.getElementById('welcomeBtn').addEventListener('click',closeWelcome);
-document.getElementById('welcomeSkip').addEventListener('click',closeWelcome);
+document.getElementById('welcomeBtn').addEventListener('click',()=>closeWelcome(true));
+document.getElementById('welcomeSkip').addEventListener('click',()=>closeWelcome(false));
 
 /* ── SOCIAL PROOF TOAST: removed — fake activity conflicts with project's honesty principle ── */
 
@@ -1282,6 +1681,13 @@ document.querySelectorAll('.nav-item').forEach(btn=>{
     document.getElementById('page-'+p).classList.add('active');
     btn.classList.add('active');
     window.scrollTo(0,0);
+    // The shared star canvas moved from Home (always visible on load) into
+    // this tab 04.07.2026 — its size is measured from its wrapper element,
+    // which is 0×0 while the tab is hidden (display:none). Recompute once
+    // the tab is actually shown, or the canvas stays blank/mis-sized.
+    if (p === 'stars' && typeof window.cosmosResize === 'function') {
+      requestAnimationFrame(window.cosmosResize);
+    }
   });
 });
 document.getElementById('addNftBtn').addEventListener('click',()=>{
@@ -1289,40 +1695,129 @@ document.getElementById('addNftBtn').addEventListener('click',()=>{
 });
 
 /* ── MODALS ── */
-function openModal(id){document.getElementById(id).classList.add('open');}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
+// Debug panel is hidden by default now that the app is past the initial
+// bring-up phase — it still logs everything into the DOM in the background
+// (nothing is lost), it just doesn't render unless explicitly turned on via
+// the secret long-press gesture on the logo (see bindDebugGesture below).
+let debugMode = (localStorage.getItem('vt_debug') === '1');
+window.addEventListener('error', (e) => {
+  const bar = document.getElementById('persistentDebug');
+  if (bar) { if (debugMode) bar.style.display='block'; bar.textContent = '🔴 GLOBAL ERROR: ' + e.message + ' (' + e.filename + ':' + e.lineno + ')\n' + bar.textContent; }
+});
+// NOTE: window.onerror above only catches synchronous throws. Anything that
+// rejects inside an async function/promise (e.g. a failed await deep inside
+// TonConnect's internals) fires 'unhandledrejection' instead and was
+// previously invisible to the debug panel — added 03.07.2026 while chasing
+// the Confirm button hang.
+window.addEventListener('unhandledrejection', (e) => {
+  const bar = document.getElementById('persistentDebug');
+  const msg = e.reason?.message || e.reason || 'unknown';
+  if (bar) { if (debugMode) bar.style.display='block'; bar.textContent = '🔴 UNHANDLED PROMISE REJECTION: ' + msg + '\n' + bar.textContent; }
+});
+
+// Secret gesture: long-press (700ms) the "vitiligo.ton" logo to toggle the
+// diagnostic panel on/off. Kept out of normal UI on purpose — this is a
+// tool for us, not a feature for visitors.
+function bindDebugGesture(){
+  const logo = document.querySelector('.logo');
+  if (!logo) return;
+  let pressTimer = null;
+  const start = () => { pressTimer = setTimeout(() => {
+    debugMode = !debugMode;
+    localStorage.setItem('vt_debug', debugMode ? '1' : '0');
+    const bar = document.getElementById('persistentDebug');
+    if (bar) bar.style.display = debugMode ? 'block' : 'none';
+    showToast(debugMode ? 'Debug panel on ✦' : 'Debug panel off');
+  }, 700); };
+  const cancel = () => clearTimeout(pressTimer);
+  logo.addEventListener('touchstart', start, {passive:true});
+  logo.addEventListener('touchend', cancel);
+  logo.addEventListener('touchmove', cancel);
+  logo.addEventListener('mousedown', start);
+  logo.addEventListener('mouseup', cancel);
+  logo.addEventListener('mouseleave', cancel);
+}
+bindDebugGesture();
+if (debugMode) { const bar = document.getElementById('persistentDebug'); if (bar) bar.style.display = 'block'; }
+
+function updateDebugInfo(stage){
+  const el = document.getElementById('debugInfo');
+  const lines = [
+    'stage: ' + stage,
+    'connected: ' + connected,
+    'tonConnectUI: ' + (tonConnectUI ? 'exists' : 'NULL'),
+    'tonConnectUI.connected: ' + (tonConnectUI ? tonConnectUI.connected : 'n/a'),
+    'wallet addr: ' + (tonConnectUI?.account?.address ? tonConnectUI.account.address.slice(0,10)+'…' : 'none'),
+    'window.TonCore: ' + (window.TonCore ? 'exists' : 'MISSING'),
+    'window.TonCore.beginCell: ' + (window.TonCore?.beginCell ? 'exists' : 'MISSING'),
+    'currentConst: ' + (typeof currentConst !== 'undefined' && currentConst ? 'set (' + currentConst.name + ')' : 'NULL'),
+    'hasProfile(): ' + (typeof hasProfile === 'function' ? hasProfile() : '?'),
+    'time: ' + new Date().toLocaleTimeString()
+  ];
+  const text = lines.join(' | ');
+  if (el) el.textContent = text;
+  const bar = document.getElementById('persistentDebug');
+  if (bar) {
+    if (debugMode) bar.style.display = 'block';
+    bar.textContent = '▶ ' + stage + '\n' + bar.textContent;
+  }
+}
+function openModal(id){document.getElementById(id).classList.add('open'); if(id==='modalMint') updateDebugInfo('modal opened');}
+function closeModal(id){document.getElementById(id)?.classList.remove('open');}
 
 // "I have vitiligo" — goes straight to photo upload on Stars tab
+// "joined" = has this wallet already completed JoinAndMint at least once?
+// Persisted per-wallet in localStorage, purely for optimistic UI (button
+// state, home counter). The actual source of truth is on-chain; if this
+// local flag is ever wrong, worst case the user just sees stale UI state,
+// not a broken flow — every mint action re-sends full profile data anyway,
+// which the contract safely ignores if the wallet is already registered.
+function joinedKey(addr){ return 'vitiligo_joined_' + addr; }
+function isJoinedLocal(){
+  const addr = tonConnectUI?.account?.address;
+  return !!(addr && localStorage.getItem(joinedKey(addr)) === '1');
+}
+function markJoinedLocal(){
+  const addr = tonConnectUI?.account?.address;
+  if (addr) localStorage.setItem(joinedKey(addr), '1');
+}
+
+function hasProfile(){
+  const name = document.getElementById('fieldName')?.value.trim();
+  const country = document.getElementById('fieldCountry')?.value.trim();
+  const city = document.getElementById('fieldCity')?.value.trim();
+  const age = document.getElementById('fieldAge')?.value;
+  return !!(name && country && city && age);
+}
+let pendingAfterProfile = null;
+// Single gate used by both "Count me in" (home) and the mint button (Stars):
+// profile must be complete, wallet connected — then run onDone.
+// No separate registration step anymore: profile + constellation data are
+// sent together in one JoinAndMint transaction (1 TON total).
+async function ensureProfile(onDone){
+  if(!tonConnectUI){
+    showToast('Connecting wallet service, one moment…');
+    await initTonConnect();
+  }
+  if(!tonConnectUI){showToast('Wallet connect is unavailable — check your connection and reload the page.');return;}
+  if(!connected){ tonConnectUI.openModal(); showToast('Connect your wallet first ✦'); return; }
+  if(!hasProfile()){
+    showToast('Please fill your name, country, city and age first ✦');
+    pendingAfterProfile = () => ensureProfile(onDone);
+    document.querySelector('[data-page="profile"]').click();
+    return;
+  }
+  onDone();
+}
+
 document.getElementById('countBtn').addEventListener('click',()=>{
-  document.querySelector('[data-page="stars"]').click();
-  showToast('Upload a photo of your vitiligo to get started ✦');
+  ensureProfile(()=>{
+    document.querySelector('[data-page="stars"]').click();
+    showToast('Upload a photo of your vitiligo to join the count ✦');
+  });
 });
 
-document.getElementById('modalCountClose').addEventListener('click',()=>closeModal('modalCount'));
 document.getElementById('modalMintClose').addEventListener('click',()=>closeModal('modalMint'));
-
-let counted=false;
-document.getElementById('modalCountConfirm').addEventListener('click',()=>{
-  if(!connected){tonConnectUI.openModal();return;}
-  const name = document.getElementById('fieldName')?.value || '';
-  const country = document.getElementById('fieldCountry')?.value || '';
-  const city = document.getElementById('fieldCity')?.value || '';
-  const age = parseInt(document.getElementById('fieldAge')?.value || '0');
-  const payload = buildRegisterPayload(name, country, city, age);
-  sendTon('txCount',()=>{
-    closeModal('modalCount');
-    if(!counted){
-      counted=true; count++;
-      numEl.textContent=fmt(count); numEl.title=fmtExact(count)+' people';
-      numEl.classList.add('flash'); setTimeout(()=>numEl.classList.remove('flash'),700);
-      updateMilestone();
-      const btn=document.getElementById('countBtn');
-      btn.textContent='✓ You\'re counted!'; btn.classList.add('done'); btn.disabled=true;
-      addPixelToCanvas('#9333ea',false,null);
-      showToast('Your star is on the canvas ✦');
-    }
-  }, payload);
-});
 
 document.querySelectorAll('.modal-backdrop').forEach(bd=>{
   bd.addEventListener('click',e=>{if(e.target===bd)bd.classList.remove('open');});
@@ -1434,6 +1929,19 @@ const RARE_CONSTS = [
   {name:'Cygnus Aureus · The Golden Swan', rare:true, desc:'One swan in a thousand is born wrapped in gold — touched by the same hand that paints the northern lights. You are that one. Carry it well.', stars:[{x:.5,y:.1},{x:.5,y:.38},{x:.5,y:.65},{x:.5,y:.88},{x:.18,y:.38},{x:.82,y:.38},{x:.32,y:.55},{x:.68,y:.55},{x:.5,y:.05}], lines:[[0,1],[1,2],[2,3],[4,1],[1,5],[2,6],[2,7],[0,8]]},
 ];
 
+// Used when the AI mythical-constellation call fails (no network, or this
+// needs a real backend with an API key — a direct browser fetch to
+// api.anthropic.com with no auth header will not work on a live deployed
+// site). This is a curated, hand-written pool — deliberately NOT drawn from
+// REAL_CONSTS, so a fallback never quietly hands out one of the scarce 88
+// real constellations under a false "AI mythical" label.
+const MYTHICAL_FALLBACKS = [
+  {name:'Lucerna Silens · The Quiet Lantern', desc:'Long before the sky had a name, there was a lantern that refused to burn like the others — it did not blaze, it glowed, steady and unhurried, visible only to those who stopped rushing long enough to look up. The old stories say it was lit by someone who had been told, more than once, to dim themselves for comfort of the crowd, and who lit this instead: proof that a different kind of brightness is still brightness. Sailors who saw it never mistook it for a star burning out — they knew a slow light when they saw one. It has hung in the same place for ten thousand years, asking nothing, apologizing to no one. Some nights it is nearly invisible. Those are not its weakest nights. Those are the nights it is simply waiting for the right eyes.'},
+  {name:'Vestigia Lucis · The Trail of Light-Marks', desc:'Not every constellation was placed all at once — this one was left, one point at a time, by something that walked across the dark sky and never looked back to see what it left behind. Each mark is a little paler than the sky around it, a footprint made of absence rather than paint, the same way frost outlines a leaf by taking color away instead of adding it. The old skywatchers argued for centuries about whether it was a wound or a gift; the oldest texts, the ones nobody trusts anymore, simply call it a map of where something brave had been. It does not form a tidy shape, and that is the point — it was never meant to look like anything else. It only had to be unmistakably, permanently itself.'},
+  {name:'Speculum Fractum · The Broken Mirror That Still Works', desc:'A mirror once shattered while trying to hold too much light at once, and instead of being swept away, its pieces were hung in the sky exactly where they fell — which is why, to this day, this constellation has no clean symmetry, no obvious center. Each fragment still reflects, just at its own angle, throwing small honest glints instead of one blinding glare. People used to fear broken mirrors; the ones who named this constellation did not agree — they thought a mirror in many pieces simply had more places to catch the light from. It is one of the few constellations that looks slightly different depending on where you stand to view it, which the old astronomers considered a flaw and the old poets considered the entire point.'},
+  {name:'Semita Candida · The Pale Path', desc:'Every other road in the old sky-maps is drawn as a single unbroken line; this one is drawn as a scatter of pale stepping-stones, because the story says it was walked by someone who never moved in a straight line and never apologized for it. The gaps between the stars are not missing pieces — they are the parts of the journey nobody else was allowed to see. Shepherds used it to find their way home precisely because it looked unfinished; a path that pretends to be perfectly smooth, they said, is usually lying to you. This one never lied. It simply went where it went, one honest patch of light at a time, and eventually, every single time, it arrived.'},
+];
+
 // ── CONSTELLATION SELECTION ──
 // Default: AI-generated mythical (unique to each person)
 // Rare: one of 88 real IAU constellations — distributed randomly across all mints
@@ -1445,9 +1953,7 @@ const RARE_CONSTS = [
 const REAL_DISCOVERY_CHANCE = 88 / 1000000; // ~0.0088%
 const MILESTONE_REAL_CHANCE = 0.05; // every 100th mint gets 5% bonus real chance
 
-// Track which real constellations have been discovered (persisted via contract/local)
-// For now stored in memory — will be replaced with chain data after contract redeploy
-let discoveredReal = new Set();
+// Track which real constellations have been discovered — see loadDiscoveredRealFromChain()
 
 function selectConstellation(nftCountSoFar) {
   const upcomingMintNumber = nftCountSoFar + 1;
@@ -1478,7 +1984,7 @@ function selectConstellation(nftCountSoFar) {
       ...realConst,
       rare: true,
       isRealDiscovery: true,
-      discoveryNumber: discoveredReal.size,
+      discoveryNumber: originalIdx + 1, // stable ID matching the contract's bit position — NOT discoveredReal.size
       milestoneBadge: `✦ Discovery #${discoveredReal.size} of 88 — ${realConst.name.split('·')[0].trim()}`
     };
   }
@@ -1583,14 +2089,14 @@ async function buildConstellation(img){
           max_tokens: 1000,
           messages: [{
             role: "user",
-            content: `Create a unique mythical constellation for someone with vitiligo. 
+            content: `Create a unique mythical constellation for someone whose skin has vitiligo — patches of skin that lost their pigment, so they're paler than the rest, like light breaking through.
 Respond ONLY with JSON, no markdown, no extra text:
 {
   "name": "ConstellationName · The Mythical Title",
-  "desc": "A short mythological description (2-3 sentences max) that is poetic, personal, and references the stars or sky. Make it feel ancient and profound.",
+  "desc": "A rich mythological description, 4-6 sentences. Give it an origin (who or what placed these stars in the sky, and why), a specific vivid image (not generic 'ancient and profound' language), and end with one sentence that quietly connects it back to skin that carries its own light-and-shadow pattern — without ever using the word 'vitiligo' or sounding clinical. Write like a real myth a real culture might tell, not ad copy.",
   "rare": false
 }
-Make the name completely unique and not based on any real constellation.`
+Make the name and mythology completely original — not based on any real-world constellation or existing legend.`
           }]
         })
       });
@@ -1605,8 +2111,21 @@ Make the name completely unique and not based on any real constellation.`
       if (stars.length > 2) lines.push([stars.length-1, 0]);
       currentConst = {...aiConst, stars, lines, rare: Math.random() < 0.10};
     } catch(e) {
-      // Fallback if AI fails
-      currentConst = REAL_CONSTS[Math.floor(Math.random()*REAL_CONSTS.length)];
+      // AI unreachable (e.g. no network, or this call needs a backend proxy
+      // with a real API key — direct browser calls to api.anthropic.com
+      // with no auth will fail on a live deployed site). Fall back to a
+      // curated, hand-written mythical constellation instead of silently
+      // handing out one of the scarce 88 real ones (which used to happen
+      // here and quietly broke the "discovered once, ever" scarcity promise
+      // — a random real name like "Gemini" would get handed out as an
+      // ordinary pick, not tracked in discoveredReal, not really rare).
+      const picked = MYTHICAL_FALLBACKS[Math.floor(Math.random() * MYTHICAL_FALLBACKS.length)];
+      const starCount = 6 + Math.floor(Math.random() * 6);
+      const stars = Array.from({length: starCount}, () => ({x: 0.1 + Math.random()*0.8, y: 0.1 + Math.random()*0.8}));
+      const lines = [];
+      for (let i = 0; i < stars.length - 1; i++) lines.push([i, i+1]);
+      if (stars.length > 2) lines.push([stars.length-1, 0]);
+      currentConst = {...picked, stars, lines, rare: Math.random() < 0.10};
     }
   }
 
@@ -1704,28 +2223,51 @@ Make the name completely unique and not based on any real constellation.`
 }
 
 mintBtn.addEventListener('click',()=>{
-  if(!connected){
-    tonConnectUI.openModal();
-    showToast('Connect your wallet to continue ✦');
-    return;
-  }
   lastStoryText = document.getElementById('storyInput').value.trim();
-  openModal('modalMint');
+  ensureProfile(()=> openModal('modalMint'));
 });
 
 let nftCount=0;
 let myNfts = [];
-document.getElementById('modalMintConfirm').addEventListener('click',()=>{
-  if(!connected){tonConnectUI.openModal();return;}
-  const constName = currentConst ? currentConst.name.split('·')[0].trim() : '';
-  const isRare = currentConst ? (currentConst.rare || false) : false;
-  const isLegendary = currentConst ? (currentConst.isRealDiscovery || false) : false;
-  const discoveryNumber = currentConst ? (currentConst.discoveryNumber || 0) : 0;
-  const story = lastStoryText || '';
-  const pixelColor = nftPixelColor || '#9333ea';
-  const payload = buildMintPayload(constName, isRare, isLegendary, discoveryNumber, story, pixelColor);
-  sendTon('txMint',()=>{
+document.getElementById('modalMintConfirm').addEventListener('click', async ()=>{
+  updateDebugInfo('CLICKED confirm button');
+  if (!hasProfile()) {
+    updateDebugInfo('STOPPED: hasProfile() is false');
     closeModal('modalMint');
+    ensureProfile(()=> openModal('modalMint'));
+    return;
+  }
+  if(!tonConnectUI){ updateDebugInfo('tonConnectUI null, retrying init...'); await initTonConnect(); }
+  if(!tonConnectUI){ updateDebugInfo('STOPPED: tonConnectUI still null after retry'); showToast('Wallet connect is unavailable — check your connection and reload the page.');return;}
+  if(!connected){ updateDebugInfo('STOPPED: not connected, opening wallet modal'); closeModal('modalMint'); tonConnectUI.openModal(); return; }
+  try {
+    if (!currentConst) { updateDebugInfo('STOPPED: currentConst is null'); showToast('Something went wrong with your constellation — try uploading the photo again.'); return; }
+    updateDebugInfo('building payload...');
+    const name = document.getElementById('fieldName')?.value || '';
+    const country = document.getElementById('fieldCountry')?.value || '';
+    const city = document.getElementById('fieldCity')?.value || '';
+    const age = parseInt(document.getElementById('fieldAge')?.value || '0');
+    const constName = currentConst.name.split('·')[0].trim();
+    const isRare = currentConst.rare || false;
+    const isLegendary = currentConst.isRealDiscovery || false;
+    const discoveryNumber = currentConst.discoveryNumber || 0;
+    const story = lastStoryText || '';
+    const pixelColor = nftPixelColor || '#9333ea';
+    if (!window.TonCore || !window.TonCore.beginCell) { updateDebugInfo('STOPPED: window.TonCore missing'); showToast('Payment setup failed to load — please reload the page and try again.'); return; }
+    const payload = buildJoinAndMintPayload(name, country, city, age, constName, isRare, isLegendary, discoveryNumber, story, pixelColor);
+    updateDebugInfo('payload built, calling sendTon...');
+    sendTon('txMint',()=>{
+    closeModal('modalMint');
+    const wasAlreadyJoined = isJoinedLocal();
+    markJoinedLocal();
+    if (!wasAlreadyJoined) {
+      count++;
+      numEl.textContent=fmt(count); numEl.title=fmtExact(count)+' people';
+      numEl.classList.add('flash'); setTimeout(()=>numEl.classList.remove('flash'),700);
+      updateMilestone();
+      const homeBtn=document.getElementById('countBtn');
+      homeBtn.textContent='✓ You\'re counted!'; homeBtn.classList.add('done'); homeBtn.disabled=true;
+    }
     nftCount++;
     const gold = currentConst.rare;
     mintBtn.textContent='✓ Counted!'; mintBtn.classList.add('done'); mintBtn.disabled=true;
@@ -1772,7 +2314,7 @@ document.getElementById('modalMintConfirm').addEventListener('click',()=>{
     setTimeout(()=>{
       document.querySelector('[data-page="home"]').click();
       setTimeout(()=>{
-        addPixelToCanvas(nftPixelColor,true,{constName: nftData.name, story: nftData.story, isRare: nftData.rare, isLegendary: nftData.isRealDiscovery || false});
+        addPixelToCanvas(nftPixelColor,true,{constName: nftData.name, story: nftData.story, isRare: nftData.rare, isLegendary: nftData.isRealDiscovery || false, constData: nftData.constData});
         photoCount++; numPhotosEl.textContent=fmt(photoCount); numPhotosEl.title=fmtExact(photoCount)+' constellations';
         numPhotosEl.classList.add('flash'); setTimeout(()=>numPhotosEl.classList.remove('flash'),600);
         showToast(gold ? '★ Rare constellation minted!' : '✦ Your constellation is on the canvas');
@@ -1780,13 +2322,26 @@ document.getElementById('modalMintConfirm').addEventListener('click',()=>{
       },350);
     },900);
   }, payload);
+  } catch(e) {
+    console.error('[vitiligo.ton] Confirm payment failed:', e);
+    updateDebugInfo('EXCEPTION: ' + (e?.message || e));
+    showToast('Something went wrong preparing the payment. Please try again — if it keeps happening, reload the page.');
+  }
 });
 
-function openNftDetail(nftData){
+function openNftDetail(nftData, showActions){
   document.getElementById('modalNftTitle').textContent = '✦ ' + nftData.name + (nftData.rare ? ' ★ RARE' : '');
   document.getElementById('modalNftTitle').classList.toggle('rare', nftData.rare);
   document.getElementById('modalNftPreview').classList.toggle('rare', nftData.rare);
-  document.getElementById('modalNftStory').textContent = nftData.story || 'No story added yet.';
+  document.getElementById('modalNftDesc').textContent = nftData.constData?.desc || '';
+  document.getElementById('modalNftDesc').style.display = nftData.constData?.desc ? 'block' : 'none';
+  const ownerEl = document.getElementById('modalNftOwner');
+  if (nftData.owner) { ownerEl.textContent = '✦ Owner: ' + nftData.owner; ownerEl.style.display = 'block'; }
+  else { ownerEl.style.display = 'none'; }
+  const storyEl = document.getElementById('modalNftStory');
+  storyEl.textContent = nftData.story || 'No story added yet.';
+  storyEl.style.display = (nftData.story || showActions !== false) ? 'block' : 'none';
+  document.getElementById('modalNftActions').style.display = showActions === false ? 'none' : 'flex';
   const canvas = document.getElementById('modalNftCanvas');
   const w = canvas.parentElement.offsetWidth || 300, h = w/1.6;
   canvas.width=w; canvas.height=h;
@@ -1819,7 +2374,7 @@ function drawMySky(){
   const w = canvas.offsetWidth || 300, h = w/1.6;
   canvas.width=w; canvas.height=h;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle='#030112'; ctx.fillRect(0,0,w,h);
+  ctx.fillStyle='#020110'; ctx.fillRect(0,0,w,h);
   for(let i=0;i<40;i++){
     const x=Math.random()*w, y=Math.random()*h;
     ctx.fillStyle=`rgba(200,190,255,${.05+Math.random()*.15})`;
@@ -1877,7 +2432,66 @@ document.getElementById('saveBtn').addEventListener('click',()=>{
   const n=document.getElementById('fieldName').value;
   if(n) document.getElementById('profileName').textContent=n;
   if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-  if(tg) tg.showAlert('Profile saved!'); else alert('Profile saved!');
+  if(!hasProfile()){
+    showToast('Please fill in name, country, city and age ✦');
+    return;
+  }
+  // Previously "Save profile" only showed a success message and never
+  // actually persisted anything anywhere — country/city/age vanished on
+  // every reload, and the name field only ever looked filled because
+  // Telegram's own name was re-injected fresh each load (see initTelegram
+  // above), not because anything had been saved. Found 04.07.2026 when a
+  // real profile disappeared after a reload. Now genuinely saved.
+  try {
+    localStorage.setItem('vt_profile', JSON.stringify({
+      name: document.getElementById('fieldName').value.trim(),
+      country: document.getElementById('fieldCountry').value.trim(),
+      city: document.getElementById('fieldCity').value.trim(),
+      age: document.getElementById('fieldAge').value
+    }));
+  } catch(e) { /* storage unavailable — profile still works for this session */ }
+  if(tg) tg.showAlert('Profile saved!'); else showToast('Profile saved ✦');
+  if(pendingAfterProfile){ const fn=pendingAfterProfile; pendingAfterProfile=null; fn(); }
+  refreshUpdateProfileButtonVisibility();
+});
+
+// The "Update on-chain profile" button only makes sense for a wallet that
+// has already minted before — a first-timer should just fill the form and
+// mint normally (JoinAndMint carries their profile data already). Checked
+// on load, after Save Profile, and after wallet connect changes.
+function refreshUpdateProfileButtonVisibility(){
+  const btn = document.getElementById('updateOnChainBtn');
+  if (!btn) return;
+  btn.style.display = isJoinedLocal() ? 'block' : 'none';
+}
+refreshUpdateProfileButtonVisibility();
+
+document.getElementById('updateOnChainBtn').addEventListener('click', async () => {
+  if(!hasProfile()){
+    showToast('Please fill in name, country, city and age ✦');
+    return;
+  }
+  if(!tonConnectUI){ await initTonConnect(); }
+  if(!tonConnectUI || !tonConnectUI.connected){
+    showToast('Connect your wallet first ✦');
+    if (tonConnectUI) tonConnectUI.openModal();
+    return;
+  }
+  let payload;
+  try {
+    payload = buildUpdateProfilePayload(
+      document.getElementById('fieldName').value.trim(),
+      document.getElementById('fieldCountry').value.trim(),
+      document.getElementById('fieldCity').value.trim(),
+      parseInt(document.getElementById('fieldAge').value) || 0
+    );
+  } catch(e) {
+    showToast('Could not prepare the update — try reloading the page ✦');
+    return;
+  }
+  sendTon('txUpdateProfile', () => {
+    showToast('On-chain profile updated ✦');
+  }, payload, '20000000'); // 0.02 TON
 });
 
 /* ── INVITE / REFERRAL ── */
@@ -1917,7 +2531,7 @@ document.getElementById('copyLinkOpt').addEventListener('click', ()=>{
 const mapC=document.getElementById('mapCanvas');
 const mX=mapC.getContext('2d');
 mapC.width=304; mapC.height=155;
-mX.fillStyle='#030112';
+mX.fillStyle='#020110';
 mX.beginPath(); if(mX.roundRect)mX.roundRect(0,0,304,155,14); else mX.rect(0,0,304,155); mX.fill();
 // Background stars only — no city dots until real data exists
 for(let i=0;i<35;i++){
@@ -1929,13 +2543,164 @@ const mapNg = mX.createRadialGradient(152,77,0,152,77,140);
 mapNg.addColorStop(0,'rgba(76,29,149,.1)'); mapNg.addColorStop(1,'transparent');
 mX.fillStyle=mapNg; mX.beginPath(); mX.arc(152,77,140,0,Math.PI*2); mX.fill();
 
-// ── POPULATE AGE SELECT ──
-const ageSelect = document.getElementById('fieldAge');
-for (let a = 5; a <= 104; a++) {
-  const opt = document.createElement('option');
-  opt.value = a; opt.textContent = a;
-  ageSelect.appendChild(opt);
+function base64ToBytes(base64) {
+  const binStr = atob(base64);
+  const bytes = new Uint8Array(binStr.length);
+  for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
+  return bytes;
 }
+
+// Reads a Tact `String` field back out of a toncenter "cell" stack entry.
+// Tact stores String as a snake-cell (bits now, ref to next cell if it
+// overflows); Cell.beginParse().loadStringTail() walks that chain for us.
+function decodeCellString(cellEntry) {
+  try {
+    const bytes = cellEntry?.bytes;
+    if (!bytes) return '';
+    const cell = window.TonCore.Cell.fromBoc(base64ToBytes(bytes))[0];
+    return cell.beginParse().loadStringTail();
+  } catch(e) { console.warn('decodeCellString failed', e); return ''; }
+}
+
+// NOTE: this decodes a custom Tact struct (CityCount) from a raw toncenter
+// runGetMethod response — the one part of this pass I could not test end to
+// end without a live contract call. If the city list doesn't populate (stays
+// on "No one has marked their city yet"), open the browser console: any
+// warning starting with "getCityCount" points at exactly where the stack
+// shape didn't match what's expected below.
+// Reloads a previously-minted constellation into the Profile grid after a
+// page refresh. Added 04.07.2026 — myNfts (below) only ever lived in this
+// tab's memory, so anyone who minted, then reloaded, saw an empty "My
+// constellations" section even though their mint was real and on-chain.
+// IMPORTANT HONEST LIMITATION: the exact star layout (the pixel positions
+// the photo-detection algorithm found) is never stored on-chain — only
+// name/story/rarity are. So this can restore the real name, story and
+// rarity badge, but the star pattern itself is a stand-in seeded from the
+// constellation's name (stable across reloads, not a reproduction of the
+// original photo). Not yet verified against a live getUser() call — if
+// the card doesn't appear after minting+reloading, check the console for
+// a warning starting with "getUser".
+function seededStars(seedStr, count) {
+  let seed = 0;
+  for (let i = 0; i < seedStr.length; i++) seed = (seed * 31 + seedStr.charCodeAt(i)) >>> 0;
+  const rand = () => { seed = (seed * 1103515245 + 12345) >>> 0; return (seed >>> 8) / 16777216; };
+  const stars = [];
+  for (let i = 0; i < count; i++) stars.push({ x: 0.15 + rand() * 0.7, y: 0.15 + rand() * 0.7 });
+  return stars;
+}
+
+async function loadMyConstellationFromChain() {
+  try {
+    const addr = tonConnectUI?.account?.address;
+    if (!addr || !window.TonCore?.Address) return;
+    const addrCell = beginCellSafe();
+    if (!addrCell) return;
+    const cell = window.TonCore.beginCell().storeAddress(window.TonCore.Address.parse(addr)).endCell();
+    const addrBoc = bytesToBase64(cell.toBoc());
+    const data = await tonFetch({ address: CONTRACT_ADDRESS, method: 'getUser', stack: [['tvm.Slice', addrBoc]] });
+    const entry = data?.result?.stack?.[0];
+    if (!entry || entry[0] === 'null') return; // never registered — nothing to show
+    const elements = entry[1]?.elements || entry[1];
+    if (!elements || elements.length < 13) { console.warn('getUser: unexpected stack shape', entry); return; }
+    const hasConstellation = elements[5]?.[1] === 'true' || elements[5]?.[1] === '-1' || elements[5]?.[1] === true;
+    if (!hasConstellation) return;
+    const constName = decodeCellString(elements[6]?.[1]);
+    const isRare = elements[7]?.[1] === 'true' || elements[7]?.[1] === '-1' || elements[7]?.[1] === true;
+    const story = decodeCellString(elements[10]?.[1]);
+    if (!constName) return;
+    const nftData = { name: constName, story, rare: isRare, constData: { name: constName, stars: seededStars(constName, 5) } };
+    myNfts.push(nftData);
+    renderRestoredNftCard(nftData);
+  } catch(e) { console.warn('getUser load failed', e); }
+}
+function beginCellSafe(){ try { return !!(window.TonCore && window.TonCore.beginCell); } catch(e){ return false; } }
+
+// Draws one constellation card into the Profile grid — used specifically
+// for restoring a mint from chain after a reload (see
+// loadMyConstellationFromChain above). Kept separate from the mint-time
+// card drawing further down so that reload behavior can never affect the
+// live mint flow.
+function renderRestoredNftCard(nftData) {
+  const grid = document.getElementById('nftGrid');
+  const addBtn = document.getElementById('addNftBtn');
+  if (!grid || !addBtn) return;
+  const gold = nftData.rare;
+  const card = document.createElement('div');
+  card.className = 'nft-card' + (gold ? ' rare' : '');
+  const mc = document.createElement('canvas'); mc.width = 80; mc.height = 80;
+  mc.style.cssText = 'width:100%;height:100%;display:block';
+  const mctx = mc.getContext('2d');
+  mctx.fillStyle = '#020110'; mctx.fillRect(0, 0, 80, 80);
+  const ng = mctx.createRadialGradient(40, 40, 0, 40, 40, 38);
+  ng.addColorStop(0, gold ? 'rgba(245,158,11,.3)' : 'rgba(76,29,149,.3)'); ng.addColorStop(1, 'transparent');
+  mctx.fillStyle = ng; mctx.beginPath(); mctx.arc(40, 40, 38, 0, Math.PI * 2); mctx.fill();
+  nftData.constData.stars.forEach((s, i) => {
+    const sx = s.x * 80, sy = s.y * 80, sz = i === 0 ? 3 : 1.5;
+    const g = mctx.createRadialGradient(sx, sy, 0, sx, sy, sz * 4);
+    g.addColorStop(0, gold ? 'rgba(253,230,138,.5)' : 'rgba(200,170,255,.5)'); g.addColorStop(1, 'transparent');
+    mctx.fillStyle = g; mctx.beginPath(); mctx.arc(sx, sy, sz * 4, 0, Math.PI * 2); mctx.fill();
+    mctx.fillStyle = 'rgba(255,252,255,.95)'; mctx.beginPath(); mctx.arc(sx, sy, sz, 0, Math.PI * 2); mctx.fill();
+  });
+  card.appendChild(mc);
+  if (gold) {
+    const badge = document.createElement('div'); badge.className = 'nft-rare-badge'; badge.textContent = '★ RARE';
+    card.appendChild(badge);
+  }
+  const infoBar = document.createElement('div'); infoBar.className = 'nft-info-bar';
+  infoBar.innerHTML = `<div class="nft-name">${nftData.name}</div>${nftData.story ? `<div class="nft-story">"${nftData.story}"</div>` : ''}`;
+  card.appendChild(infoBar);
+  card.addEventListener('click', () => openNftDetail(nftData));
+  grid.insertBefore(card, addBtn);
+}
+
+async function loadCitiesFromChain() {
+  try {
+    const sizeData = await tonFetch({ address: CONTRACT_ADDRESS, method: 'cityCountsSize', stack: [] });
+    const sizeHex = sizeData?.result?.stack?.[0]?.[1];
+    const size = sizeHex ? parseInt(sizeHex, 16) : 0;
+    if (!size) return; // stays on the "No one has marked their city yet" empty state
+
+    const cities = [];
+    for (let i = 0; i < size; i++) {
+      try {
+        const data = await tonFetch({ address: CONTRACT_ADDRESS, method: 'getCityCount', stack: [['num', i.toString()]] });
+        const entry = data?.result?.stack?.[0];
+        if (!entry || entry[0] === 'null') continue;
+        // Expect a tuple: [cityNameCell, countNum] — city first, count second (struct field order in .tact)
+        const elements = entry[1]?.elements || entry[1];
+        if (!elements || elements.length < 2) { console.warn('getCityCount: unexpected stack shape', entry); continue; }
+        const cityName = decodeCellString(elements[0][1]);
+        const countHex = elements[1][1];
+        const cnt = countHex ? parseInt(countHex, 16) : 0;
+        if (cityName && cnt > 0) cities.push({ city: cityName, count: cnt });
+      } catch(e) { console.warn('getCityCount index', i, 'failed', e); }
+    }
+
+    if (!cities.length) return;
+    cities.sort((a,b) => b.count - a.count);
+    document.getElementById('cityListEmpty').style.display = 'none';
+    const listEl = document.getElementById('cityListReal');
+    listEl.innerHTML = cities.map(c => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.15);border-radius:10px;margin-bottom:6px">
+        <span style="color:#e9d5ff;font-size:13px">${c.city}</span>
+        <span style="color:#a78bfa;font-size:12px;font-weight:600">${c.count}</span>
+      </div>`).join('');
+
+    // Home teaser — added 04.07.2026, top 3 cities only, reusing the same
+    // sorted data already fetched above rather than a second round of calls.
+    const homeTeaser = document.getElementById('cityTeaserHome');
+    const homeList = document.getElementById('cityTeaserList');
+    if (homeTeaser && homeList) {
+      homeList.innerHTML = cities.slice(0, 3).map(c => `
+        <div style="display:flex;justify-content:space-between"><span>${c.city}</span><span style="color:#a78bfa;font-weight:600">${c.count}</span></div>`).join('');
+      homeTeaser.style.display = 'block';
+    }
+  } catch(e) { console.log('City list load failed', e); }
+}
+loadCitiesFromChain();
+document.getElementById('cityTeaserLink')?.addEventListener('click', () => {
+  document.querySelector('[data-page="map"]')?.click();
+});
 
 // ── COUNTRY LIST ──
 const COUNTRIES = [
@@ -2013,29 +2778,9 @@ document.addEventListener('click', e => {
 
 // Start canvas pulse animation — must be last, after all variables are defined
 
-// ── GENESIS STAR ── The first transaction · The one who started counting
-const GENESIS_DATE = new Date('2026-07-01').getTime();
-const GENESIS_FADE_YEARS = 1;
-const genesisAge = Math.min(1, (Date.now() - GENESIS_DATE) / (GENESIS_FADE_YEARS * 365.24 * 24 * 3600 * 1000));
-const genesisBrightness = 1 - (genesisAge * 0.7);
-
-const genesisIdx = Math.floor(ROWS / 2) * COLS + Math.floor(COLS / 2);
-pixels[genesisIdx] = {
-  color: 'white',
-  op: 1,
-  isNFT: true,
-  isGenesis: true,
-  genesisBrightness,
-  data: {
-    constName: 'Genesis Star',
-    story: 'The first. The one who started counting.',
-    isRare: true,
-    isLegendary: true,
-    isGenesis: true
-  }
-};
-
+// Genesis star is created inside the cosmic canvas IIFE above (see "Genesis star in center").
 // Canvas pulse animation handled inside cosmic canvas IIFE above
+
 </script>
 </body>
 </html>
