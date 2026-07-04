@@ -601,6 +601,13 @@ html,body{
     <h1 class="headline">People with vitiligo<br>are <em>unique by design</em></h1>
     <p class="sub">just vitiligo · just us · just beautiful</p>
 
+    <!-- Added 04.07.2026 — shown instead of the plain tagline once a
+         returning visitor is confirmed counted, so the app greets them
+         rather than repeating the same first-time pitch forever. -->
+    <div id="countedBanner" style="display:none;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);border-radius:12px;padding:12px 16px;margin-bottom:16px;text-align:center;color:#6ee7b7;font-size:14px">
+      🎉 Congratulations — you're counted
+    </div>
+
     <button class="btn-main" id="countBtn">Count me in ✦</button>
   </div>
 </div>
@@ -1519,6 +1526,7 @@ async function initTonConnect() {
         startTick();
         if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
         if (typeof refreshUpdateProfileButtonVisibility === 'function') refreshUpdateProfileButtonVisibility();
+        if (typeof refreshCountedBanner === 'function') refreshCountedBanner();
         if (typeof myNfts !== 'undefined' && myNfts.length === 0 && typeof loadMyConstellationFromChain === 'function') {
           loadMyConstellationFromChain();
         }
@@ -1527,6 +1535,7 @@ async function initTonConnect() {
         connected=false;
         stopTick();
         if (typeof refreshUpdateProfileButtonVisibility === 'function') refreshUpdateProfileButtonVisibility();
+        if (typeof refreshCountedBanner === 'function') refreshCountedBanner();
       }
     });
     document.getElementById('walletDisc').addEventListener('click',()=>tonConnectUI.disconnect());
@@ -1826,11 +1835,31 @@ async function ensureProfile(onDone){
 }
 
 document.getElementById('countBtn').addEventListener('click',()=>{
+  if (isJoinedLocal()) {
+    document.querySelector('[data-page="profile"]').click();
+    return;
+  }
   ensureProfile(()=>{
     document.querySelector('[data-page="stars"]').click();
     showToast('Upload a photo of your vitiligo to join the count ✦');
   });
 });
+
+// Toggles the "You're counted" banner and the Home button's text/purpose
+// for returning, already-registered visitors. Called on wallet connect
+// (see onStatusChange) since isJoinedLocal() needs a connected address.
+function refreshCountedBanner(){
+  const banner = document.getElementById('countedBanner');
+  const btn = document.getElementById('countBtn');
+  if (!banner || !btn) return;
+  if (isJoinedLocal()) {
+    banner.style.display = 'block';
+    btn.textContent = 'View my constellation →';
+  } else {
+    banner.style.display = 'none';
+    btn.textContent = 'Count me in ✦';
+  }
+}
 
 document.getElementById('modalMintClose').addEventListener('click',()=>closeModal('modalMint'));
 
@@ -2788,17 +2817,65 @@ document.addEventListener('click', e => {
   }
 });
 const CITIES = [
-  "Tokyo","Delhi","Shanghai","Dhaka","São Paulo","Mexico City","Cairo","Beijing","Mumbai","Osaka",
-  "Chongqing","Karachi","Istanbul","Kinshasa","Lagos","Buenos Aires","Kolkata","Manila","Guangzhou","Rio de Janeiro",
-  "Lahore","Moscow","Shenzhen","Bangalore","Paris","Bogotá","Jakarta","Chennai","Lima","Bangkok",
-  "Seoul","Nagoya","Hyderabad","London","Tehran","Chicago","Chengdu","Nanjing","Wuhan","Luanda",
-  "Ahmedabad","Kuala Lumpur","Wuhan","Xian","Ho Chi Minh City","Hong Kong","Baghdad","Riyadh","Singapore","Santiago",
-  "Surat","Miami","Belo Horizonte","Shenyang","Khartoum","Pune","Madrid","Nairobi","Harbin","Houston",
-  "Dallas","Toronto","Johannesburg","Dar es Salaam","Medellín","Philadelphia","Casablanca","Abidjan","Cape Town","Yangon",
-  "Accra","Alexandria","Suzhou","Addis Ababa","Ankara","Hanoi","Sydney","Kabul","Kanpur","Jaipur",
-  "New York","Los Angeles","Berlin","Rome","Barcelona","Vienna","Warsaw","Kyiv","Minsk","Almaty",
-  "Tashkent","Baku","Tbilisi","Yerevan","Norilsk","Yekaterinburg","Novosibirsk","Omsk","Samara","Ufa",
-  "Chelyabinsk","Rostov-on-Don","Kazan","Voronezh","Perm","Krasnodar","Saratov","Tyumen","Irkutsk","Krasnoyarsk"
+  // East & Southeast Asia
+  "Tokyo","Delhi","Shanghai","Beijing","Osaka","Chongqing","Guangzhou","Shenzhen","Chengdu","Nanjing",
+  "Wuhan","Xian","Hong Kong","Harbin","Shenyang","Suzhou","Seoul","Nagoya","Busan","Incheon",
+  "Taipei","Kaohsiung","Sapporo","Yokohama","Fukuoka","Tianjin","Qingdao","Dalian","Ulaanbaatar","Pyongyang",
+  "Manila","Jakarta","Bangkok","Ho Chi Minh City","Hanoi","Kuala Lumpur","Yangon","Singapore","Surabaya","Bandung",
+  "Medan","Phnom Penh","Vientiane","Cebu City","Davao City","Chiang Mai","Da Nang",
+  // South Asia
+  "Mumbai","Kolkata","Bangalore","Chennai","Hyderabad","Ahmedabad","Surat","Pune","Kanpur","Jaipur",
+  "Karachi","Lahore","Dhaka","Kabul","Islamabad","Colombo","Kathmandu","Chittagong","Multan","Faisalabad",
+  "Peshawar","Nagpur","Lucknow","Patna","Bhopal","Indore",
+  // Middle East
+  "Istanbul","Tehran","Baghdad","Riyadh","Ankara","Jeddah","Dubai","Abu Dhabi","Doha","Kuwait City",
+  "Amman","Beirut","Damascus","Muscat","Manama","Jerusalem","Tel Aviv",
+  // Africa
+  "Kinshasa","Lagos","Luanda","Khartoum","Nairobi","Johannesburg","Dar es Salaam","Casablanca","Abidjan","Cape Town",
+  "Accra","Alexandria","Cairo","Addis Ababa","Kampala","Dakar","Algiers","Tunis","Maputo","Lusaka","Harare",
+  "Kigali","Yaoundé","Douala","Bamako","Ouagadougou","Freetown","Monrovia","Tripoli","Rabat","Pretoria",
+  "Durban","Ibadan","Kano","Abuja","Mogadishu","Antananarivo","Lubumbashi","Bujumbura","N'Djamena","Niamey","Conakry",
+  // Europe
+  "Paris","London","Madrid","Berlin","Rome","Barcelona","Vienna","Warsaw","Kyiv","Minsk",
+  "Amsterdam","Brussels","Lisbon","Dublin","Stockholm","Copenhagen","Oslo","Helsinki","Athens","Budapest",
+  "Prague","Bucharest","Sofia","Zagreb","Belgrade","Zurich","Milan","Naples","Munich","Hamburg",
+  "Frankfurt","Manchester",
+  // Americas
+  "São Paulo","Mexico City","Buenos Aires","Rio de Janeiro","Bogotá","Lima","Santiago","Belo Horizonte","Medellín","Caracas",
+  "Quito","Guayaquil","Montevideo","Asunción","La Paz","Santa Cruz de la Sierra","Guadalajara","Monterrey","Havana","Santo Domingo",
+  "San Juan","Panama City","San José","Brasília","Fortaleza","Salvador","Recife","Porto Alegre","Curitiba",
+  "New York","Los Angeles","Chicago","Miami","Houston","Dallas","Toronto","Philadelphia",
+  // Oceania
+  "Sydney","Melbourne","Brisbane","Perth","Auckland","Wellington","Suva",
+  // Central Asia & Caucasus
+  "Almaty","Tashkent","Baku","Tbilisi","Yerevan","Bishkek","Dushanbe","Ashgabat",
+  // Russia (kept from the original list)
+  "Moscow","Saint Petersburg","Norilsk","Yekaterinburg","Novosibirsk","Omsk","Samara","Ufa","Chelyabinsk","Rostov-on-Don",
+  "Kazan","Voronezh","Perm","Krasnodar","Saratov","Tyumen","Irkutsk","Krasnoyarsk","Khabarovsk","Vladivostok",
+  "Nizhny Novgorod","Volgograd","Barnaul","Tomsk","Kemerovo","Naberezhnye Chelny","Kaliningrad","Tula","Sochi","Stavropol",
+  "Makhachkala","Yaroslavl","Izhevsk","Ulyanovsk","Nizhny Tagil","Ulan-Ude","Orenburg","Novokuznetsk","Ryazan","Astrakhan",
+  "Penza","Lipetsk","Kirov","Cheboksary","Balashikha","Bryansk","Ivanovo","Magnitogorsk","Tver","Belgorod",
+  "Vladikavkaz","Chita","Kaluga","Surgut","Smolensk","Volzhsky","Cherepovets","Vologda","Saransk","Yakutsk",
+  "Grozny","Podolsk","Kursk","Tambov","Petrozavodsk","Sterlitamak","Kostroma","Nizhnevartovsk","Orel","Novorossiysk",
+  "Angarsk","Blagoveshchensk","Syktyvkar","Murmansk","Tolyatti",
+  // United States
+  "Phoenix","San Antonio","San Diego","San Jose","Austin","Jacksonville","Fort Worth","Columbus","Charlotte","San Francisco",
+  "Indianapolis","Seattle","Denver","Washington","Boston","El Paso","Nashville","Detroit","Oklahoma City","Portland",
+  "Las Vegas","Memphis","Louisville","Baltimore","Milwaukee","Albuquerque","Tucson","Fresno","Sacramento","Kansas City",
+  "Mesa","Atlanta","Omaha","Colorado Springs","Raleigh","Long Beach","Virginia Beach","Oakland","Minneapolis","Tulsa",
+  "Bakersfield","Tampa","Wichita","Arlington","New Orleans","Cleveland","Honolulu","Anaheim","Pittsburgh","St. Louis",
+  "Cincinnati","Orlando",
+  // Europe — major non-capital cities plus capitals not yet listed
+  "Birmingham","Glasgow","Liverpool","Leeds","Edinburgh","Bristol","Sheffield","Newcastle",
+  "Marseille","Lyon","Toulouse","Nice","Nantes","Strasbourg","Bordeaux","Lille",
+  "Cologne","Stuttgart","Düsseldorf","Dortmund","Essen","Leipzig","Bremen","Dresden","Hanover","Nuremberg",
+  "Turin","Palermo","Genoa","Bologna","Florence","Bari","Catania","Venice",
+  "Valencia","Seville","Zaragoza","Málaga","Bilbao","Porto",
+  "Rotterdam","The Hague","Utrecht","Antwerp","Ghent",
+  "Kraków","Łódź","Wrocław","Poznań","Gdańsk","Brno","Graz","Salzburg",
+  "Geneva","Basel","Bern","Lausanne","Gothenburg","Malmö","Bergen","Aarhus","Espoo",
+  "Thessaloniki","Cluj-Napoca","Timișoara","Plovdiv","Split","Novi Sad","Cork",
+  "Kharkiv","Odesa","Dnipro","Lviv","Bratislava","Ljubljana","Vilnius","Riga","Tallinn"
 ].sort();
 
 function filterCities(val) {
