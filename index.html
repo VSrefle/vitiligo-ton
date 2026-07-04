@@ -16,7 +16,11 @@
   // which every single payment depends on. A previous version imported
   // both in one statement, which meant a Cell failure would silently break
   // ALL payments with zero visible error. Never again.
-  import("https://esm.sh/@ton/core@0.56.0").then(mod => {
+  // window.TonCoreExtrasReady lets other code explicitly await this
+  // instead of racing it — found 04.07.2026 when the Map's city list
+  // parsed the count correctly but the city name came back empty, because
+  // loadCitiesFromChain() ran before this import had resolved.
+  window.TonCoreExtrasReady = import("https://esm.sh/@ton/core@0.56.0").then(mod => {
     if (mod.Cell) window.TonCore.Cell = mod.Cell;
     if (mod.Address) window.TonCore.Address = mod.Address;
   }).catch(e => console.warn('[vitiligo.ton] Cell/Address import failed — Map city list and profile reload will stay empty, payments unaffected:', e));
@@ -2556,10 +2560,21 @@ function base64ToBytes(base64) {
 function decodeCellString(cellEntry) {
   try {
     const bytes = cellEntry?.bytes;
-    if (!bytes) return '';
+    if (!bytes) {
+      if (typeof debugMode !== 'undefined' && debugMode) updateDebugInfo('decodeCellString: no .bytes on input — ' + JSON.stringify(cellEntry).slice(0,150));
+      return '';
+    }
+    if (!window.TonCore?.Cell) {
+      if (typeof debugMode !== 'undefined' && debugMode) updateDebugInfo('decodeCellString: window.TonCore.Cell not loaded yet');
+      return '';
+    }
     const cell = window.TonCore.Cell.fromBoc(base64ToBytes(bytes))[0];
     return cell.beginParse().loadStringTail();
-  } catch(e) { console.warn('decodeCellString failed', e); return ''; }
+  } catch(e) {
+    console.warn('decodeCellString failed', e);
+    if (typeof debugMode !== 'undefined' && debugMode) updateDebugInfo('decodeCellString threw: ' + e.message);
+    return '';
+  }
 }
 
 // NOTE: this decodes a custom Tact struct (CityCount) from a raw toncenter
@@ -2592,7 +2607,9 @@ function seededStars(seedStr, count) {
 async function loadMyConstellationFromChain() {
   try {
     const addr = tonConnectUI?.account?.address;
-    if (!addr || !window.TonCore?.Address) return;
+    if (!addr) return;
+    if (window.TonCoreExtrasReady) await window.TonCoreExtrasReady;
+    if (!window.TonCore?.Address) return;
     const addrCell = beginCellSafe();
     if (!addrCell) return;
     const cell = window.TonCore.beginCell().storeAddress(window.TonCore.Address.parse(addr)).endCell();
@@ -2655,6 +2672,7 @@ function renderRestoredNftCard(nftData) {
 
 async function loadCitiesFromChain() {
   try {
+    if (window.TonCoreExtrasReady) await window.TonCoreExtrasReady;
     const sizeData = await tonFetch({ address: CONTRACT_ADDRESS, method: 'cityCountsSize', stack: [] });
     const sizeHex = sizeData?.result?.stack?.[0]?.[1];
     const size = sizeHex ? parseInt(sizeHex, 16) : 0;
