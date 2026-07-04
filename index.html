@@ -1530,8 +1530,8 @@ async function initTonConnect() {
         if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
         if (typeof refreshUpdateProfileButtonVisibility === 'function') refreshUpdateProfileButtonVisibility();
         if (typeof refreshCountedBanner === 'function') refreshCountedBanner();
-        if (typeof myNfts !== 'undefined' && myNfts.length === 0 && typeof loadMyConstellationFromChain === 'function') {
-          loadMyConstellationFromChain();
+        if (typeof myNfts !== 'undefined' && myNfts.length === 0 && typeof tryLoadConstellationWithRetry === 'function') {
+          tryLoadConstellationWithRetry();
         }
       } else {
         chip.classList.remove('show'); tcBtn.style.display='';
@@ -2621,6 +2621,22 @@ function seededStars(seedStr, count) {
   return stars;
 }
 
+// Wraps loadMyConstellationFromChain with retries. Found 04.07.2026 —
+// the single, one-shot call at wallet-connect time could lose a race
+// against TonConnect's own session-restore timing or the TonCoreExtras
+// import, silently leaving myNfts empty with no second chance. This was
+// only ever "fixed" by manually disconnecting/reconnecting the wallet
+// (which happened to retrigger it) — not a real fix. Retries up to 3
+// times, 1.5s apart, and stops as soon as something is actually found.
+let constellationRetryCount = 0;
+async function tryLoadConstellationWithRetry(){
+  if (myNfts.length > 0) return; // already have it, nothing to do
+  await loadMyConstellationFromChain();
+  if (myNfts.length === 0 && constellationRetryCount < 3) {
+    constellationRetryCount++;
+    setTimeout(tryLoadConstellationWithRetry, 1500);
+  }
+}
 async function loadMyConstellationFromChain() {
   try {
     const addr = tonConnectUI?.account?.address;
