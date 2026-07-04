@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>vitiligo.ton — TX TEST</title>
+<style>
+  body{background:#040b18;color:#e8c050;font-family:-apple-system,sans-serif;padding:20px;margin:0}
+  h1{font-size:16px;color:#9333ea}
+  button{display:block;width:100%;padding:16px;margin:12px 0;border:none;border-radius:10px;
+    background:#9333ea;color:#fff;font-size:16px;font-weight:600}
+  button:disabled{opacity:.4}
+  #log{position:fixed;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,.95);
+    color:#0f0;font-family:monospace;font-size:11px;padding:8px 10px;line-height:1.5;
+    white-space:pre-wrap;word-break:break-all;max-height:60vh;overflow-y:auto;border-top:1px solid #0f0}
+  #stamp{color:#888;font-size:11px}
+</style>
+</head>
+<body>
+
+<h1>vitiligo.ton — минимальный тест транзакции</h1>
+<p id="stamp"></p>
+
+<div id="ton-connect-btn"></div>
+
+<button id="btnSend" disabled>Отправить тестовые 0.01 TON</button>
+
+<div id="log">загрузка...</div>
+
+<script>
+  // Метка сборки — чтобы видеть в скриншоте/логе, что это точно свежая версия файла,
+  // а не закэшированная. Меняйте BUILD_ID при каждом редеплое, если снова будете тестировать.
+  const BUILD_ID = 'test-' + new Date().toISOString();
+  document.getElementById('stamp').textContent = 'build: ' + BUILD_ID;
+
+  const logEl = document.getElementById('log');
+  function log(msg){
+    const line = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+    console.log(line);
+    logEl.textContent = line + '\n' + logEl.textContent;
+  }
+
+  // Ловим ОБА типа ошибок — обычные throw И необработанные promise rejection.
+  // В основном index.html сейчас есть только 'error' — 'unhandledrejection' НЕТ,
+  // а значит любая ошибка внутри async-функции (await ...) там утекает молча.
+  window.addEventListener('error', e => log('🔴 ERROR: ' + e.message + ' @ ' + e.filename + ':' + e.lineno));
+  window.addEventListener('unhandledrejection', e => log('🔴 UNHANDLED PROMISE REJECTION: ' + (e.reason?.message || e.reason)));
+
+  log('script started, BUILD_ID=' + BUILD_ID);
+</script>
+
+<script src="https://unpkg.com/@tonconnect/ui@2.0.9/dist/tonconnect-ui.min.js"
+  onload="log('tonconnect-ui.min.js loaded OK')"
+  onerror="log('🔴 tonconnect-ui.min.js FAILED TO LOAD')"></script>
+
+<script>
+  const CONTRACT_ADDRESS = 'EQACgMT-OVuTdxjTJhgNjakguf8-yV8l9YEla3Z46UIsqLv2';
+  let tonConnectUI = null;
+  let connected = false;
+
+  async function init() {
+    log('init() called');
+    try {
+      if (!window.TON_CONNECT_UI) {
+        log('🔴 window.TON_CONNECT_UI missing — SDK script did not attach global');
+        return;
+      }
+      log('creating TonConnectUI instance...');
+      tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+        // NOTE: используем строчными буквами — в основном index.html
+        // сейчас манифест указан как VSrefle (с большой V), а домен
+        // github pages — vsrefle (маленькая v). Стоит проверить, не
+        // мешает ли это некоторым кошелькам при строгой сверке origin.
+        manifestUrl: 'https://vsrefle.github.io/vitiligo-ton/tonconnect-manifest.json',
+        buttonRootId: 'ton-connect-btn',
+        uiPreferences: { theme: 'DARK' }
+      });
+      log('TonConnectUI created OK');
+
+      tonConnectUI.onStatusChange(wallet => {
+        if (wallet) {
+          connected = true;
+          document.getElementById('btnSend').disabled = false;
+          log('✅ wallet CONNECTED: ' + wallet.account.address);
+        } else {
+          connected = false;
+          document.getElementById('btnSend').disabled = true;
+          log('wallet disconnected');
+        }
+      });
+      log('onStatusChange handler attached');
+    } catch (e) {
+      log('🔴 EXCEPTION in init(): ' + (e?.message || e));
+    }
+  }
+
+  document.getElementById('btnSend').addEventListener('click', async () => {
+    log('▶ SEND BUTTON CLICKED');
+    if (!tonConnectUI) { log('🔴 STOPPED: tonConnectUI is null'); return; }
+    if (!connected) { log('🔴 STOPPED: not connected'); return; }
+    try {
+      log('calling tonConnectUI.sendTransaction()...');
+      const result = await tonConnectUI.sendTransaction({
+        validUntil: Math.floor(Date.now() / 1000) + 300,
+        messages: [{ address: CONTRACT_ADDRESS, amount: '10000000' }] // 0.01 TON, no payload — pure connectivity test
+      });
+      log('✅ sendTransaction SUCCEEDED: ' + JSON.stringify(result).slice(0, 200));
+    } catch (e) {
+      log('🔴 sendTransaction THREW: ' + (e?.message || e));
+    }
+  });
+
+  log('calling init()...');
+  init();
+</script>
+
+</body>
+</html>

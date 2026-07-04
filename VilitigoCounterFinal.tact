@@ -44,6 +44,27 @@ message MintConstellation {
     pixelColor: String;
 }
 
+// Combines Register + MintConstellation into a single 1 TON message.
+// This is now the PRIMARY path for first-time users: one wallet
+// confirmation, one 1 TON payment, both registration and minting happen
+// atomically in the same transaction. Register/MintConstellation are kept
+// separately below for the "try another photo" upgrade flow, where a user
+// who is already registered mints again hoping for a better rarity without
+// paying to re-register.
+message JoinAndMint {
+    queryId: Int as uint64;
+    name: String;
+    country: String;
+    city: String;
+    age: Int as uint8;
+    constName: String;
+    isRare: Bool;
+    isLegendary: Bool;
+    discoveryNumber: Int as uint8;
+    story: String;
+    pixelColor: String;
+}
+
 message AdminWithdraw {
     queryId: Int as uint64;
     amount: Int as coins;
@@ -162,6 +183,81 @@ contract VilitigoCounter with Deployable, Ownable {
         self.users.set(sender, u);
 
         // Return only excess gas above 1 TON
+        let excess: Int = context().value - ton("1");
+        if (excess > ton("0.01")) {
+            send(SendParameters{
+                to: sender,
+                value: excess - ton("0.01"),
+                mode: SendIgnoreErrors,
+                bounce: false,
+                body: "Excess gas".asComment()
+            });
+        }
+    }
+
+    // ── JOIN + MINT (single-payment combined flow) ──
+    receive(msg: JoinAndMint) {
+        let sender: Address = sender();
+        require(context().value >= ton("1"), "Send at least 1 TON");
+
+        let existing: UserData? = self.users.get(sender);
+        let isNewUser: Bool = existing == null;
+
+        let u: UserData = isNewUser
+            ? UserData{
+                wallet: sender,
+                name: msg.name,
+                country: msg.country,
+                city: msg.city,
+                age: msg.age,
+                hasConstellation: false,
+                constName: "",
+                isRare: false,
+                isLegendary: false,
+                discoveryNumber: 0,
+                story: "",
+                pixelColor: "#9333ea",
+                mintedAt: 0
+              }
+            : existing!!;
+
+        if (isNewUser) {
+            self.totalCount = self.totalCount + 1;
+            self.trackCity(msg.city);
+        }
+
+        // Star only upgrades, never degrades: normal < rare < legendary
+        let shouldUpgrade: Bool = false;
+        if (msg.isLegendary && !u.isLegendary) {
+            shouldUpgrade = true;
+        } else if (msg.isRare && !u.isRare && !u.isLegendary) {
+            shouldUpgrade = true;
+        } else if (!u.hasConstellation) {
+            shouldUpgrade = true;
+        }
+
+        self.photoCount = self.photoCount + 1;
+
+        if (shouldUpgrade) {
+            if (msg.isLegendary && msg.discoveryNumber > 0 && msg.discoveryNumber <= 88) {
+                let bit: Int = 1 << (msg.discoveryNumber - 1);
+                if ((self.realConstellationsMap & bit) == 0) {
+                    self.realConstellationsMap = self.realConstellationsMap | bit;
+                    self.realConstellationsFound = self.realConstellationsFound + 1;
+                }
+            }
+            u.hasConstellation = true;
+            u.constName = msg.constName;
+            u.isRare = msg.isRare || u.isRare;
+            u.isLegendary = msg.isLegendary;
+            u.discoveryNumber = msg.discoveryNumber;
+            u.pixelColor = msg.pixelColor;
+        }
+
+        u.story = msg.story;
+        u.mintedAt = now();
+        self.users.set(sender, u);
+
         let excess: Int = context().value - ton("1");
         if (excess > ton("0.01")) {
             send(SendParameters{
