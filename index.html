@@ -2658,6 +2658,7 @@ async function loadCitiesFromChain() {
     const sizeData = await tonFetch({ address: CONTRACT_ADDRESS, method: 'cityCountsSize', stack: [] });
     const sizeHex = sizeData?.result?.stack?.[0]?.[1];
     const size = sizeHex ? parseInt(sizeHex, 16) : 0;
+    if (typeof debugMode !== 'undefined' && debugMode) updateDebugInfo('cityCountsSize = ' + size);
     if (!size) return; // stays on the "No one has marked their city yet" empty state
 
     const cities = [];
@@ -2668,12 +2669,20 @@ async function loadCitiesFromChain() {
         if (!entry || entry[0] === 'null') continue;
         // Expect a tuple: [cityNameCell, countNum] — city first, count second (struct field order in .tact)
         const elements = entry[1]?.elements || entry[1];
-        if (!elements || elements.length < 2) { console.warn('getCityCount: unexpected stack shape', entry); continue; }
+        if (!elements || elements.length < 2) {
+          console.warn('getCityCount: unexpected stack shape', entry);
+          if (typeof debugMode !== 'undefined' && debugMode) updateDebugInfo('getCityCount(' + i + ') unexpected shape: ' + JSON.stringify(entry).slice(0, 300));
+          continue;
+        }
         const cityName = decodeCellString(elements[0][1]);
         const countHex = elements[1][1];
         const cnt = countHex ? parseInt(countHex, 16) : 0;
+        if (typeof debugMode !== 'undefined' && debugMode) updateDebugInfo('getCityCount(' + i + ') parsed: city="' + cityName + '" count=' + cnt);
         if (cityName && cnt > 0) cities.push({ city: cityName, count: cnt });
-      } catch(e) { console.warn('getCityCount index', i, 'failed', e); }
+      } catch(e) {
+        console.warn('getCityCount index', i, 'failed', e);
+        if (typeof debugMode !== 'undefined' && debugMode) updateDebugInfo('getCityCount(' + i + ') threw: ' + e.message);
+      }
     }
 
     if (!cities.length) return;
