@@ -20,10 +20,21 @@
   // instead of racing it — found 04.07.2026 when the Map's city list
   // parsed the count correctly but the city name came back empty, because
   // loadCitiesFromChain() ran before this import had resolved.
-  window.TonCoreExtrasReady = import("https://esm.sh/@ton/core@0.56.0").then(mod => {
-    if (mod.Cell) window.TonCore.Cell = mod.Cell;
-    if (mod.Address) window.TonCore.Address = mod.Address;
-  }).catch(e => console.warn('[vitiligo.ton] Cell/Address import failed — Map city list and profile reload will stay empty, payments unaffected:', e));
+  window.TonCoreExtrasReady = Promise.all([
+    import("https://esm.sh/@ton/core@0.56.0").then(mod => {
+      if (mod.Cell) window.TonCore.Cell = mod.Cell;
+      if (mod.Address) window.TonCore.Address = mod.Address;
+    }),
+    // @ton/core's Cell.fromBoc expects a real Node-style Buffer, not a
+    // plain Uint8Array — passing a Uint8Array throws "Argument must be a
+    // Buffer" even though it's byte-for-byte identical. Found 04.07.2026
+    // while decoding city names for the Map. Loaded from the same
+    // 'buffer' package @ton/core itself depends on, so it's the exact
+    // same Buffer class it checks against internally.
+    import("https://esm.sh/buffer@6.0.3").then(mod => {
+      if (mod.Buffer) window.TonCore.Buffer = mod.Buffer;
+    })
+  ]).catch(e => console.warn('[vitiligo.ton] Cell/Address/Buffer import failed — Map city list and profile reload will stay empty, payments unaffected:', e));
   window.dispatchEvent(new Event('toncore-ready'));
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2568,7 +2579,8 @@ function decodeCellString(cellEntry) {
       if (typeof debugMode !== 'undefined' && debugMode) updateDebugInfo('decodeCellString: window.TonCore.Cell not loaded yet');
       return '';
     }
-    const cell = window.TonCore.Cell.fromBoc(base64ToBytes(bytes))[0];
+    const bocBytes = window.TonCore.Buffer ? window.TonCore.Buffer.from(base64ToBytes(bytes)) : base64ToBytes(bytes);
+    const cell = window.TonCore.Cell.fromBoc(bocBytes)[0];
     return cell.beginParse().loadStringTail();
   } catch(e) {
     console.warn('decodeCellString failed', e);
