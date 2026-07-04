@@ -76,7 +76,7 @@ html,body{
 .ob-title{font-size:24px;font-weight:600;color:#fff;line-height:1.3;margin-bottom:16px}
 .ob-body{font-size:14px;color:rgba(220,200,255,.5);line-height:1.7;margin-bottom:36px;max-width:280px}
 .ob-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.2);transition:all .3s ease}
-.ob-dot.active{width:20px;border-radius:3px;background:#9333ea}
+.ob-dot.active{width:20px;border-radius:2px;background:#9333ea}
 
 /* SOCIAL TOAST */
 .social-toast{
@@ -297,7 +297,7 @@ html,body{
   background:radial-gradient(circle,rgba(168,85,247,.25),transparent 70%);
   pointer-events:none;
 }
-.invite-icon{font-size:32px;margin-bottom:10px;position:relative}
+.invite-icon{font-size:30px;margin-bottom:10px;position:relative}
 .invite-title{font-family:'Outfit',sans-serif;font-size:16px;color:#ede8ff;margin-bottom:6px;position:relative}
 .invite-text{font-size:12px;color:rgba(192,132,252,.5);line-height:1.5;margin-bottom:18px;position:relative}
 
@@ -370,7 +370,7 @@ html,body{
 .profile-handle{font-size:13px;color:var(--muted)}
 
 .sky-card{
-  background:#030112;border-radius:20px;
+  background:#020110;border-radius:20px;
   border:.5px solid rgba(147,51,234,.25);
   aspect-ratio:1.6;position:relative;overflow:hidden;margin-bottom:18px;
 }
@@ -398,7 +398,7 @@ html,body{
 .nft-rare-badge{position:absolute;top:5px;right:5px;background:linear-gradient(135deg,#fbbf24,#f59e0b);border-radius:6px;padding:2px 6px;font-size:8px;color:#1a1207;font-weight:600}
 .nft-info-bar{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:14px 6px 5px}
 .nft-name{font-size:9px;color:#ede8ff;font-weight:500}
-.nft-story{font-size:8px;color:rgba(192,132,252,.5);margin-top:1px;font-style:italic;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.nft-story{font-size:9px;color:rgba(192,132,252,.5);margin-top:1px;font-style:italic;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .gift-fab{position:absolute;bottom:6px;right:6px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:10px;border:.5px solid rgba(255,255,255,.15)}
 .nft-add{border:1.5px dashed rgba(147,51,234,.25);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px}
 .nft-add span{font-size:10px;color:rgba(192,132,252,.3)}
@@ -459,7 +459,7 @@ html,body{
 
 /* SHARE SHEET */
 .sheet-preview{background:rgba(0,0,0,.3);border-radius:14px;padding:14px;border:.5px solid rgba(147,51,234,.25);margin-bottom:16px;display:flex;gap:12px;align-items:center}
-.sheet-preview-icon{font-size:28px}
+.sheet-preview-icon{font-size:30px}
 .sheet-preview-title{font-size:13px;color:#ede8ff;margin-bottom:3px}
 .sheet-preview-sub{font-size:10px;color:rgba(192,132,252,.4)}
 .sheet-options{display:flex;flex-direction:column;gap:8px}
@@ -469,9 +469,10 @@ html,body{
 /* TOAST */
 .toast{
   position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(16px);
-  background:#9333ea;color:#fff;border-radius:40px;
-  padding:10px 20px;font-size:12px;font-weight:500;
-  white-space:nowrap;opacity:0;transition:all .35s;z-index:150;pointer-events:none;
+  background:rgba(20,10,35,.95);color:var(--text);border:.5px solid rgba(147,51,234,.35);
+  border-radius:12px;
+  padding:9px 16px;font-size:12px;font-weight:400;text-align:center;
+  max-width:280px;opacity:0;transition:all .35s;z-index:150;pointer-events:none;
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
@@ -541,13 +542,13 @@ html,body{
 
     <div class="canvas-wrap" style="position:relative;border-radius:12px;overflow:hidden;background:#040b18;height:160px">
       <canvas id="cosmosCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;touch-action:none;cursor:grab"></canvas>
-      <div id="cosmosExp" style="position:absolute;bottom:8px;right:8px;width:28px;height:28px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.35);color:#a78bfa;border-radius:7px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;user-select:none">⛶</div>
+      <div id="cosmosExp" style="position:absolute;bottom:8px;right:8px;width:28px;height:28px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.35);color:#a78bfa;border-radius:8px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;user-select:none">⛶</div>
       <div id="cosmosUI" style="position:fixed;top:12px;right:12px;flex-direction:column;gap:6px;z-index:10001;display:none">
-        <div id="cosmosClose" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:9px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</div>
-        <div id="cosmosPlus" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:9px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">+</div>
-        <div id="cosmosMinus" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:9px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">−</div>
-        <div id="cosmosReset" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:9px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center">✦</div>
-        <div id="cosmosMe" style="width:34px;height:34px;background:rgba(124,58,237,.35);border:1px solid rgba(167,139,250,.7);color:#ddd6fe;border-radius:9px;font-size:9px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;letter-spacing:.5px">ME</div>
+        <div id="cosmosClose" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</div>
+        <div id="cosmosPlus" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">+</div>
+        <div id="cosmosMinus" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">−</div>
+        <div id="cosmosReset" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center">✦</div>
+        <div id="cosmosMe" style="width:34px;height:34px;background:rgba(124,58,237,.35);border:1px solid rgba(167,139,250,.7);color:#ddd6fe;border-radius:8px;font-size:9px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;letter-spacing:.5px">ME</div>
       </div>
       <div id="cosmosTip" style="position:absolute;bottom:8px;left:8px;background:rgba(4,11,24,.97);border:1px solid rgba(124,58,237,.3);border-radius:8px;padding:8px 12px;font-size:11px;color:#e9d5ff;pointer-events:none;display:none;z-index:10;max-width:180px;line-height:1.5"></div>
     </div>
@@ -910,6 +911,20 @@ if (tg) {
     referrerId = startParam.replace('ref_', '');
   }
 }
+// Restore a previously saved profile, if any — runs after the Telegram
+// block above (regardless of whether tg exists) so a real saved profile
+// takes priority over Telegram's auto-filled name instead of being
+// silently overwritten by it, and still works when opened in a plain
+// browser with no Telegram context at all.
+try {
+  const savedProfile = JSON.parse(localStorage.getItem('vt_profile') || 'null');
+  if (savedProfile) {
+    if (savedProfile.name) { document.getElementById('fieldName').value = savedProfile.name; document.getElementById('profileName').textContent = savedProfile.name; }
+    if (savedProfile.country) document.getElementById('fieldCountry').value = savedProfile.country;
+    if (savedProfile.city) document.getElementById('fieldCity').value = savedProfile.city;
+    if (savedProfile.age) document.getElementById('fieldAge').value = savedProfile.age;
+  }
+} catch(e) { /* no saved profile yet, or storage unavailable */ }
 const refLink = `t.me/${BOT_USERNAME}?start=ref_${myTelegramId || 'you'}`;
 document.getElementById('refLinkText').textContent = refLink;
 
@@ -1466,9 +1481,14 @@ function goOb(n) {
 function closeWelcome(goToStars){
   document.getElementById('welcome').classList.add('fade');
   setTimeout(()=>{document.getElementById('welcome').style.display='none';},600);
+  // Previously this force-navigated straight to the photo-upload screen
+  // right after onboarding, skipping Home (the default landing page) and
+  // its counter/mission context — landing on "tap to upload a photo" with
+  // zero transition felt disorienting. Now both onboarding paths land on
+  // Home, same as a fresh visit. The "Count me in ✦" button on Home
+  // already takes people to the photo step deliberately, when they're ready.
   if (goToStars) {
-    document.querySelector('[data-page="stars"]').click();
-    showToast('Tap the star to upload a photo of your vitiligo ✦');
+    showToast("You're one of us ✦");
   }
 }
 document.getElementById('welcomeBtn').addEventListener('click',()=>closeWelcome(true));
@@ -1492,9 +1512,14 @@ document.getElementById('addNftBtn').addEventListener('click',()=>{
 });
 
 /* ── MODALS ── */
+// Debug panel is hidden by default now that the app is past the initial
+// bring-up phase — it still logs everything into the DOM in the background
+// (nothing is lost), it just doesn't render unless explicitly turned on via
+// the secret long-press gesture on the logo (see bindDebugGesture below).
+let debugMode = (localStorage.getItem('vt_debug') === '1');
 window.addEventListener('error', (e) => {
   const bar = document.getElementById('persistentDebug');
-  if (bar) { bar.style.display='block'; bar.textContent = '🔴 GLOBAL ERROR: ' + e.message + ' (' + e.filename + ':' + e.lineno + ')\n' + bar.textContent; }
+  if (bar) { if (debugMode) bar.style.display='block'; bar.textContent = '🔴 GLOBAL ERROR: ' + e.message + ' (' + e.filename + ':' + e.lineno + ')\n' + bar.textContent; }
 });
 // NOTE: window.onerror above only catches synchronous throws. Anything that
 // rejects inside an async function/promise (e.g. a failed await deep inside
@@ -1504,8 +1529,33 @@ window.addEventListener('error', (e) => {
 window.addEventListener('unhandledrejection', (e) => {
   const bar = document.getElementById('persistentDebug');
   const msg = e.reason?.message || e.reason || 'unknown';
-  if (bar) { bar.style.display='block'; bar.textContent = '🔴 UNHANDLED PROMISE REJECTION: ' + msg + '\n' + bar.textContent; }
+  if (bar) { if (debugMode) bar.style.display='block'; bar.textContent = '🔴 UNHANDLED PROMISE REJECTION: ' + msg + '\n' + bar.textContent; }
 });
+
+// Secret gesture: long-press (700ms) the "vitiligo.ton" logo to toggle the
+// diagnostic panel on/off. Kept out of normal UI on purpose — this is a
+// tool for us, not a feature for visitors.
+function bindDebugGesture(){
+  const logo = document.querySelector('.logo');
+  if (!logo) return;
+  let pressTimer = null;
+  const start = () => { pressTimer = setTimeout(() => {
+    debugMode = !debugMode;
+    localStorage.setItem('vt_debug', debugMode ? '1' : '0');
+    const bar = document.getElementById('persistentDebug');
+    if (bar) bar.style.display = debugMode ? 'block' : 'none';
+    showToast(debugMode ? 'Debug panel on ✦' : 'Debug panel off');
+  }, 700); };
+  const cancel = () => clearTimeout(pressTimer);
+  logo.addEventListener('touchstart', start, {passive:true});
+  logo.addEventListener('touchend', cancel);
+  logo.addEventListener('touchmove', cancel);
+  logo.addEventListener('mousedown', start);
+  logo.addEventListener('mouseup', cancel);
+  logo.addEventListener('mouseleave', cancel);
+}
+bindDebugGesture();
+if (debugMode) { const bar = document.getElementById('persistentDebug'); if (bar) bar.style.display = 'block'; }
 
 function updateDebugInfo(stage){
   const el = document.getElementById('debugInfo');
@@ -1525,7 +1575,7 @@ function updateDebugInfo(stage){
   if (el) el.textContent = text;
   const bar = document.getElementById('persistentDebug');
   if (bar) {
-    bar.style.display = 'block';
+    if (debugMode) bar.style.display = 'block';
     bar.textContent = '▶ ' + stage + '\n' + bar.textContent;
   }
 }
@@ -2141,7 +2191,7 @@ function drawMySky(){
   const w = canvas.offsetWidth || 300, h = w/1.6;
   canvas.width=w; canvas.height=h;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle='#030112'; ctx.fillRect(0,0,w,h);
+  ctx.fillStyle='#020110'; ctx.fillRect(0,0,w,h);
   for(let i=0;i<40;i++){
     const x=Math.random()*w, y=Math.random()*h;
     ctx.fillStyle=`rgba(200,190,255,${.05+Math.random()*.15})`;
@@ -2203,6 +2253,20 @@ document.getElementById('saveBtn').addEventListener('click',()=>{
     showToast('Please fill in name, country, city and age ✦');
     return;
   }
+  // Previously "Save profile" only showed a success message and never
+  // actually persisted anything anywhere — country/city/age vanished on
+  // every reload, and the name field only ever looked filled because
+  // Telegram's own name was re-injected fresh each load (see initTelegram
+  // above), not because anything had been saved. Found 04.07.2026 when a
+  // real profile disappeared after a reload. Now genuinely saved.
+  try {
+    localStorage.setItem('vt_profile', JSON.stringify({
+      name: document.getElementById('fieldName').value.trim(),
+      country: document.getElementById('fieldCountry').value.trim(),
+      city: document.getElementById('fieldCity').value.trim(),
+      age: document.getElementById('fieldAge').value
+    }));
+  } catch(e) { /* storage unavailable — profile still works for this session */ }
   if(tg) tg.showAlert('Profile saved!'); else showToast('Profile saved ✦');
   if(pendingAfterProfile){ const fn=pendingAfterProfile; pendingAfterProfile=null; fn(); }
 });
@@ -2244,7 +2308,7 @@ document.getElementById('copyLinkOpt').addEventListener('click', ()=>{
 const mapC=document.getElementById('mapCanvas');
 const mX=mapC.getContext('2d');
 mapC.width=304; mapC.height=155;
-mX.fillStyle='#030112';
+mX.fillStyle='#020110';
 mX.beginPath(); if(mX.roundRect)mX.roundRect(0,0,304,155,14); else mX.rect(0,0,304,155); mX.fill();
 // Background stars only — no city dots until real data exists
 for(let i=0;i<35;i++){
