@@ -1072,7 +1072,11 @@ drawSF();
       x: Math.random(), y: Math.random(),
       speed, size: size * (0.6 + Math.random() * 0.8),
       a: alpha * (0.5 + Math.random() * 0.5),
-      ph: Math.random() * Math.PI * 2
+      ph: Math.random() * Math.PI * 2,
+      // Slight per-star speed variation on top of the shared phase offset —
+      // makes the twinkle feel organic rather than a single synchronized
+      // pulse. Widened 04.07.2026 (was 0.6–1.0, barely visible).
+      tw: 0.02 + Math.random() * 0.02
     }));
   }
   const layers = [
@@ -1099,7 +1103,7 @@ drawSF();
         layer.forEach(s => {
           s.x -= s.speed;
           if (s.x < -0.02) s.x = 1.02;
-          const twinkle = 0.6 + 0.4 * Math.sin(t * 0.03 + s.ph);
+          const twinkle = 0.15 + 0.85 * (0.5 + 0.5 * Math.sin(t * s.tw + s.ph));
           ctx.beginPath();
           ctx.arc(s.x * W, s.y * H, s.size, 0, Math.PI * 2);
           ctx.fillStyle = `rgba(225,215,255,${(s.a * twinkle).toFixed(2)})`;
