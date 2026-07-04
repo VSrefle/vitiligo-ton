@@ -816,7 +816,7 @@ html,body{
       💬 Write to the team
     </a>
     <button onclick="openModal('modalHelp')" style="display:block;width:100%;text-align:center;padding:14px;border:1px solid rgba(147,51,234,.2);border-radius:12px;color:#6b7280;font-size:14px;background:none;cursor:pointer;margin-bottom:32px">
-      ? How it works
+      💡 How it works
     </button>
   </div>
 </div>
@@ -1487,7 +1487,15 @@ async function loadCounterFromChain() {
   photoCount = newPhotoCount;
   numPhotosEl.textContent = fmt(photoCount); numPhotosEl.title = fmtExact(photoCount)+' constellations';
 }
-loadCounterFromChain();
+// loadCitiesFromChain() used to fire independently at the same time as
+// loadCounterFromChain() — since both share one rate-limited queue, its
+// request could slip in between totalCount and photoCount's two calls
+// (which happen inside one function, but each is a separate turn of the
+// event loop), stretching the visible gap between "People counted" and
+// "Constellations minted" to several seconds even though they sit side by
+// side. Chaining it after loadCounterFromChain finishes keeps that pair
+// adjacent in the queue.
+loadCounterFromChain().then(() => { if (typeof loadCitiesFromChain === 'function') loadCitiesFromChain(); });
 updateMilestone();
 
 // Same undeclared-variable bug as 'connected' below — tickTimer was read/
@@ -2821,7 +2829,8 @@ async function loadCitiesFromChain() {
     }
   } catch(e) { console.log('City list load failed', e); }
 }
-loadCitiesFromChain();
+// Called via .then() chain after loadCounterFromChain() now — see that
+// call site — instead of firing independently here.
 document.getElementById('cityTeaserLink')?.addEventListener('click', () => {
   document.querySelector('[data-page="map"]')?.click();
 });
