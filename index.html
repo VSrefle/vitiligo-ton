@@ -676,6 +676,18 @@ html,body{
     <button class="btn-main" id="mintBtn" disabled>Count me in ✦</button>
     <button class="btn-ghost" id="resetBtn" style="display:none;margin-top:0">Try another photo</button>
 
+    <!-- Moved here from Profile 04.07.2026 — Profile is now purely about
+         personal info and account actions; anything constellation-related
+         lives together on this tab instead of being split across two
+         differently-purposed screens. -->
+    <label class="form-label" style="margin-top:24px;display:block">My constellations <span id="constCount" style="color:#a78bfa;font-weight:400"></span></label>
+    <div class="nft-grid" id="nftGrid">
+      <div class="nft-card nft-add" id="addNftBtn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(192,132,252,.3)" stroke-width="1.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>Add photo · 1 TON</span>
+      </div>
+    </div>
+
     <!-- Moved here from Home 04.07.2026 — the personal upload/mint flow
          above is the primary reason someone visits this tab; browsing
          everyone else's stars is a secondary, related action, so it lives
@@ -785,14 +797,6 @@ html,body{
          explicit, deliberate action that does that. -->
     <button class="btn-main" id="updateOnChainBtn" style="display:none;margin-bottom:16px;background:transparent;border:1px solid rgba(147,51,234,.4);color:var(--purple-light)">Update on-chain profile · 0.02 TON</button>
     <div class="tx-status" id="txUpdateProfile" style="margin-bottom:16px"></div>
-
-    <label class="form-label">My constellations <span id="constCount" style="color:#a78bfa;font-weight:400"></span></label>
-    <div class="nft-grid" id="nftGrid">
-      <div class="nft-card nft-add" id="addNftBtn">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(192,132,252,.3)" stroke-width="1.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        <span>Add photo · 1 TON</span>
-      </div>
-    </div>
 
     <div style="border:1px solid rgba(147,51,234,.18);background:rgba(147,51,234,.05);border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:12px;line-height:1.6;color:#9c93b8">
       <b style="color:#c4a8f5">Fun fact:</b> vitiligo.ton isn't just a name — it's a real TON domain, pointing straight at this contract. You can send TON there directly from any wallet, no app needed, and it lands here.
@@ -1719,6 +1723,7 @@ document.querySelectorAll('.nav-item').forEach(btn=>{
 });
 document.getElementById('addNftBtn').addEventListener('click',()=>{
   document.querySelector('[data-page="stars"]').click();
+  uploadArea.click();
 });
 
 /* ── MODALS ── */
