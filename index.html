@@ -518,9 +518,7 @@ html,body{
     <button class="welcome-btn" id="welcomeBtn">I have vitiligo ✦</button>
   </div>
 
-  <div id="obNextHint" style="display:none;position:absolute;left:28px;right:28px;bottom:52px;font-size:11px;color:rgba(255,255,255,.28);text-align:center">Next: a quick photo of your patch — that's how your star is born</div>
-
-  <div class="welcome-skip" id="welcomeSkip" style="display:none;position:absolute;left:28px;right:28px;bottom:20px">just look around first</div>
+  <div class="welcome-skip" id="welcomeSkip" style="display:none;position:absolute;left:28px;right:28px;bottom:28px">just look around first</div>
 
 </div>
 
@@ -1209,6 +1207,43 @@ function updateMilestone(){
   document.getElementById('milestoneSub').textContent = `${fmt(count)} / ${fmt(goal)}`;
 }
 
+// Shared rate-limited queue for every toncenter.com call in this app.
+// toncenter's free, unauthenticated tier allows only 1 request/second
+// (https://toncenter.com/) — this app fires several get-method calls
+// (totalCount, photoCount, realConstellationsMap, and one per city on the
+// Map tab) close together on load, which silently exceeded that limit and
+// made some of them fail. On failure the UI just displayed 0, which was
+// indistinguishable from a genuinely-empty counter until a real
+// transaction made the true count nonzero — that's why "People counted"
+// could show 0 the day after a real, confirmed on-chain transaction.
+// Found 04.07.2026. Every call site below now goes through tonFetch()
+// instead of calling fetch() directly, so calls are always spaced out and
+// retried once on failure rather than firing in a burst.
+let _tonQueue = Promise.resolve();
+function tonFetch(body) {
+  const run = async () => {
+    for (let attempt = 0; attempt <= 1; attempt++) {
+      try {
+        const res = await fetch('https://toncenter.com/api/v2/runGetMethod', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (data?.result?.exit_code === 0) return data;
+        if (attempt === 0) { await new Promise(r=>setTimeout(r, 1200)); continue; }
+        return data;
+      } catch(e) {
+        if (attempt === 0) { await new Promise(r=>setTimeout(r, 1200)); continue; }
+        throw e;
+      }
+    }
+  };
+  const result = _tonQueue.then(run);
+  _tonQueue = result.catch(()=>{}).then(() => new Promise(r => setTimeout(r, 1150)));
+  return result;
+}
+
 // Fetches which of the 88 real constellations are already taken, globally,
 // across every participant — fixes a real bug where this used to live only
 // in per-browser memory (reset on every reload, never shared between users,
@@ -1217,12 +1252,7 @@ function updateMilestone(){
 // can represent exactly.
 async function loadDiscoveredRealFromChain() {
   try {
-    const res = await fetch(`https://toncenter.com/api/v2/runGetMethod`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ address: CONTRACT_ADDRESS, method: 'realConstellationsMap', stack: [] })
-    });
-    const data = await res.json();
+    const data = await tonFetch({ address: CONTRACT_ADDRESS, method: 'realConstellationsMap', stack: [] });
     const exitCode = data?.result?.exit_code;
     const hex = data?.result?.stack?.[0]?.[1];
     if (exitCode === 0 && hex) {
@@ -1249,12 +1279,7 @@ function updateDiscoveryProgress() {
 
 async function loadCounterFromChain() {
   try {
-    const res = await fetch(`https://toncenter.com/api/v2/runGetMethod`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ address: CONTRACT_ADDRESS, method: 'totalCount', stack: [] })
-    });
-    const data = await res.json();
+    const data = await tonFetch({ address: CONTRACT_ADDRESS, method: 'totalCount', stack: [] });
     const exitCode = data?.result?.exit_code;
     const hex = data?.result?.stack?.[0]?.[1];
     if (exitCode === 0 && hex) {
@@ -1268,12 +1293,7 @@ async function loadCounterFromChain() {
   } catch(e) { console.log('Counter load failed', e); }
 
   try {
-    const res2 = await fetch(`https://toncenter.com/api/v2/runGetMethod`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ address: CONTRACT_ADDRESS, method: 'photoCount', stack: [] })
-    });
-    const data2 = await res2.json();
+    const data2 = await tonFetch({ address: CONTRACT_ADDRESS, method: 'photoCount', stack: [] });
     const exitCode2 = data2?.result?.exit_code;
     const hex2 = data2?.result?.stack?.[0]?.[1];
     if (exitCode2 === 0 && hex2) {
@@ -1474,8 +1494,6 @@ function goOb(n) {
   });
   const skip = document.getElementById('welcomeSkip');
   if (skip) skip.style.display = n === 2 ? 'block' : 'none';
-  const hint = document.getElementById('obNextHint');
-  if (hint) hint.style.display = n === 2 ? 'block' : 'none';
 }
 
 function closeWelcome(goToStars){
@@ -2347,12 +2365,7 @@ function decodeCellString(cellEntry) {
 // shape didn't match what's expected below.
 async function loadCitiesFromChain() {
   try {
-    const sizeRes = await fetch(`https://toncenter.com/api/v2/runGetMethod`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ address: CONTRACT_ADDRESS, method: 'cityCountsSize', stack: [] })
-    });
-    const sizeData = await sizeRes.json();
+    const sizeData = await tonFetch({ address: CONTRACT_ADDRESS, method: 'cityCountsSize', stack: [] });
     const sizeHex = sizeData?.result?.stack?.[0]?.[1];
     const size = sizeHex ? parseInt(sizeHex, 16) : 0;
     if (!size) return; // stays on the "No one has marked their city yet" empty state
@@ -2360,12 +2373,7 @@ async function loadCitiesFromChain() {
     const cities = [];
     for (let i = 0; i < size; i++) {
       try {
-        const res = await fetch(`https://toncenter.com/api/v2/runGetMethod`, {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ address: CONTRACT_ADDRESS, method: 'getCityCount', stack: [['num', i.toString()]] })
-        });
-        const data = await res.json();
+        const data = await tonFetch({ address: CONTRACT_ADDRESS, method: 'getCityCount', stack: [['num', i.toString()]] });
         const entry = data?.result?.stack?.[0];
         if (!entry || entry[0] === 'null') continue;
         // Expect a tuple: [cityNameCell, countNum] — city first, count second (struct field order in .tact)
