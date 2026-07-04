@@ -2197,6 +2197,12 @@ Make the name and mythology completely original — not based on any real-world 
   } else {
     finalStars=tmpl.map(cs=>({x:cs.x+(Math.random()-.5)*.05,y:cs.y+(Math.random()-.5)*.05}));
   }
+  // Temporary — added 04.07.2026 to capture Viktor's real photo-derived
+  // star coordinates for the hardcoded Genesis star marker (the actual
+  // blockchain never stores these coordinates, only name/story/rarity —
+  // see NOTES.md section 6 — so this is the only way to get the real
+  // shape without needing a second paid mint transaction).
+  if (typeof debugMode !== 'undefined' && debugMode) updateDebugInfo('REAL STAR COORDS: ' + JSON.stringify(finalStars.map(s=>({x:+s.x.toFixed(3),y:+s.y.toFixed(3)}))));
 
   resultCanvas.width=W; resultCanvas.height=H;
   const rx=resultCanvas.getContext('2d');
@@ -2669,14 +2675,28 @@ async function loadMyConstellationFromChain() {
     const addrBoc = bytesToBase64(cell.toBoc());
     const data = await tonFetch({ address: CONTRACT_ADDRESS, method: 'getUser', stack: [['tvm.Slice', addrBoc]] });
     const entry = data?.result?.stack?.[0];
+    if (typeof debugMode !== 'undefined' && debugMode) updateDebugInfo('getUser RAW: ' + JSON.stringify(entry).slice(0, 400));
     if (!entry || entry[0] === 'null') return; // never registered — nothing to show
     const elements = entry[1]?.elements || entry[1];
-    if (!elements || elements.length < 13) { console.warn('getUser: unexpected stack shape', entry); return; }
-    const hasConstellation = elements[5]?.[1] === 'true' || elements[5]?.[1] === '-1' || elements[5]?.[1] === true;
+    if (!elements || elements.length < 13) {
+      console.warn('getUser: unexpected stack shape', entry);
+      if (typeof debugMode !== 'undefined' && debugMode) updateDebugInfo('getUser unexpected shape');
+      return;
+    }
+    // Real tuple-element format confirmed 04.07.2026 via getCityCount —
+    // each element is an @type-tagged object, not a [type,value] pair.
+    // Same fix applied here; this function previously used the old wrong
+    // format and always silently found hasConstellation=false.
+    const getNum = el => el?.number?.number !== undefined ? parseInt(el.number.number, 10) : undefined;
+    const getBool = el => { const n = getNum(el); return n !== undefined && n !== 0; };
+    const getStr = el => decodeCellString(el?.slice);
+
+    const hasConstellation = getBool(elements[5]);
+    if (typeof debugMode !== 'undefined' && debugMode) updateDebugInfo('getUser parsed: hasConstellation=' + hasConstellation);
     if (!hasConstellation) return;
-    const constName = decodeCellString(elements[6]?.[1]);
-    const isRare = elements[7]?.[1] === 'true' || elements[7]?.[1] === '-1' || elements[7]?.[1] === true;
-    const story = decodeCellString(elements[10]?.[1]);
+    const constName = getStr(elements[6]);
+    const isRare = getBool(elements[7]);
+    const story = getStr(elements[10]);
     if (!constName) return;
     const nftData = { name: constName, story, rare: isRare, constData: { name: constName, stars: seededStars(constName, 5) } };
     myNfts.push(nftData);
