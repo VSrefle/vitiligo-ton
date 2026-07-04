@@ -1447,32 +1447,45 @@ function updateDiscoveryProgress() {
 }
 
 async function loadCounterFromChain() {
+  // Both numbers are fetched through the same rate-limited queue (still
+  // sequential — toncenter's free tier allows only 1 request/second, so
+  // true parallel fetching risks the exact silent-429 bug from earlier
+  // today). What changed 04.07.2026: neither number is written to the
+  // screen until BOTH are ready, so "People counted" and "Constellations
+  // minted" appear together instead of one popping in 1-2 seconds after
+  // the other.
+  let newCount = null, newPhotoCount = null;
+
   try {
     const data = await tonFetch({ address: CONTRACT_ADDRESS, method: 'totalCount', stack: [] });
     const exitCode = data?.result?.exit_code;
     const hex = data?.result?.stack?.[0]?.[1];
     if (exitCode === 0 && hex) {
-      count = parseInt(hex, 16);
-      numEl.textContent = fmt(count); numEl.title = fmtExact(count)+' people';
-      updateMilestone();
+      newCount = parseInt(hex, 16);
     } else {
       console.warn('totalCount get-method failed, exit_code:', exitCode);
-      numEl.textContent = fmt(0); numEl.title = '0 people';
+      newCount = 0;
     }
-  } catch(e) { console.log('Counter load failed', e); }
+  } catch(e) { console.log('Counter load failed', e); newCount = 0; }
 
   try {
     const data2 = await tonFetch({ address: CONTRACT_ADDRESS, method: 'photoCount', stack: [] });
     const exitCode2 = data2?.result?.exit_code;
     const hex2 = data2?.result?.stack?.[0]?.[1];
     if (exitCode2 === 0 && hex2) {
-      photoCount = parseInt(hex2, 16);
-      numPhotosEl.textContent = fmt(photoCount); numPhotosEl.title = fmtExact(photoCount)+' constellations';
+      newPhotoCount = parseInt(hex2, 16);
     } else {
       console.warn('photoCount get-method failed, exit_code:', exitCode2);
-      numPhotosEl.textContent = fmt(0); numPhotosEl.title = '0 constellations';
+      newPhotoCount = 0;
     }
-  } catch(e) { console.log('Photo counter load failed', e); }
+  } catch(e) { console.log('Photo counter load failed', e); newPhotoCount = 0; }
+
+  // Update both together now that both are known.
+  count = newCount;
+  numEl.textContent = fmt(count); numEl.title = fmtExact(count)+' people';
+  updateMilestone();
+  photoCount = newPhotoCount;
+  numPhotosEl.textContent = fmt(photoCount); numPhotosEl.title = fmtExact(photoCount)+' constellations';
 }
 loadCounterFromChain();
 updateMilestone();
