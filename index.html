@@ -2666,6 +2666,7 @@ async function loadCitiesFromChain() {
       try {
         const data = await tonFetch({ address: CONTRACT_ADDRESS, method: 'getCityCount', stack: [['num', i.toString()]] });
         const entry = data?.result?.stack?.[0];
+        if (typeof debugMode !== 'undefined' && debugMode) updateDebugInfo('getCityCount(' + i + ') RAW: ' + JSON.stringify(entry).slice(0, 400));
         if (!entry || entry[0] === 'null') continue;
         // Expect a tuple: [cityNameCell, countNum] — city first, count second (struct field order in .tact)
         const elements = entry[1]?.elements || entry[1];
