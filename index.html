@@ -66,7 +66,7 @@ html,body{
   width:100%;background:var(--purple);color:#fff;border:none;
   border-radius:40px;padding:16px;font-size:15px;font-weight:500;
   cursor:pointer;font-family:'Space Grotesk',sans-serif;
-  box-shadow:0 0 36px rgba(147,51,234,.45);transition:all .2s;
+  box-shadow:0 4px 20px rgba(147,51,234,.35);transition:all .2s;
 }
 .welcome-btn:active{transform:scale(.97)}
 .welcome-skip{margin-top:14px;font-size:12px;color:rgba(255,255,255,.22);cursor:pointer}
@@ -714,6 +714,15 @@ html,body{
     </select>
     <button class="btn-main" id="saveBtn" style="margin-top:20px;margin-bottom:16px">Save profile</button>
 
+    <!-- Only shown once the wallet has minted before — lets someone fix a
+         wrong/empty name·country·city·age on-chain via the new
+         UpdateProfile message, added 04.07.2026. Locally-saved profile
+         fields (fieldName/fieldCountry/fieldCity/fieldAge) are never
+         retroactively sent on-chain by themselves — this button is the
+         explicit, deliberate action that does that. -->
+    <button class="btn-main" id="updateOnChainBtn" style="display:none;margin-bottom:16px;background:transparent;border:1px solid rgba(147,51,234,.4);color:var(--purple-light)">Update on-chain profile · 0.02 TON</button>
+    <div class="tx-status" id="txUpdateProfile" style="margin-bottom:16px"></div>
+
     <label class="form-label">My constellations</label>
     <div class="nft-grid" id="nftGrid">
       <div class="nft-card nft-add" id="addNftBtn">
@@ -880,11 +889,10 @@ html,body{
 <div class="toast" id="toast"></div>
 
 <script>
-// This IS the current contract, deployed 03.07.2026, includes JoinAndMint.
-// (An earlier TODO here warning that this "still points at the old contract"
-// was stale — left over from before that deploy — and was removed 03.07.2026
-// to avoid a future edit mistakenly reverting a working address.)
-const CONTRACT_ADDRESS = 'EQACgMT-OVuTdxjTJhgNjakguf8-yV8l9YEla3Z46UIsqLv2';
+// This IS the current contract, deployed 04.07.2026, includes JoinAndMint
+// AND UpdateProfile (added to let people correct name/country/city/age
+// after their first registration — see UpdateProfile in the .tact file).
+const CONTRACT_ADDRESS = 'EQCt4zv8F2-s0eMAy-SD0Nk5CoH1V9ilzx0K8QqT0xAzyWrd';
 const TON_AMOUNT = '1000000000';
 const BOT_USERNAME = 'vitiligo_ton_bot';
 
@@ -1373,10 +1381,12 @@ async function initTonConnect() {
         connected=true;
         startTick();
         if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        if (typeof refreshUpdateProfileButtonVisibility === 'function') refreshUpdateProfileButtonVisibility();
       } else {
         chip.classList.remove('show'); tcBtn.style.display='';
         connected=false;
         stopTick();
+        if (typeof refreshUpdateProfileButtonVisibility === 'function') refreshUpdateProfileButtonVisibility();
       }
     });
     document.getElementById('walletDisc').addEventListener('click',()=>tonConnectUI.disconnect());
@@ -1394,6 +1404,10 @@ initTonConnect();
    Register/MintConstellation остаются в .tact для совместимости, но фронтенд
    их больше не вызывает — весь путь идёт через один JoinAndMint. */
 const JOIN_AND_MINT_OPCODE = 2274933188;
+// Opcode for the new UpdateProfile message, confirmed 04.07.2026 directly
+// from the compiled build/VilitigoCounter_VilitigoCounter.ts (loadUpdateProfile),
+// same way JOIN_AND_MINT_OPCODE was confirmed — not guessed.
+const UPDATE_PROFILE_OPCODE = 1706447584;
 
 function bytesToBase64(bytes) {
   let binary = '';
@@ -1447,8 +1461,27 @@ function buildJoinAndMintPayload(name, country, city, age, constName, isRare, is
   return bytesToBase64(b0.endCell().toBoc());
 }
 
+// UpdateProfile: queryId(64) + name(ref) + country(ref) + city(ref) + age(8 bits).
+// Only 3 String refs needed — fits in a single cell (limit is 4), unlike
+// JoinAndMint which needs a continuation cell for its 6 String fields.
+// Layout confirmed 04.07.2026 against the compiled loadUpdateProfile, same
+// way JoinAndMint's layout was confirmed earlier — not guessed.
+function buildUpdateProfilePayload(name, country, city, age) {
+  const { beginCell } = window.TonCore || {};
+  if (!beginCell) throw new Error('TonCore.beginCell unavailable — payment SDK failed to load');
+  let b = beginCell()
+    .storeUint(UPDATE_PROFILE_OPCODE, 32)
+    .storeUint(0, 64); // queryId
+  b = storeRequiredString(b, name);
+  b = storeRequiredString(b, country);
+  b = storeRequiredString(b, city);
+  b = b.storeUint(age || 0, 8);
+  return bytesToBase64(b.endCell().toBoc());
+}
+
 /* ── SEND TX ── */
-async function sendTon(statusId, onSuccess, payload) {
+async function sendTon(statusId, onSuccess, payload, amount) {
+  amount = amount || TON_AMOUNT;
   const el=document.getElementById(statusId);
   updateDebugInfo('sendTon() called');
   if(!tonConnectUI){ await initTonConnect(); }
@@ -1467,7 +1500,7 @@ async function sendTon(statusId, onSuccess, payload) {
   try {
     await tonConnectUI.sendTransaction({
       validUntil:Math.floor(Date.now()/1000)+300,
-      messages:[{address:CONTRACT_ADDRESS,amount:TON_AMOUNT,payload: payload || ''}]
+      messages:[{address:CONTRACT_ADDRESS,amount:amount,payload: payload || ''}]
     });
     clearTimeout(watchdog);
     updateDebugInfo('sendTransaction SUCCEEDED');
@@ -2287,6 +2320,46 @@ document.getElementById('saveBtn').addEventListener('click',()=>{
   } catch(e) { /* storage unavailable — profile still works for this session */ }
   if(tg) tg.showAlert('Profile saved!'); else showToast('Profile saved ✦');
   if(pendingAfterProfile){ const fn=pendingAfterProfile; pendingAfterProfile=null; fn(); }
+  refreshUpdateProfileButtonVisibility();
+});
+
+// The "Update on-chain profile" button only makes sense for a wallet that
+// has already minted before — a first-timer should just fill the form and
+// mint normally (JoinAndMint carries their profile data already). Checked
+// on load, after Save Profile, and after wallet connect changes.
+function refreshUpdateProfileButtonVisibility(){
+  const btn = document.getElementById('updateOnChainBtn');
+  if (!btn) return;
+  btn.style.display = isJoinedLocal() ? 'block' : 'none';
+}
+refreshUpdateProfileButtonVisibility();
+
+document.getElementById('updateOnChainBtn').addEventListener('click', async () => {
+  if(!hasProfile()){
+    showToast('Please fill in name, country, city and age ✦');
+    return;
+  }
+  if(!tonConnectUI){ await initTonConnect(); }
+  if(!tonConnectUI || !tonConnectUI.connected){
+    showToast('Connect your wallet first ✦');
+    if (tonConnectUI) tonConnectUI.openModal();
+    return;
+  }
+  let payload;
+  try {
+    payload = buildUpdateProfilePayload(
+      document.getElementById('fieldName').value.trim(),
+      document.getElementById('fieldCountry').value.trim(),
+      document.getElementById('fieldCity').value.trim(),
+      parseInt(document.getElementById('fieldAge').value) || 0
+    );
+  } catch(e) {
+    showToast('Could not prepare the update — try reloading the page ✦');
+    return;
+  }
+  sendTon('txUpdateProfile', () => {
+    showToast('On-chain profile updated ✦');
+  }, payload, '20000000'); // 0.02 TON
 });
 
 /* ── INVITE / REFERRAL ── */
