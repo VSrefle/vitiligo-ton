@@ -9,7 +9,8 @@
 <script type="module">
   import { beginCell } from "https://esm.sh/@ton/core@0.56.0";
   window.TonCore = { beginCell };
-  // Cell is only used by the optional Map city-list feature. Loaded
+  // Cell and Address are only used by optional features (Map city-list,
+  // reloading a previously-minted constellation into Profile). Loaded
   // separately and defensively so that if this fails for any reason
   // (CDN hiccup, export mismatch, etc.) it can NEVER take down beginCell —
   // which every single payment depends on. A previous version imported
@@ -17,7 +18,8 @@
   // ALL payments with zero visible error. Never again.
   import("https://esm.sh/@ton/core@0.56.0").then(mod => {
     if (mod.Cell) window.TonCore.Cell = mod.Cell;
-  }).catch(e => console.warn('[vitiligo.ton] Cell import failed — Map city list will stay empty, payments unaffected:', e));
+    if (mod.Address) window.TonCore.Address = mod.Address;
+  }).catch(e => console.warn('[vitiligo.ton] Cell/Address import failed — Map city list and profile reload will stay empty, payments unaffected:', e));
   window.dispatchEvent(new Event('toncore-ready'));
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -538,17 +540,12 @@ html,body{
       </div>
     </div>
 
-    <div class="canvas-wrap" style="position:relative;border-radius:12px;overflow:hidden;background:#040b18;height:160px">
-      <canvas id="cosmosCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;touch-action:none;cursor:grab"></canvas>
-      <div id="cosmosExp" style="position:absolute;bottom:8px;right:8px;width:28px;height:28px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.35);color:#a78bfa;border-radius:8px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;user-select:none">⛶</div>
-      <div id="cosmosUI" style="position:fixed;top:12px;right:12px;flex-direction:column;gap:6px;z-index:10001;display:none">
-        <div id="cosmosClose" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</div>
-        <div id="cosmosPlus" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">+</div>
-        <div id="cosmosMinus" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">−</div>
-        <div id="cosmosReset" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center">✦</div>
-        <div id="cosmosMe" style="width:34px;height:34px;background:rgba(124,58,237,.35);border:1px solid rgba(167,139,250,.7);color:#ddd6fe;border-radius:8px;font-size:9px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;letter-spacing:.5px">ME</div>
-      </div>
-      <div id="cosmosTip" style="position:absolute;bottom:8px;left:8px;background:rgba(4,11,24,.97);border:1px solid rgba(124,58,237,.3);border-radius:8px;padding:8px 12px;font-size:11px;color:#e9d5ff;pointer-events:none;display:none;z-index:10;max-width:180px;line-height:1.5"></div>
+    <!-- Added 04.07.2026 — purely decorative, no taps/zoom (that lives on
+         Constellation now). Multi-depth parallax starfield drifting slowly
+         + one soft pulsing core, meant to read as "space, stars, infinity"
+         without needing any new art assets. -->
+    <div style="height:130px;border-radius:12px;overflow:hidden;position:relative;margin-bottom:16px;background:#040b18">
+      <canvas id="heroCosmos" style="width:100%;height:100%;display:block"></canvas>
     </div>
 
     <div class="dual-counter">
@@ -568,6 +565,22 @@ html,body{
       <div class="milestone-label" id="milestoneLabel">Goal: 100 people</div>
       <div class="milestone-track"><div class="milestone-fill" id="milestoneFill"></div></div>
       <div class="milestone-sub" id="milestoneSub">0 / 100</div>
+    </div>
+
+    <!-- Added 04.07.2026 to fill out Home once the star canvas moved to
+         Constellation — real numbers only, no invented activity. -->
+    <div id="discoveryTeaserHome" style="background:rgba(147,51,234,.1);border:1px solid rgba(147,51,234,.22);border-radius:12px;padding:12px 16px;margin-bottom:14px;text-align:center">
+      <div style="font-size:10px;color:#a78bfa;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Real constellations discovered</div>
+      <div style="font-size:18px;font-weight:700;color:white" id="discoveryCountHome">0 <span style="font-size:12px;color:#a78bfa;font-weight:400">of 88</span></div>
+      <div style="height:4px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:6px">
+        <div id="discoveryBarHome" style="height:100%;background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:2px;width:0%;transition:width .6s ease"></div>
+      </div>
+    </div>
+
+    <div id="cityTeaserHome" style="display:none;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px 16px;margin-bottom:20px">
+      <div style="font-size:10px;color:#a78bfa;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Top cities</div>
+      <div id="cityTeaserList" style="font-size:13px;color:#e9d5ff;line-height:1.8"></div>
+      <div class="page-sub" id="cityTeaserLink" style="margin-top:8px;cursor:pointer;color:#a78bfa;font-size:12px">See the full map →</div>
     </div>
 
     <h1 class="headline">People with vitiligo<br>are <em>unique by design</em></h1>
@@ -631,6 +644,25 @@ html,body{
 
     <button class="btn-main" id="mintBtn" disabled>Count me in ✦</button>
     <button class="btn-ghost" id="resetBtn" style="display:none;margin-top:0">Try another photo</button>
+
+    <!-- Moved here from Home 04.07.2026 — the personal upload/mint flow
+         above is the primary reason someone visits this tab; browsing
+         everyone else's stars is a secondary, related action, so it lives
+         below rather than competing with Home's counters for attention. -->
+    <div class="page-title" style="font-size:16px;margin-top:32px">Everyone's sky</div>
+    <div class="page-sub" style="margin-bottom:16px">Tap any star to see whose it is</div>
+    <div class="canvas-wrap" style="position:relative;border-radius:12px;overflow:hidden;background:#040b18;height:220px">
+      <canvas id="cosmosCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;touch-action:none;cursor:grab"></canvas>
+      <div id="cosmosExp" style="position:absolute;bottom:8px;right:8px;width:28px;height:28px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.35);color:#a78bfa;border-radius:8px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;user-select:none">⛶</div>
+      <div id="cosmosUI" style="position:fixed;top:12px;right:12px;flex-direction:column;gap:6px;z-index:10001;display:none">
+        <div id="cosmosClose" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</div>
+        <div id="cosmosPlus" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">+</div>
+        <div id="cosmosMinus" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">−</div>
+        <div id="cosmosReset" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center">✦</div>
+        <div id="cosmosMe" style="width:34px;height:34px;background:rgba(124,58,237,.35);border:1px solid rgba(167,139,250,.7);color:#ddd6fe;border-radius:8px;font-size:9px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;letter-spacing:.5px">ME</div>
+      </div>
+      <div id="cosmosTip" style="position:absolute;bottom:8px;left:8px;background:rgba(4,11,24,.97);border:1px solid rgba(124,58,237,.3);border-radius:8px;padding:8px 12px;font-size:11px;color:#e9d5ff;pointer-events:none;display:none;z-index:10;max-width:180px;line-height:1.5"></div>
+    </div>
   </div>
 </div>
 
@@ -896,6 +928,22 @@ const CONTRACT_ADDRESS = 'EQCt4zv8F2-s0eMAy-SD0Nk5CoH1V9ilzx0K8QqT0xAzyWrd';
 const TON_AMOUNT = '1000000000';
 const BOT_USERNAME = 'vitiligo_ton_bot';
 
+// ── POPULATE AGE SELECT ──
+// Moved here 04.07.2026 — this used to run near the end of the script,
+// long after the Telegram/profile-restore code below tried to set
+// fieldAge.value from a saved profile. Since the <select> had zero
+// <option> elements at that point, the assignment silently failed and
+// invalidated the select's selection state; when the options were
+// finally added later, the browser auto-selected the first one (age 5)
+// instead of leaving the real saved age in place. That's why a saved
+// age of 36 would come back as 5 after a reload.
+const ageSelect = document.getElementById('fieldAge');
+for (let a = 5; a <= 104; a++) {
+  const opt = document.createElement('option');
+  opt.value = a; opt.textContent = a;
+  ageSelect.appendChild(opt);
+}
+
 /* ── TELEGRAM ── */
 const tg = window.Telegram?.WebApp;
 let myTelegramId = null;
@@ -967,6 +1015,73 @@ function drawSF() {
 }
 drawSF();
 
+/* ── HERO COSMOS (Home only, purely decorative — no taps/zoom) ──
+   Three depth layers of stars drift horizontally at different speeds
+   (parallax = sense of infinite depth), plus one slow-pulsing core glow.
+   Self-contained IIFE so it can never collide with the interactive
+   cosmos canvas over on the Constellation tab. */
+(function(){
+  const cv = document.getElementById('heroCosmos');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const DPR = window.devicePixelRatio || 1;
+  let W, H;
+  function resize() {
+    const wrap = cv.parentElement;
+    W = wrap.clientWidth; H = wrap.clientHeight;
+    if (!W || !H) return;
+    cv.width = W * DPR; cv.height = H * DPR;
+    cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function makeLayer(count, speed, size, alpha) {
+    return Array.from({length: count}, () => ({
+      x: Math.random(), y: Math.random(),
+      speed, size: size * (0.6 + Math.random() * 0.8),
+      a: alpha * (0.5 + Math.random() * 0.5),
+      ph: Math.random() * Math.PI * 2
+    }));
+  }
+  const layers = [
+    makeLayer(30, 0.00006, 0.6, 0.35),
+    makeLayer(20, 0.00014, 1.0, 0.55),
+    makeLayer(12, 0.00028, 1.6, 0.8)
+  ];
+
+  let t = 0;
+  function frame() {
+    t++;
+    if (W && H) {
+      ctx.clearRect(0, 0, W, H);
+      const pulse = 0.5 + Math.sin(t * 0.01) * 0.5;
+      const cx = W * 0.7, cy = H * 0.4;
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.5);
+      g.addColorStop(0, `rgba(147,51,234,${(0.10 + pulse * 0.06).toFixed(2)})`);
+      g.addColorStop(0.5, `rgba(88,28,135,${(0.05 + pulse * 0.03).toFixed(2)})`);
+      g.addColorStop(1, 'transparent');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+
+      layers.forEach(layer => {
+        layer.forEach(s => {
+          s.x -= s.speed;
+          if (s.x < -0.02) s.x = 1.02;
+          const twinkle = 0.6 + 0.4 * Math.sin(t * 0.03 + s.ph);
+          ctx.beginPath();
+          ctx.arc(s.x * W, s.y * H, s.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(225,215,255,${(s.a * twinkle).toFixed(2)})`;
+          ctx.fill();
+        });
+      });
+    }
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
 /* ── SIMPLE STAR CANVAS ── */
 const cosmosCV = document.getElementById('cosmosCanvas');
 if (cosmosCV) {
@@ -982,6 +1097,7 @@ if (cosmosCV) {
     cosmosCV.style.width = cW + 'px'; cosmosCV.style.height = cH + 'px';
     cosmosCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
   }
+  window.cosmosResize = cosmosResize;
   cosmosResize();
 
   // Generate background stars
@@ -1283,6 +1399,12 @@ function updateDiscoveryProgress() {
   const bar = document.getElementById('discoveryBar');
   if (el) el.innerHTML = `${found} <span style="font-size:14px;color:#a78bfa;font-weight:400">of 88</span>`;
   if (bar) bar.style.width = Math.min(100, (found / 88) * 100) + '%';
+  // Home teaser — added 04.07.2026, mirrors the same numbers shown on the
+  // Constellation tab so Home isn't just bare counters.
+  const elHome = document.getElementById('discoveryCountHome');
+  const barHome = document.getElementById('discoveryBarHome');
+  if (elHome) elHome.innerHTML = `${found} <span style="font-size:12px;color:#a78bfa;font-weight:400">of 88</span>`;
+  if (barHome) barHome.style.width = Math.min(100, (found / 88) * 100) + '%';
 }
 
 async function loadCounterFromChain() {
@@ -1382,6 +1504,9 @@ async function initTonConnect() {
         startTick();
         if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
         if (typeof refreshUpdateProfileButtonVisibility === 'function') refreshUpdateProfileButtonVisibility();
+        if (typeof myNfts !== 'undefined' && myNfts.length === 0 && typeof loadMyConstellationFromChain === 'function') {
+          loadMyConstellationFromChain();
+        }
       } else {
         chip.classList.remove('show'); tcBtn.style.display='';
         connected=false;
@@ -1556,6 +1681,13 @@ document.querySelectorAll('.nav-item').forEach(btn=>{
     document.getElementById('page-'+p).classList.add('active');
     btn.classList.add('active');
     window.scrollTo(0,0);
+    // The shared star canvas moved from Home (always visible on load) into
+    // this tab 04.07.2026 — its size is measured from its wrapper element,
+    // which is 0×0 while the tab is hidden (display:none). Recompute once
+    // the tab is actually shown, or the canvas stays blank/mis-sized.
+    if (p === 'stars' && typeof window.cosmosResize === 'function') {
+      requestAnimationFrame(window.cosmosResize);
+    }
   });
 });
 document.getElementById('addNftBtn').addEventListener('click',()=>{
@@ -2436,6 +2568,91 @@ function decodeCellString(cellEntry) {
 // on "No one has marked their city yet"), open the browser console: any
 // warning starting with "getCityCount" points at exactly where the stack
 // shape didn't match what's expected below.
+// Reloads a previously-minted constellation into the Profile grid after a
+// page refresh. Added 04.07.2026 — myNfts (below) only ever lived in this
+// tab's memory, so anyone who minted, then reloaded, saw an empty "My
+// constellations" section even though their mint was real and on-chain.
+// IMPORTANT HONEST LIMITATION: the exact star layout (the pixel positions
+// the photo-detection algorithm found) is never stored on-chain — only
+// name/story/rarity are. So this can restore the real name, story and
+// rarity badge, but the star pattern itself is a stand-in seeded from the
+// constellation's name (stable across reloads, not a reproduction of the
+// original photo). Not yet verified against a live getUser() call — if
+// the card doesn't appear after minting+reloading, check the console for
+// a warning starting with "getUser".
+function seededStars(seedStr, count) {
+  let seed = 0;
+  for (let i = 0; i < seedStr.length; i++) seed = (seed * 31 + seedStr.charCodeAt(i)) >>> 0;
+  const rand = () => { seed = (seed * 1103515245 + 12345) >>> 0; return (seed >>> 8) / 16777216; };
+  const stars = [];
+  for (let i = 0; i < count; i++) stars.push({ x: 0.15 + rand() * 0.7, y: 0.15 + rand() * 0.7 });
+  return stars;
+}
+
+async function loadMyConstellationFromChain() {
+  try {
+    const addr = tonConnectUI?.account?.address;
+    if (!addr || !window.TonCore?.Address) return;
+    const addrCell = beginCellSafe();
+    if (!addrCell) return;
+    const cell = window.TonCore.beginCell().storeAddress(window.TonCore.Address.parse(addr)).endCell();
+    const addrBoc = bytesToBase64(cell.toBoc());
+    const data = await tonFetch({ address: CONTRACT_ADDRESS, method: 'getUser', stack: [['tvm.Slice', addrBoc]] });
+    const entry = data?.result?.stack?.[0];
+    if (!entry || entry[0] === 'null') return; // never registered — nothing to show
+    const elements = entry[1]?.elements || entry[1];
+    if (!elements || elements.length < 13) { console.warn('getUser: unexpected stack shape', entry); return; }
+    const hasConstellation = elements[5]?.[1] === 'true' || elements[5]?.[1] === '-1' || elements[5]?.[1] === true;
+    if (!hasConstellation) return;
+    const constName = decodeCellString(elements[6]?.[1]);
+    const isRare = elements[7]?.[1] === 'true' || elements[7]?.[1] === '-1' || elements[7]?.[1] === true;
+    const story = decodeCellString(elements[10]?.[1]);
+    if (!constName) return;
+    const nftData = { name: constName, story, rare: isRare, constData: { name: constName, stars: seededStars(constName, 5) } };
+    myNfts.push(nftData);
+    renderRestoredNftCard(nftData);
+  } catch(e) { console.warn('getUser load failed', e); }
+}
+function beginCellSafe(){ try { return !!(window.TonCore && window.TonCore.beginCell); } catch(e){ return false; } }
+
+// Draws one constellation card into the Profile grid — used specifically
+// for restoring a mint from chain after a reload (see
+// loadMyConstellationFromChain above). Kept separate from the mint-time
+// card drawing further down so that reload behavior can never affect the
+// live mint flow.
+function renderRestoredNftCard(nftData) {
+  const grid = document.getElementById('nftGrid');
+  const addBtn = document.getElementById('addNftBtn');
+  if (!grid || !addBtn) return;
+  const gold = nftData.rare;
+  const card = document.createElement('div');
+  card.className = 'nft-card' + (gold ? ' rare' : '');
+  const mc = document.createElement('canvas'); mc.width = 80; mc.height = 80;
+  mc.style.cssText = 'width:100%;height:100%;display:block';
+  const mctx = mc.getContext('2d');
+  mctx.fillStyle = '#020110'; mctx.fillRect(0, 0, 80, 80);
+  const ng = mctx.createRadialGradient(40, 40, 0, 40, 40, 38);
+  ng.addColorStop(0, gold ? 'rgba(245,158,11,.3)' : 'rgba(76,29,149,.3)'); ng.addColorStop(1, 'transparent');
+  mctx.fillStyle = ng; mctx.beginPath(); mctx.arc(40, 40, 38, 0, Math.PI * 2); mctx.fill();
+  nftData.constData.stars.forEach((s, i) => {
+    const sx = s.x * 80, sy = s.y * 80, sz = i === 0 ? 3 : 1.5;
+    const g = mctx.createRadialGradient(sx, sy, 0, sx, sy, sz * 4);
+    g.addColorStop(0, gold ? 'rgba(253,230,138,.5)' : 'rgba(200,170,255,.5)'); g.addColorStop(1, 'transparent');
+    mctx.fillStyle = g; mctx.beginPath(); mctx.arc(sx, sy, sz * 4, 0, Math.PI * 2); mctx.fill();
+    mctx.fillStyle = 'rgba(255,252,255,.95)'; mctx.beginPath(); mctx.arc(sx, sy, sz, 0, Math.PI * 2); mctx.fill();
+  });
+  card.appendChild(mc);
+  if (gold) {
+    const badge = document.createElement('div'); badge.className = 'nft-rare-badge'; badge.textContent = '★ RARE';
+    card.appendChild(badge);
+  }
+  const infoBar = document.createElement('div'); infoBar.className = 'nft-info-bar';
+  infoBar.innerHTML = `<div class="nft-name">${nftData.name}</div>${nftData.story ? `<div class="nft-story">"${nftData.story}"</div>` : ''}`;
+  card.appendChild(infoBar);
+  card.addEventListener('click', () => openNftDetail(nftData));
+  grid.insertBefore(card, addBtn);
+}
+
 async function loadCitiesFromChain() {
   try {
     const sizeData = await tonFetch({ address: CONTRACT_ADDRESS, method: 'cityCountsSize', stack: [] });
@@ -2468,17 +2685,22 @@ async function loadCitiesFromChain() {
         <span style="color:#e9d5ff;font-size:13px">${c.city}</span>
         <span style="color:#a78bfa;font-size:12px;font-weight:600">${c.count}</span>
       </div>`).join('');
+
+    // Home teaser — added 04.07.2026, top 3 cities only, reusing the same
+    // sorted data already fetched above rather than a second round of calls.
+    const homeTeaser = document.getElementById('cityTeaserHome');
+    const homeList = document.getElementById('cityTeaserList');
+    if (homeTeaser && homeList) {
+      homeList.innerHTML = cities.slice(0, 3).map(c => `
+        <div style="display:flex;justify-content:space-between"><span>${c.city}</span><span style="color:#a78bfa;font-weight:600">${c.count}</span></div>`).join('');
+      homeTeaser.style.display = 'block';
+    }
   } catch(e) { console.log('City list load failed', e); }
 }
 loadCitiesFromChain();
-
-// ── POPULATE AGE SELECT ──
-const ageSelect = document.getElementById('fieldAge');
-for (let a = 5; a <= 104; a++) {
-  const opt = document.createElement('option');
-  opt.value = a; opt.textContent = a;
-  ageSelect.appendChild(opt);
-}
+document.getElementById('cityTeaserLink')?.addEventListener('click', () => {
+  document.querySelector('[data-page="map"]')?.click();
+});
 
 // ── COUNTRY LIST ──
 const COUNTRIES = [
