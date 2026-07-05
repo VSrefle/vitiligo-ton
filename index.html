@@ -722,13 +722,20 @@ html,body{
       </div>
     </div>
 
-    <!-- Moved here from Home 04.07.2026 — the personal upload/mint flow
-         above is the primary reason someone visits this tab; browsing
-         everyone else's stars is a secondary, related action, so it lives
-         below rather than competing with Home's counters for attention. -->
-    <div class="page-title" style="font-size:16px;margin-top:32px">Everyone's sky</div>
-    <div class="page-sub" style="margin-bottom:16px">Tap any star to see whose it is</div>
-    <div class="canvas-wrap" style="position:relative;border-radius:12px;overflow:hidden;background:#040b18;height:220px">
+  </div>
+</div>
+
+<!-- MAP -->
+<div class="page" id="page-map">
+  <div class="map-page">
+    <div class="page-title">Where we are</div>
+    <div class="page-sub">Tap any star to see whose it is</div>
+
+    <!-- Moved here from Constellation 05.07.2026 — this is the shared,
+         browsable view of everyone; the personal upload/mint flow stays on
+         Constellation, this ambient/exploratory view belongs with the
+         rest of "where we are" data (city list below). -->
+    <div class="canvas-wrap" style="position:relative;border-radius:12px;overflow:hidden;background:#040b18;height:220px;margin-bottom:20px">
       <canvas id="cosmosCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;touch-action:none;cursor:grab"></canvas>
       <div id="cosmosExp" style="position:absolute;bottom:8px;right:8px;width:28px;height:28px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.35);color:#a78bfa;border-radius:8px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;user-select:none">⛶</div>
       <div id="cosmosUI" style="position:fixed;top:12px;right:12px;flex-direction:column;gap:6px;z-index:10001;display:none">
@@ -740,15 +747,9 @@ html,body{
       </div>
       <div id="cosmosTip" style="position:absolute;bottom:8px;left:8px;background:rgba(4,11,24,.97);border:1px solid rgba(124,58,237,.3);border-radius:8px;padding:8px 12px;font-size:11px;color:#e9d5ff;pointer-events:none;display:none;z-index:10;max-width:180px;line-height:1.5"></div>
     </div>
-  </div>
-</div>
 
-<!-- MAP -->
-<div class="page" id="page-map">
-  <div class="map-page">
-    <div class="page-title">Where we are</div>
-    <div class="page-sub">People with vitiligo worldwide</div>
-    <canvas id="mapCanvas" width="304" height="155"></canvas>
+    <div class="page-title" style="font-size:16px;margin-bottom:4px">Top cities</div>
+    <div class="page-sub" style="margin-bottom:14px">People with vitiligo worldwide</div>
     <div class="invite-empty" id="cityListEmpty">No one has marked their city yet — be the first ✦</div>
     <div id="cityListReal"></div>
   </div>
@@ -1766,11 +1767,15 @@ document.querySelectorAll('.nav-item').forEach(btn=>{
     document.getElementById('page-'+p).classList.add('active');
     btn.classList.add('active');
     window.scrollTo(0,0);
-    // The shared star canvas moved from Home (always visible on load) into
-    // this tab 04.07.2026 — its size is measured from its wrapper element,
-    // which is 0×0 while the tab is hidden (display:none). Recompute once
-    // the tab is actually shown, or the canvas stays blank/mis-sized.
-    if (p === 'stars' && typeof window.cosmosResize === 'function') {
+    // The shared star canvas moved from Home into Constellation on
+    // 04.07.2026, then from Constellation into Map on 05.07.2026 — its
+    // size is measured from its wrapper element, which is 0×0 while the
+    // tab is hidden (display:none). Recompute once the tab is actually
+    // shown, or the canvas stays blank/mis-sized. Must match wherever the
+    // canvas currently lives (page-map right now) — this check still said
+    // 'stars' after the most recent move, which was exactly why it looked
+    // broken.
+    if (p === 'map' && typeof window.cosmosResize === 'function') {
       requestAnimationFrame(window.cosmosResize);
     }
   });
@@ -2643,20 +2648,9 @@ document.getElementById('copyLinkOpt').addEventListener('click', ()=>{
 });
 
 /* ── MAP ── */
-const mapC=document.getElementById('mapCanvas');
-const mX=mapC.getContext('2d');
-mapC.width=304; mapC.height=155;
-mX.fillStyle='#020110';
-mX.beginPath(); if(mX.roundRect)mX.roundRect(0,0,304,155,14); else mX.rect(0,0,304,155); mX.fill();
-// Background stars only — no city dots until real data exists
-for(let i=0;i<35;i++){
-  const x=Math.random()*304, y=Math.random()*155;
-  mX.fillStyle=`rgba(210,200,255,${(.04+Math.random()*.12).toFixed(2)})`;
-  mX.beginPath(); mX.arc(x,y,Math.random()<.7?.5:1,0,Math.PI*2); mX.fill();
-}
-const mapNg = mX.createRadialGradient(152,77,0,152,77,140);
-mapNg.addColorStop(0,'rgba(76,29,149,.1)'); mapNg.addColorStop(1,'transparent');
-mX.fillStyle=mapNg; mX.beginPath(); mX.arc(152,77,140,0,Math.PI*2); mX.fill();
+// The small decorative mapCanvas (just background stars, no real city
+// data) is gone — replaced 05.07.2026 by the real, interactive Everyone's
+// sky canvas moved here from Constellation. See cosmosCanvas setup below.
 
 function base64ToBytes(base64) {
   const binStr = atob(base64);
@@ -2894,11 +2888,19 @@ async function loadCitiesFromChain() {
     cities.sort((a,b) => b.count - a.count);
     document.getElementById('cityListEmpty').style.display = 'none';
     const listEl = document.getElementById('cityListReal');
-    listEl.innerHTML = cities.map(c => `
+    // Capped 05.07.2026 — an uncapped list would grow forever as more
+    // cities register, turning this into an endless scroll. Top 20 covers
+    // "where the community actually is" at a glance; the rest are
+    // summarized in one line instead of listed individually.
+    const VISIBLE_CITY_LIMIT = 20;
+    const visibleCities = cities.slice(0, VISIBLE_CITY_LIMIT);
+    const remainder = cities.length - visibleCities.length;
+    listEl.innerHTML = visibleCities.map(c => `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.15);border-radius:10px;margin-bottom:6px">
         <span style="color:#e9d5ff;font-size:13px">${c.city}</span>
         <span style="color:#a78bfa;font-size:12px;font-weight:600">${c.count}</span>
-      </div>`).join('');
+      </div>`).join('')
+      + (remainder > 0 ? `<div style="text-align:center;padding:10px;color:#6b7280;font-size:12px">+ ${remainder} more ${remainder === 1 ? 'city' : 'cities'}</div>` : '');
 
     // Home teaser — added 04.07.2026, top 3 cities only, reusing the same
     // sorted data already fetched above rather than a second round of calls.
