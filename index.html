@@ -532,19 +532,17 @@ html,body{
 <canvas id="starfield"></canvas>
 
 <!-- WELCOME -->
-<script>
-  // Checked synchronously, inline, right before the element itself —
-  // must run before the browser paints anything, or an already-onboarded
-  // person would see a flash of onboarding before JS has a chance to hide
-  // it. document.write-style placement (a <script> tag right at this
-  // point in the HTML) blocks parsing until it runs, which is exactly
-  // what's needed here just this once.
-  try {
-    if (localStorage.getItem('vt_has_joined_ever') === '1') {
-      document.write('<style>#welcome{display:none !important}</style>');
-    }
-  } catch(e) { /* storage unavailable — onboarding will just show, not ideal but not broken */ }
-</script>
+<!-- 05.07.2026 — removed the synchronous pre-paint hide that used to live
+     here. It checked a single device-wide flag, not tied to any specific
+     wallet, so switching to a brand-new wallet on a device that had
+     already joined with a DIFFERENT wallet incorrectly hid onboarding for
+     someone who hadn't actually joined yet. There's no way to know which
+     wallet is about to reconnect this early (TonConnect's reconnect is
+     async) — so onboarding now always starts visible, and is closed by
+     the wallet-aware check in refreshCountedBanner() once we actually
+     know whether THIS connected wallet has joined. Returning users on
+     their own device may see a brief flash before it closes; that's an
+     honest tradeoff for not showing the wrong thing to someone else. -->
 <div class="welcome" id="welcome">
 
   <!-- ONBOARDING DOTS -->
@@ -1884,13 +1882,6 @@ function isJoinedLocal(){
 function markJoinedLocal(){
   const addr = tonConnectUI?.account?.address;
   if (addr) localStorage.setItem(joinedKey(addr), '1');
-  // Separate, non-per-address flag — checked synchronously at the very
-  // top of the page (see the inline <script> right before #welcome) to
-  // decide whether onboarding should show at all. 05.07.2026: changed
-  // from "has clicked through onboarding once" to "has actually joined" —
-  // someone who only looked around without joining should keep seeing
-  // the invitation next time, not just once ever.
-  try { localStorage.setItem('vt_has_joined_ever', '1'); } catch(e) {}
 }
 
 function hasProfile(){
@@ -1962,11 +1953,14 @@ function refreshCountedBanner(){
   const note = document.getElementById('alreadyCountedNote');
   const mintBtnEl = document.getElementById('mintBtn');
   if (note) note.style.display = isJoinedLocal() ? 'block' : 'none';
-  // Covers joining on a different device — this device's synchronous
-  // flag wouldn't be set yet, so onboarding could still be showing at
-  // this point despite the wallet confirming they're already counted.
+  // This is the only place that closes onboarding for an already-joined
+  // person — checked against the CURRENTLY connected wallet's own status
+  // (isJoinedLocal), once TonConnect actually finishes reconnecting.
+  // There's no synchronous shortcut here anymore (see the comment above
+  // #welcome) — a device-wide flag previously caused onboarding to
+  // wrongly stay hidden when someone switched to a different, not-yet-
+  // joined wallet on the same device.
   if (isJoinedLocal()) {
-    try { localStorage.setItem('vt_has_joined_ever', '1'); } catch(e) {}
     const w = document.getElementById('welcome');
     if (w && getComputedStyle(w).display !== 'none') closeWelcome(false);
   }
@@ -2437,6 +2431,7 @@ document.getElementById('modalMintConfirm').addEventListener('click', async ()=>
     markJoinedLocal();
     if (!wasAlreadyJoined) {
       count++;
+      numEl.classList.remove('loading');
       numEl.textContent=fmt(count); numEl.title=fmtExact(count)+' people';
       numEl.classList.add('flash'); setTimeout(()=>numEl.classList.remove('flash'),700);
       updateMilestone();
@@ -2493,7 +2488,8 @@ document.getElementById('modalMintConfirm').addEventListener('click', async ()=>
       document.querySelector('[data-page="home"]').click();
       setTimeout(()=>{
         addPixelToCanvas(nftPixelColor,true,{constName: nftData.name, story: nftData.story, isRare: nftData.rare, isLegendary: nftData.isRealDiscovery || false, constData: nftData.constData});
-        photoCount++; numPhotosEl.textContent=fmt(photoCount); numPhotosEl.title=fmtExact(photoCount)+' constellations';
+        photoCount++; numPhotosEl.classList.remove('loading');
+        numPhotosEl.textContent=fmt(photoCount); numPhotosEl.title=fmtExact(photoCount)+' constellations';
         numPhotosEl.classList.add('flash'); setTimeout(()=>numPhotosEl.classList.remove('flash'),600);
         showToast(gold ? '★ Rare constellation minted!' : '✦ Your constellation is on the canvas');
         if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
