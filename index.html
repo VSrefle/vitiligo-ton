@@ -518,7 +518,7 @@ html,body{
 
 /* TOAST */
 .toast{
-  position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(16px);
+  position:fixed;bottom:104px;left:50%;transform:translateX(-50%) translateY(16px);
   background:rgba(20,10,35,.95);color:var(--text);border:.5px solid rgba(147,51,234,.35);
   border-radius:12px;
   padding:9px 16px;font-size:12px;font-weight:400;text-align:center;
@@ -532,6 +532,19 @@ html,body{
 <canvas id="starfield"></canvas>
 
 <!-- WELCOME -->
+<script>
+  // Checked synchronously, inline, right before the element itself —
+  // must run before the browser paints anything, or an already-onboarded
+  // person would see a flash of onboarding before JS has a chance to hide
+  // it. document.write-style placement (a <script> tag right at this
+  // point in the HTML) blocks parsing until it runs, which is exactly
+  // what's needed here just this once.
+  try {
+    if (localStorage.getItem('vt_has_joined_ever') === '1') {
+      document.write('<style>#welcome{display:none !important}</style>');
+    }
+  } catch(e) { /* storage unavailable — onboarding will just show, not ideal but not broken */ }
+</script>
 <div class="welcome" id="welcome">
 
   <!-- ONBOARDING DOTS -->
@@ -1871,6 +1884,13 @@ function isJoinedLocal(){
 function markJoinedLocal(){
   const addr = tonConnectUI?.account?.address;
   if (addr) localStorage.setItem(joinedKey(addr), '1');
+  // Separate, non-per-address flag — checked synchronously at the very
+  // top of the page (see the inline <script> right before #welcome) to
+  // decide whether onboarding should show at all. 05.07.2026: changed
+  // from "has clicked through onboarding once" to "has actually joined" —
+  // someone who only looked around without joining should keep seeing
+  // the invitation next time, not just once ever.
+  try { localStorage.setItem('vt_has_joined_ever', '1'); } catch(e) {}
 }
 
 function hasProfile(){
@@ -1942,6 +1962,14 @@ function refreshCountedBanner(){
   const note = document.getElementById('alreadyCountedNote');
   const mintBtnEl = document.getElementById('mintBtn');
   if (note) note.style.display = isJoinedLocal() ? 'block' : 'none';
+  // Covers joining on a different device — this device's synchronous
+  // flag wouldn't be set yet, so onboarding could still be showing at
+  // this point despite the wallet confirming they're already counted.
+  if (isJoinedLocal()) {
+    try { localStorage.setItem('vt_has_joined_ever', '1'); } catch(e) {}
+    const w = document.getElementById('welcome');
+    if (w && getComputedStyle(w).display !== 'none') closeWelcome(false);
+  }
   // Only touch mintBtn's label when it isn't mid-flow (i.e. not disabled
   // from an in-progress upload, not showing the post-mint "✓ Counted!"
   // state) — this just sets the correct default/reset label.
