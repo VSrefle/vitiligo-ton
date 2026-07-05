@@ -363,11 +363,11 @@ html,body{
 }
 .copy-btn.copied{background:rgba(52,211,153,.2);border-color:rgba(52,211,153,.5);color:#34d399}
 
-.share-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:relative}
+.share-row{display:flex;justify-content:center;position:relative}
 .share-btn{
   display:flex;align-items:center;justify-content:center;gap:7px;
   background:rgba(255,255,255,.04);border:.5px solid rgba(255,255,255,.1);
-  border-radius:40px;padding:12px;font-size:12px;color:#ede8ff;
+  border-radius:40px;padding:12px 32px;font-size:13px;color:#ede8ff;
   font-family:'Space Grotesk',sans-serif;transition:all .2s;cursor:pointer;
 }
 .share-btn:active{transform:scale(.96);background:rgba(147,51,234,.15)}
@@ -435,9 +435,14 @@ html,body{
 .form-input{
   width:100%;background:var(--surface);border:.5px solid var(--border);
   border-radius:14px;padding:13px 16px;font-size:15px;color:var(--text);
-  font-family:'Space Grotesk',sans-serif;outline:none;transition:border-color .2s;
+  font-family:'Space Grotesk',sans-serif;outline:none;transition:border-color .2s,background .2s;
 }
 .form-input:focus{border-color:rgba(147,51,234,.45)}
+/* Added 05.07.2026 — an empty required field looked identical to a
+   settled/filled one, giving no visual cue about what actually needs
+   filling in. Highlighted while empty, settles to the plain look the
+   moment it has a value — whether typed or pulled from the blockchain. */
+.form-input.needs-fill{border-color:rgba(147,51,234,.5);background:rgba(147,51,234,.06)}
 .form-input::placeholder{color:rgba(255,255,255,.14)}
 
 .nft-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:8px;padding-bottom:12px}
@@ -769,8 +774,8 @@ html,body{
 <!-- INVITE -->
 <div class="page" id="page-invite">
   <div class="invite-page">
-    <div class="page-title">Invite a friend</div>
-    <div class="page-sub">Every star matters — bring someone in</div>
+    <div class="page-title">Share vitiligo.ton</div>
+    <div class="page-sub">Someone you know might belong here too</div>
 
     <div class="invite-card">
       <div class="invite-glow"></div>
@@ -779,13 +784,12 @@ html,body{
       <div class="invite-text">Send them your link. When they join, you both light up the sky a little brighter.</div>
 
       <div class="link-box">
-        <div class="link-text" id="refLinkText">t.me/vitiligo_ton_bot?start=ref_you</div>
+        <div class="link-text" id="refLinkText">t.me/vitiligo_ton_bot</div>
         <div class="copy-btn" id="copyBtn">Copy</div>
       </div>
 
       <div class="share-row">
-        <div class="share-btn telegram" id="shareTelegram"><span>✈️</span> Telegram</div>
-        <div class="share-btn" id="shareMore"><span>↗</span> Share</div>
+        <div class="share-btn telegram" id="shareMore"><span>↗</span> Share</div>
       </div>
     </div>
 
@@ -830,7 +834,7 @@ html,body{
       <div id="cityDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#12103a;border:1px solid rgba(147,51,234,.3);border-radius:8px;max-height:180px;overflow-y:auto;z-index:100;margin-top:2px"></div>
     </div>
     <label class="form-label">Age</label>
-    <select class="form-input" id="fieldAge" style="color:#e9d5ff;background:#12103a;border:1px solid rgba(147,51,234,.3)">
+    <select class="form-input" id="fieldAge">
       <option value="" disabled selected style="color:#6b7280">Select your age</option>
     </select>
 
@@ -1018,7 +1022,6 @@ for (let a = 5; a <= 104; a++) {
 /* ── TELEGRAM ── */
 const tg = window.Telegram?.WebApp;
 let myTelegramId = null;
-let referrerId = null;
 if (tg) {
   tg.ready(); tg.expand();
   tg.setHeaderColor('#06030f');
@@ -1037,17 +1040,18 @@ if (tg) {
     // blockchain fetch, the on-chain name had to fight past this
     // placeholder to actually show up (see the __chainProfileApplied fix).
   }
-  const startParam = tg.initDataUnsafe?.start_param;
-  if (startParam && startParam.startsWith('ref_')) {
-    referrerId = startParam.replace('ref_', '');
-  }
+  // Removed 05.07.2026 — used to parse an incoming ref_ start parameter
+  // into a referrerId variable that was never actually used anywhere.
+  // Leftover from the same abandoned referral-tracking concept as the
+  // outgoing ref_ link parameter (see refLink below) — the contract has
+  // no field for this, so there was never anything to do with it.
 }
 // Profile prefilling now happens directly from the blockchain (see the
 // onChainProfile block inside loadMyConstellationFromChain) rather than
 // from localStorage — removed 05.07.2026 along with the "Save profile"
 // button, so there's exactly one source of truth for an already-
 // registered person's data instead of two that could disagree.
-const refLink = `t.me/${BOT_USERNAME}?start=ref_${myTelegramId || 'you'}`;
+const refLink = `t.me/${BOT_USERNAME}`;
 document.getElementById('refLinkText').textContent = refLink;
 
 /* ── STARFIELD ── */
@@ -2575,9 +2579,22 @@ document.getElementById('resetBtn').addEventListener('click',()=>{
 // registered person, this only updates the live on-chain-vs-typed
 // comparison note; persisting the change still requires the paid
 // "Update on-chain profile" button below.
+// Highlights empty required profile fields so a new person can see at a
+// glance what needs filling in; settles automatically once a field has a
+// value from any source (typed, or pulled from the blockchain).
+function refreshFieldHighlights(){
+  ['fieldName','fieldCountry','fieldCity','fieldAge'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('needs-fill', !el.value.trim());
+  });
+}
+refreshFieldHighlights();
+
 function checkProfileCompletion(){
   const n = document.getElementById('fieldName').value;
   if (n) document.getElementById('profileName').textContent = n;
+  refreshFieldHighlights();
   if (typeof refreshOnChainProfileNote === 'function') refreshOnChainProfileNote();
   if (hasProfile() && pendingAfterProfile) {
     const fn = pendingAfterProfile; pendingAfterProfile = null;
@@ -2647,15 +2664,10 @@ document.getElementById('copyBtn').addEventListener('click', function(){
   setTimeout(()=>{ this.textContent = 'Copy'; this.classList.remove('copied'); }, 2000);
 });
 
-document.getElementById('shareTelegram').addEventListener('click', ()=>{
+document.getElementById('shareMore').addEventListener('click', ()=>{
   if(tg){
     tg.openTelegramLink(`https://t.me/share/url?url=https://${refLink}&text=${encodeURIComponent("Join vitiligo.ton — people with vitiligo are unique by design ✦")}`);
-  } else {
-    openModal('shareSheet');
-  }
-});
-document.getElementById('shareMore').addEventListener('click', ()=>{
-  if(navigator.share){
+  } else if(navigator.share){
     navigator.share({title:'vitiligo.ton', text:'Join vitiligo.ton — people with vitiligo are unique by design', url:'https://'+refLink}).catch(()=>{});
   } else {
     openModal('shareSheet');
@@ -2810,6 +2822,7 @@ async function loadMyConstellationFromChain() {
       if (onChainProfile.age) document.getElementById('fieldAge').value = onChainProfile.age;
     }
     if (onChainProfile.name) document.getElementById('profileName').textContent = onChainProfile.name;
+    if (typeof refreshFieldHighlights === 'function') refreshFieldHighlights();
     if (typeof refreshOnChainProfileNote === 'function') refreshOnChainProfileNote();
 
     const hasConstellation = getBool(elements[5]);
