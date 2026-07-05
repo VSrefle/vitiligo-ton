@@ -187,9 +187,26 @@ html,body{
 .cnum{
   font-family:'Outfit',sans-serif;font-size:44px;font-weight:200;
   letter-spacing:-.04em;color:#fff;line-height:1;
-  font-variant-numeric:tabular-nums;transition:text-shadow .5s;
+  font-variant-numeric:tabular-nums;transition:text-shadow .5s,opacity .4s;
 }
 .cnum.flash{text-shadow:0 0 30px rgba(192,132,252,.9),0 0 60px rgba(147,51,234,.4)}
+/* Added 05.07.2026 — a soft pulsing "nebula" placeholder shown while the
+   real count is still loading from the blockchain (~1-3s through the
+   rate-limited queue), instead of sitting on a bare "0" that reads as
+   "nobody's here yet" when it's really just "not loaded yet". Fades out
+   into the real number once it arrives. */
+.cnum.loading{
+  color:transparent;position:relative;user-select:none;
+}
+.cnum.loading::before{
+  content:'';position:absolute;inset:-4px -10px;border-radius:12px;
+  background:radial-gradient(ellipse at center,rgba(192,132,252,.35),rgba(147,51,234,.12) 60%,transparent 80%);
+  animation:cnumPulse 1.6s ease-in-out infinite;
+}
+@keyframes cnumPulse{
+  0%,100%{opacity:.4;transform:scale(.94)}
+  50%{opacity:.9;transform:scale(1.03)}
+}
 .counter-meta{display:flex;flex-direction:column;gap:4px}
 .clabel{font-size:9px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
 .live-row{display:none;align-items:center;gap:4px;font-size:9px;color:rgba(52,211,153,.55)}
@@ -571,13 +588,13 @@ html,body{
       <canvas id="heroCosmos" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas>
       <div class="dual-counter" style="position:relative;background:transparent;border:none;margin-bottom:0">
         <div class="counter-block">
-          <div class="cnum" id="cnum">0</div>
+          <div class="cnum loading" id="cnum">0</div>
           <div class="clabel">people counted</div>
           <div class="live-row" id="liveRow"><div class="wdot" style="background:var(--green)"></div>live</div>
         </div>
         <div class="counter-divider"></div>
         <div class="counter-block">
-          <div class="cnum cnum-gold" id="cnumPhotos">0</div>
+          <div class="cnum cnum-gold loading" id="cnumPhotos">0</div>
           <div class="clabel">constellations minted</div>
         </div>
       </div>
@@ -775,7 +792,7 @@ html,body{
   <div class="profile-page">
     <div class="profile-header">
       <div class="avatar" id="profileAvatar">🌟<div class="avatar-badge" id="profileBadge">⭐</div></div>
-      <div class="profile-name" id="profileName">Your name</div>
+      <div class="profile-name"><span id="profileName">Your name</span> <span id="profileVerifiedCheck" style="display:none;color:#34d399;font-size:16px" title="Synced with the blockchain">✓</span></div>
       <div class="profile-handle" id="profileHandle">@telegram_user</div>
     </div>
 
@@ -796,22 +813,13 @@ html,body{
       <option value="" disabled selected style="color:#6b7280">Select your age</option>
     </select>
 
-    <!-- Simplified 05.07.2026 — dropped the separate free "Save profile"
-         (local-only) step entirely. Having two buttons with different
-         scopes (free/local vs paid/on-chain) was confusing people about
-         which one was "real". Now there's one path: fields are prefilled
-         from the actual on-chain record on load, and this note shows
-         whenever what's currently typed differs from that — meaning
-         "Update on-chain profile" is needed to make it official. -->
-    <div id="onChainProfileNote" style="display:none;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:10px;padding:10px 14px;margin-top:12px;margin-bottom:16px;font-size:12px;color:#fcd34d;line-height:1.6"></div>
-
     <!-- Only shown once the wallet has minted before — lets someone fix a
          wrong/empty name·country·city·age on-chain via the new
          UpdateProfile message, added 04.07.2026. Locally-saved profile
          fields (fieldName/fieldCountry/fieldCity/fieldAge) are never
          retroactively sent on-chain by themselves — this button is the
          explicit, deliberate action that does that. -->
-    <button class="btn-main" id="updateOnChainBtn" style="display:none;margin-bottom:6px;background:transparent;border:1px solid rgba(147,51,234,.4);color:var(--purple-light)">Update on-chain profile · 0.02 TON</button>
+    <button class="btn-main" id="updateOnChainBtn" style="display:none;margin-top:20px;margin-bottom:6px;background:transparent;border:1px solid rgba(147,51,234,.4);color:var(--purple-light)">Update on-chain profile · 0.02 TON</button>
     <div id="updateOnChainHint" style="display:none;font-size:11px;color:#6b7280;text-align:center;margin-bottom:16px">This is what everyone else actually sees — city, map, and story</div>
     <div class="tx-status" id="txUpdateProfile" style="margin-bottom:16px"></div>
 
@@ -1486,9 +1494,11 @@ async function loadCounterFromChain() {
 
   // Update both together now that both are known.
   count = newCount;
+  numEl.classList.remove('loading');
   numEl.textContent = fmt(count); numEl.title = fmtExact(count)+' people';
   updateMilestone();
   photoCount = newPhotoCount;
+  numPhotosEl.classList.remove('loading');
   numPhotosEl.textContent = fmt(photoCount); numPhotosEl.title = fmtExact(photoCount)+' constellations';
 }
 // loadCitiesFromChain() used to fire independently at the same time as
@@ -1896,26 +1906,20 @@ document.getElementById('countBtn').addEventListener('click',()=>{
 // listing exactly which fields differ, so a locally-saved-but-not-yet-
 // pushed edit is never mistaken for what's actually on the blockchain.
 function refreshOnChainProfileNote(){
-  const note = document.getElementById('onChainProfileNote');
+  const check = document.getElementById('profileVerifiedCheck');
   const chain = window.onChainProfile;
-  if (!note || !chain) return;
+  if (!check || !chain) return;
   const local = {
     name: document.getElementById('fieldName')?.value.trim(),
     country: document.getElementById('fieldCountry')?.value.trim(),
     city: document.getElementById('fieldCity')?.value.trim(),
     age: document.getElementById('fieldAge')?.value
   };
-  const diffs = [];
-  if (chain.name && chain.name !== local.name) diffs.push(`name is "${chain.name}"`);
-  if (chain.country && chain.country !== local.country) diffs.push(`country is "${chain.country}"`);
-  if (chain.city && chain.city !== local.city) diffs.push(`city is "${chain.city}"`);
-  if (chain.age !== undefined && String(chain.age) !== String(local.age)) diffs.push(`age is ${chain.age}`);
-  if (diffs.length) {
-    note.textContent = '⚠ On the blockchain right now: ' + diffs.join(', ') + '. What you\'ve typed above hasn\'t been saved yet — tap "Update on-chain profile" to make it official.';
-    note.style.display = 'block';
-  } else {
-    note.style.display = 'none';
-  }
+  const matches = (!chain.name || chain.name === local.name)
+    && (!chain.country || chain.country === local.country)
+    && (!chain.city || chain.city === local.city)
+    && (chain.age === undefined || String(chain.age) === String(local.age));
+  check.style.display = matches ? 'inline' : 'none';
 }
 
 function refreshCountedBanner(){
