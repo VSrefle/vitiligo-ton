@@ -795,8 +795,15 @@ html,body{
     <select class="form-input" id="fieldAge" style="color:#e9d5ff;background:#12103a;border:1px solid rgba(147,51,234,.3)">
       <option value="" disabled selected style="color:#6b7280">Select your age</option>
     </select>
-    <button class="btn-main" id="saveBtn" style="margin-top:20px;margin-bottom:6px">Save profile</button>
-    <div style="font-size:11px;color:#6b7280;text-align:center;margin-bottom:16px">Saves on this device only — doesn't change what's on the blockchain</div>
+
+    <!-- Simplified 05.07.2026 — dropped the separate free "Save profile"
+         (local-only) step entirely. Having two buttons with different
+         scopes (free/local vs paid/on-chain) was confusing people about
+         which one was "real". Now there's one path: fields are prefilled
+         from the actual on-chain record on load, and this note shows
+         whenever what's currently typed differs from that — meaning
+         "Update on-chain profile" is needed to make it official. -->
+    <div id="onChainProfileNote" style="display:none;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:10px;padding:10px 14px;margin-top:12px;margin-bottom:16px;font-size:12px;color:#fcd34d;line-height:1.6"></div>
 
     <!-- Only shown once the wallet has minted before — lets someone fix a
          wrong/empty name·country·city·age on-chain via the new
@@ -1000,20 +1007,11 @@ if (tg) {
     referrerId = startParam.replace('ref_', '');
   }
 }
-// Restore a previously saved profile, if any — runs after the Telegram
-// block above (regardless of whether tg exists) so a real saved profile
-// takes priority over Telegram's auto-filled name instead of being
-// silently overwritten by it, and still works when opened in a plain
-// browser with no Telegram context at all.
-try {
-  const savedProfile = JSON.parse(localStorage.getItem('vt_profile') || 'null');
-  if (savedProfile) {
-    if (savedProfile.name) { document.getElementById('fieldName').value = savedProfile.name; document.getElementById('profileName').textContent = savedProfile.name; }
-    if (savedProfile.country) document.getElementById('fieldCountry').value = savedProfile.country;
-    if (savedProfile.city) document.getElementById('fieldCity').value = savedProfile.city;
-    if (savedProfile.age) document.getElementById('fieldAge').value = savedProfile.age;
-  }
-} catch(e) { /* no saved profile yet, or storage unavailable */ }
+// Profile prefilling now happens directly from the blockchain (see the
+// onChainProfile block inside loadMyConstellationFromChain) rather than
+// from localStorage — removed 05.07.2026 along with the "Save profile"
+// button, so there's exactly one source of truth for an already-
+// registered person's data instead of two that could disagree.
 const refLink = `t.me/${BOT_USERNAME}?start=ref_${myTelegramId || 'you'}`;
 document.getElementById('refLinkText').textContent = refLink;
 
@@ -1887,6 +1885,33 @@ document.getElementById('countBtn').addEventListener('click',()=>{
 // Toggles the "You're counted" banner and the Home button's text/purpose
 // for returning, already-registered visitors. Called on wallet connect
 // (see onStatusChange) since isJoinedLocal() needs a connected address.
+// Compares the live form fields against window.onChainProfile (populated
+// by loadMyConstellationFromChain's getUser call) and shows an honest note
+// listing exactly which fields differ, so a locally-saved-but-not-yet-
+// pushed edit is never mistaken for what's actually on the blockchain.
+function refreshOnChainProfileNote(){
+  const note = document.getElementById('onChainProfileNote');
+  const chain = window.onChainProfile;
+  if (!note || !chain) return;
+  const local = {
+    name: document.getElementById('fieldName')?.value.trim(),
+    country: document.getElementById('fieldCountry')?.value.trim(),
+    city: document.getElementById('fieldCity')?.value.trim(),
+    age: document.getElementById('fieldAge')?.value
+  };
+  const diffs = [];
+  if (chain.name && chain.name !== local.name) diffs.push(`name is "${chain.name}"`);
+  if (chain.country && chain.country !== local.country) diffs.push(`country is "${chain.country}"`);
+  if (chain.city && chain.city !== local.city) diffs.push(`city is "${chain.city}"`);
+  if (chain.age !== undefined && String(chain.age) !== String(local.age)) diffs.push(`age is ${chain.age}`);
+  if (diffs.length) {
+    note.textContent = '⚠ On the blockchain right now: ' + diffs.join(', ') + '. What you\'ve typed above hasn\'t been saved yet — tap "Update on-chain profile" to make it official.';
+    note.style.display = 'block';
+  } else {
+    note.style.display = 'none';
+  }
+}
+
 function refreshCountedBanner(){
   const banner = document.getElementById('countedBanner');
   const btn = document.getElementById('countBtn');
@@ -2493,31 +2518,28 @@ document.getElementById('resetBtn').addEventListener('click',()=>{
   document.getElementById('storyInput').value='';
 });
 
-document.getElementById('saveBtn').addEventListener('click',()=>{
-  const n=document.getElementById('fieldName').value;
-  if(n) document.getElementById('profileName').textContent=n;
-  if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-  if(!hasProfile()){
-    showToast('Please fill in name, country, city and age ✦');
-    return;
+// Simplified 05.07.2026 — there's no more separate "Save profile" button
+// (local-only save was confusing next to the paid on-chain update). Now
+// filling in the required fields is enough by itself: for a first-timer,
+// this just continues whatever they were doing before ensureProfile()
+// redirected them here (minting already carries the profile data in the
+// same transaction — no separate save step needed). For an already-
+// registered person, this only updates the live on-chain-vs-typed
+// comparison note; persisting the change still requires the paid
+// "Update on-chain profile" button below.
+function checkProfileCompletion(){
+  const n = document.getElementById('fieldName').value;
+  if (n) document.getElementById('profileName').textContent = n;
+  if (typeof refreshOnChainProfileNote === 'function') refreshOnChainProfileNote();
+  if (hasProfile() && pendingAfterProfile) {
+    const fn = pendingAfterProfile; pendingAfterProfile = null;
+    if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    fn();
   }
-  // Previously "Save profile" only showed a success message and never
-  // actually persisted anything anywhere — country/city/age vanished on
-  // every reload, and the name field only ever looked filled because
-  // Telegram's own name was re-injected fresh each load (see initTelegram
-  // above), not because anything had been saved. Found 04.07.2026 when a
-  // real profile disappeared after a reload. Now genuinely saved.
-  try {
-    localStorage.setItem('vt_profile', JSON.stringify({
-      name: document.getElementById('fieldName').value.trim(),
-      country: document.getElementById('fieldCountry').value.trim(),
-      city: document.getElementById('fieldCity').value.trim(),
-      age: document.getElementById('fieldAge').value
-    }));
-  } catch(e) { /* storage unavailable — profile still works for this session */ }
-  if(tg) tg.showAlert('Profile saved!'); else showToast('Profile saved ✦');
-  if(pendingAfterProfile){ const fn=pendingAfterProfile; pendingAfterProfile=null; fn(); }
-  refreshUpdateProfileButtonVisibility();
+}
+['fieldName','fieldCountry','fieldCity','fieldAge'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('change', checkProfileCompletion);
 });
 
 // The "Update on-chain profile" button only makes sense for a wallet that
@@ -2558,6 +2580,13 @@ document.getElementById('updateOnChainBtn').addEventListener('click', async () =
   }
   sendTon('txUpdateProfile', () => {
     showToast('On-chain profile updated ✦');
+    window.onChainProfile = {
+      name: document.getElementById('fieldName').value.trim(),
+      country: document.getElementById('fieldCountry').value.trim(),
+      city: document.getElementById('fieldCity').value.trim(),
+      age: parseInt(document.getElementById('fieldAge').value) || 0
+    };
+    if (typeof refreshOnChainProfileNote === 'function') refreshOnChainProfileNote();
   }, payload, '20000000'); // 0.02 TON
 });
 
@@ -2711,6 +2740,31 @@ async function loadMyConstellationFromChain() {
     const getNum = el => el?.number?.number !== undefined ? parseInt(el.number.number, 10) : undefined;
     const getBool = el => { const n = getNum(el); return n !== undefined && n !== 0; };
     const getStr = el => decodeCellString(el?.slice);
+
+    // Added 05.07.2026 — the profile form (name/country/city/age) was
+    // never compared against the real on-chain record, only ever shown
+    // from localStorage/Telegram defaults. That meant a locally-saved-but-
+    // never-pushed edit (via the free "Save profile" button) looked
+    // identical to an actually-on-chain value, with no way to tell them
+    // apart. Now we fetch the real on-chain fields and show an honest
+    // note if they differ from what's currently in the form.
+    const onChainProfile = {
+      name: getStr(elements[1]),
+      country: getStr(elements[2]),
+      city: getStr(elements[3]),
+      age: getNum(elements[4])
+    };
+    window.onChainProfile = onChainProfile;
+    // Prefill the form from the real on-chain record — this is the new
+    // single source of truth for an already-registered person (replacing
+    // the old localStorage-based restore). Only fills fields that are
+    // still empty, so it never clobbers something already being typed.
+    if (onChainProfile.name && !document.getElementById('fieldName').value) document.getElementById('fieldName').value = onChainProfile.name;
+    if (onChainProfile.country && !document.getElementById('fieldCountry').value) document.getElementById('fieldCountry').value = onChainProfile.country;
+    if (onChainProfile.city && !document.getElementById('fieldCity').value) document.getElementById('fieldCity').value = onChainProfile.city;
+    if (onChainProfile.age && !document.getElementById('fieldAge').value) document.getElementById('fieldAge').value = onChainProfile.age;
+    if (onChainProfile.name) document.getElementById('profileName').textContent = onChainProfile.name;
+    if (typeof refreshOnChainProfileNote === 'function') refreshOnChainProfileNote();
 
     const hasConstellation = getBool(elements[5]);
     if (typeof debugMode !== 'undefined' && debugMode) updateDebugInfo('getUser parsed: hasConstellation=' + hasConstellation);
