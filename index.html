@@ -1484,17 +1484,27 @@ function updateDiscoveryProgress() {
 }
 
 async function loadCounterFromChain() {
-  // Both numbers are fetched through the same rate-limited queue (still
-  // sequential — toncenter's free tier allows only 1 request/second, so
-  // true parallel fetching risks the exact silent-429 bug from earlier
-  // today). What changed 04.07.2026: neither number is written to the
-  // screen until BOTH are ready, so "People counted" and "Constellations
-  // minted" appear together instead of one popping in 1-2 seconds after
-  // the other.
+  // Both numbers go through the same rate-limited queue (toncenter's free
+  // tier allows only 1 request/second) and neither is written to the
+  // screen until BOTH are ready — that part is unchanged since 04.07.2026.
+  //
+  // What changed 05.07.2026: both requests are ENQUEUED back-to-back,
+  // synchronously, before awaiting anything. The old code awaited
+  // totalCount's response first and only then enqueued photoCount — and in
+  // that gap the wallet auto-reconnect's getUser calls (with retries, each
+  // occupying a ≥1.15s queue slot) could slip into the queue between the
+  // two counter requests, stretching the skeleton-shimmer wait to many
+  // seconds even though nothing was actually broken. tonFetch() reserves
+  // its queue slot at call time, so calling it twice in a row guarantees
+  // the two requests sit in adjacent slots and nothing can get between
+  // them.
+  const pTotal = tonFetch({ address: CONTRACT_ADDRESS, method: 'totalCount', stack: [] });
+  const pPhoto = tonFetch({ address: CONTRACT_ADDRESS, method: 'photoCount', stack: [] });
+
   let newCount = null, newPhotoCount = null;
 
   try {
-    const data = await tonFetch({ address: CONTRACT_ADDRESS, method: 'totalCount', stack: [] });
+    const data = await pTotal;
     const exitCode = data?.result?.exit_code;
     const hex = data?.result?.stack?.[0]?.[1];
     if (exitCode === 0 && hex) {
@@ -1506,7 +1516,7 @@ async function loadCounterFromChain() {
   } catch(e) { console.log('Counter load failed', e); newCount = 0; }
 
   try {
-    const data2 = await tonFetch({ address: CONTRACT_ADDRESS, method: 'photoCount', stack: [] });
+    const data2 = await pPhoto;
     const exitCode2 = data2?.result?.exit_code;
     const hex2 = data2?.result?.stack?.[0]?.[1];
     if (exitCode2 === 0 && hex2) {
@@ -1755,7 +1765,7 @@ function goOb(n) {
   if (skip) skip.style.display = n === 2 ? 'block' : 'none';
 }
 
-function closeWelcome(goToStars){
+function closeWelcome(){
   document.getElementById('welcome').classList.add('fade');
   setTimeout(()=>{document.getElementById('welcome').style.display='none';},600);
   // Previously this force-navigated straight to the photo-upload screen
@@ -1764,12 +1774,17 @@ function closeWelcome(goToStars){
   // zero transition felt disorienting. Now both onboarding paths land on
   // Home, same as a fresh visit. The "Count me in ✦" button on Home
   // already takes people to the photo step deliberately, when they're ready.
-  if (goToStars) {
-    showToast("You're one of us ✦");
-  }
+  //
+  // The "You're one of us ✦" toast that used to fire here (only on the
+  // "I have vitiligo ✦" path) was removed 05.07.2026 — it popped over the
+  // bottom of Home right as the person landed there, and the words
+  // over-promised: at that moment they've only closed onboarding, nothing
+  // is on-chain yet. The real celebration (banner + toast) happens after
+  // an actual mint. With it gone, both onboarding buttons behave
+  // identically, so the goToStars parameter went away too.
 }
-document.getElementById('welcomeBtn').addEventListener('click',()=>closeWelcome(true));
-document.getElementById('welcomeSkip').addEventListener('click',()=>closeWelcome(false));
+document.getElementById('welcomeBtn').addEventListener('click',()=>closeWelcome());
+document.getElementById('welcomeSkip').addEventListener('click',()=>closeWelcome());
 
 /* ── SOCIAL PROOF TOAST: removed — fake activity conflicts with project's honesty principle ── */
 
@@ -1966,7 +1981,7 @@ function refreshCountedBanner(){
   // joined wallet on the same device.
   if (isJoinedLocal()) {
     const w = document.getElementById('welcome');
-    if (w && getComputedStyle(w).display !== 'none') closeWelcome(false);
+    if (w && getComputedStyle(w).display !== 'none') closeWelcome();
   }
   // Only touch mintBtn's label when it isn't mid-flow (i.e. not disabled
   // from an in-progress upload, not showing the post-mint "✓ Counted!"
