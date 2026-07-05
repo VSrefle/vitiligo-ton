@@ -1000,7 +1000,13 @@ if (tg) {
     const n = [u.first_name, u.last_name].filter(Boolean).join(' ');
     document.getElementById('profileName').textContent = n || 'Your name';
     document.getElementById('profileHandle').textContent = '@' + (u.username || 'you');
-    document.getElementById('fieldName').value = n;
+    // fieldName intentionally NOT auto-filled from Telegram — profile
+    // fields must default to empty and be driven entirely by the
+    // blockchain for an already-registered person, or by the person's
+    // own typing for a new one. Was previously set here, which caused a
+    // real bug: since this runs synchronously before the async
+    // blockchain fetch, the on-chain name had to fight past this
+    // placeholder to actually show up (see the __chainProfileApplied fix).
   }
   const startParam = tg.initDataUnsafe?.start_param;
   if (startParam && startParam.startsWith('ref_')) {
@@ -2757,12 +2763,21 @@ async function loadMyConstellationFromChain() {
     window.onChainProfile = onChainProfile;
     // Prefill the form from the real on-chain record — this is the new
     // single source of truth for an already-registered person (replacing
-    // the old localStorage-based restore). Only fills fields that are
-    // still empty, so it never clobbers something already being typed.
-    if (onChainProfile.name && !document.getElementById('fieldName').value) document.getElementById('fieldName').value = onChainProfile.name;
-    if (onChainProfile.country && !document.getElementById('fieldCountry').value) document.getElementById('fieldCountry').value = onChainProfile.country;
-    if (onChainProfile.city && !document.getElementById('fieldCity').value) document.getElementById('fieldCity').value = onChainProfile.city;
-    if (onChainProfile.age && !document.getElementById('fieldAge').value) document.getElementById('fieldAge').value = onChainProfile.age;
+    // the old localStorage-based restore). Checking "is the field empty"
+    // doesn't work here: Telegram's own name auto-fill (see initTelegram,
+    // runs synchronously at load) already puts something in fieldName
+    // long before this async chain fetch resolves, so the field is never
+    // actually empty by this point. Use a one-time flag instead — the
+    // first time real chain data arrives it overrides the Telegram
+    // placeholder, but a later call (e.g. a retry) won't clobber
+    // something the person has since typed themselves.
+    if (!window.__chainProfileApplied) {
+      window.__chainProfileApplied = true;
+      if (onChainProfile.name) document.getElementById('fieldName').value = onChainProfile.name;
+      if (onChainProfile.country) document.getElementById('fieldCountry').value = onChainProfile.country;
+      if (onChainProfile.city) document.getElementById('fieldCity').value = onChainProfile.city;
+      if (onChainProfile.age) document.getElementById('fieldAge').value = onChainProfile.age;
+    }
     if (onChainProfile.name) document.getElementById('profileName').textContent = onChainProfile.name;
     if (typeof refreshOnChainProfileNote === 'function') refreshOnChainProfileNote();
 
