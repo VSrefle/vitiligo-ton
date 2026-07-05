@@ -350,28 +350,36 @@ html,body{
 .invite-title{font-family:'Outfit',sans-serif;font-size:16px;color:#ede8ff;margin-bottom:6px;position:relative}
 .invite-text{font-size:12px;color:rgba(192,132,252,.5);line-height:1.5;margin-bottom:18px;position:relative}
 
-.link-box{
-  background:rgba(0,0,0,.3);border:.5px solid rgba(147,51,234,.25);
-  border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;
-  margin-bottom:14px;position:relative;
-}
-.link-text{flex:1;font-size:11px;color:#c084fc;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:monospace}
-.copy-btn{
-  background:rgba(147,51,234,.25);border:.5px solid rgba(147,51,234,.5);
-  border-radius:8px;padding:6px 10px;font-size:10px;color:#ede8ff;
-  flex-shrink:0;transition:all .2s;cursor:pointer;
-}
-.copy-btn.copied{background:rgba(52,211,153,.2);border-color:rgba(52,211,153,.5);color:#34d399}
-
+/* Invite card actions — redesigned 05.07.2026. The old layout had a boxed
+   link field with its own "Copy" button PLUS a separate "Share" button:
+   two competing controls for near-identical intents (the system share
+   sheet includes copying anyway). Now one primary Share action, in the
+   app's own purple — the old .share-btn.telegram blue accent was the last
+   surviving blue element in the whole app, violating the "no blue,
+   purple-only" principle set on day one. The raw link is demoted to a
+   quiet tap-to-copy caption underneath, for people who specifically want
+   just the link. */
 .share-row{display:flex;justify-content:center;position:relative}
 .share-btn{
   display:flex;align-items:center;justify-content:center;gap:7px;
-  background:rgba(255,255,255,.04);border:.5px solid rgba(255,255,255,.1);
-  border-radius:40px;padding:12px 32px;font-size:13px;color:#ede8ff;
+  background:var(--purple);border:none;
+  border-radius:40px;padding:13px 40px;font-size:13px;color:#fff;font-weight:500;
   font-family:'Space Grotesk',sans-serif;transition:all .2s;cursor:pointer;
+  box-shadow:0 0 24px rgba(147,51,234,.32);
 }
-.share-btn:active{transform:scale(.96);background:rgba(147,51,234,.15)}
-.share-btn.telegram{background:rgba(36,161,222,.15);border-color:rgba(36,161,222,.4);color:#7dd3fc}
+.share-btn:active{transform:scale(.96)}
+.link-hint{
+  margin-top:14px;position:relative;cursor:pointer;user-select:none;
+  font-size:11px;font-family:monospace;color:rgba(192,132,252,.55);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.link-hint-note{
+  font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:.08em;
+  text-transform:uppercase;color:rgba(192,132,252,.32);
+  border:.5px solid rgba(147,51,234,.25);border-radius:20px;padding:2px 8px;
+  transition:all .2s;flex-shrink:0;
+}
+.link-hint.copied .link-hint-note{color:#34d399;border-color:rgba(52,211,153,.5)}
 
 .bonus-card{
   background:rgba(255,255,255,.025);border:.5px solid rgba(255,255,255,.08);
@@ -438,11 +446,32 @@ html,body{
   font-family:'Space Grotesk',sans-serif;outline:none;transition:border-color .2s,background .2s;
 }
 .form-input:focus{border-color:rgba(147,51,234,.45)}
-/* Added 05.07.2026 — an empty required field looked identical to a
-   settled/filled one, giving no visual cue about what actually needs
-   filling in. Highlighted while empty, settles to the plain look the
-   moment it has a value — whether typed or pulled from the blockchain. */
-.form-input.needs-fill{border-color:rgba(147,51,234,.5);background:rgba(147,51,234,.06)}
+/* Added 05.07.2026, reworked same day (second pass) — the first version
+   (faint .5px purple border + 6% background) sat too close to the resting
+   field style: an empty form waiting for input looked possibly-disabled,
+   especially to a not-yet-registered person with a connected wallet
+   ("can I even type here?"). Now the empty state is unmistakably active:
+   a solid brighter border with a slow breathing glow, and a placeholder
+   bright enough to actually read as an invitation. Settles to the quiet
+   resting look the moment the field has a value — typed or pulled from
+   the blockchain. The glow pauses on focus (the person is already
+   there, no need to keep waving). */
+.form-input.needs-fill{
+  border:1px solid rgba(168,85,247,.7);
+  background:rgba(147,51,234,.10);
+  animation:needsFillPulse 2.6s ease-in-out infinite;
+}
+.form-input.needs-fill:focus{animation:none;box-shadow:0 0 14px rgba(147,51,234,.3);border-color:rgba(196,168,245,.85)}
+.form-input.needs-fill::placeholder{color:rgba(196,168,245,.55)}
+/* The age <select> has no ::placeholder — its "Select your age" option
+   rendered in full-brightness text, which made the one field that was
+   just as empty as its neighbours look already-filled. Match it to the
+   placeholder tone while empty. */
+select.form-input.needs-fill{color:rgba(196,168,245,.55)}
+@keyframes needsFillPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(147,51,234,0)}
+  50%{box-shadow:0 0 14px 0 rgba(147,51,234,.35)}
+}
 .form-input::placeholder{color:rgba(255,255,255,.14)}
 
 .nft-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:8px;padding-bottom:12px}
@@ -783,13 +812,12 @@ html,body{
       <div class="invite-title">Know someone with vitiligo?</div>
       <div class="invite-text">Send them your link. When they join, you both light up the sky a little brighter.</div>
 
-      <div class="link-box">
-        <div class="link-text" id="refLinkText">t.me/vitiligo_ton_bot</div>
-        <div class="copy-btn" id="copyBtn">Copy</div>
+      <div class="share-row">
+        <button class="share-btn" id="shareMore"><span>↗</span> Share</button>
       </div>
 
-      <div class="share-row">
-        <div class="share-btn telegram" id="shareMore"><span>↗</span> Share</div>
+      <div class="link-hint" id="copyBtn">
+        <span id="refLinkText">t.me/vitiligo_ton_bot</span><span class="link-hint-note">tap to copy</span>
       </div>
     </div>
 
@@ -2620,6 +2648,11 @@ function checkProfileCompletion(){
 ['fieldName','fieldCountry','fieldCity','fieldAge'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('change', checkProfileCompletion);
+  // 'change' only fires on blur — while someone is typing their name the
+  // field would keep glowing "fill me in" even though it's clearly no
+  // longer empty. 'input' settles the highlight on the first character
+  // (and re-arms it if the field is cleared), live.
+  if (el) el.addEventListener('input', refreshFieldHighlights);
 });
 
 // The "Update on-chain profile" button only makes sense for a wallet that
@@ -2671,12 +2704,16 @@ document.getElementById('updateOnChainBtn').addEventListener('click', async () =
 });
 
 /* ── INVITE / REFERRAL ── */
+// The whole .link-hint line is the tap target (the old dedicated "Copy"
+// button is gone — see the .share-btn CSS comment). Feedback lives in the
+// small "tap to copy" pill so the link text itself never jumps around.
 document.getElementById('copyBtn').addEventListener('click', function(){
   navigator.clipboard?.writeText('https://'+refLink).catch(()=>{});
-  this.textContent = '✓ Copied';
+  const note = this.querySelector('.link-hint-note');
+  if (note) note.textContent = '✓ copied';
   this.classList.add('copied');
   if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-  setTimeout(()=>{ this.textContent = 'Copy'; this.classList.remove('copied'); }, 2000);
+  setTimeout(()=>{ if (note) note.textContent = 'tap to copy'; this.classList.remove('copied'); }, 2000);
 });
 
 document.getElementById('shareMore').addEventListener('click', ()=>{
