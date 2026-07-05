@@ -190,22 +190,31 @@ html,body{
   font-variant-numeric:tabular-nums;transition:text-shadow .5s,opacity .4s;
 }
 .cnum.flash{text-shadow:0 0 30px rgba(192,132,252,.9),0 0 60px rgba(147,51,234,.4)}
-/* Added 05.07.2026 — a soft pulsing "nebula" placeholder shown while the
-   real count is still loading from the blockchain (~1-3s through the
-   rate-limited queue), instead of sitting on a bare "0" that reads as
-   "nobody's here yet" when it's really just "not loaded yet". Fades out
-   into the real number once it arrives. */
+/* Redesigned 05.07.2026 — the original soft nebula glow used similar
+   purple tones to the hero cosmos background behind it and basically
+   disappeared into it, especially on the gold "Constellations minted"
+   side, making the two numbers look out of sync even though they update
+   together in the underlying code. Switched to an unmistakable solid
+   skeleton bar with a shimmer sweep — the standard, clearly-visible
+   loading pattern, readable against any background. */
 .cnum.loading{
   color:transparent;position:relative;user-select:none;
 }
 .cnum.loading::before{
-  content:'';position:absolute;inset:-4px -10px;border-radius:12px;
-  background:radial-gradient(ellipse at center,rgba(192,132,252,.35),rgba(147,51,234,.12) 60%,transparent 80%);
-  animation:cnumPulse 1.6s ease-in-out infinite;
+  content:'';position:absolute;left:6px;right:6px;top:8px;bottom:8px;
+  border-radius:8px;background:rgba(255,255,255,.14);
+  overflow:hidden;
 }
-@keyframes cnumPulse{
-  0%,100%{opacity:.4;transform:scale(.94)}
-  50%{opacity:.9;transform:scale(1.03)}
+.cnum.loading::after{
+  content:'';position:absolute;left:6px;right:6px;top:8px;bottom:8px;
+  border-radius:8px;
+  background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);
+  background-size:200% 100%;
+  animation:cnumShimmer 1.3s ease-in-out infinite;
+}
+@keyframes cnumShimmer{
+  0%{background-position:150% 0}
+  100%{background-position:-50% 0}
 }
 .counter-meta{display:flex;flex-direction:column;gap:4px}
 .clabel{font-size:9px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
