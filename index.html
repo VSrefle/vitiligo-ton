@@ -2896,29 +2896,43 @@ let constellationRetryCount = 0;
 async function tryLoadConstellationWithRetry(){
   if (myNfts.length > 0) return; // already have it, nothing to do
   await loadMyConstellationFromChain();
-  if (myNfts.length === 0 && constellationRetryCount < 3) {
+  // Retries raised 3→6 with a growing delay 06.07.2026 — on a weak
+  // connection (2G / flaky SIM) the first attempts can all land while
+  // the startup queue is still busy or the network is dropping, and
+  // three quick tries silently gave up forever.
+  if (myNfts.length === 0 && constellationRetryCount < 6) {
     constellationRetryCount++;
-    setTimeout(tryLoadConstellationWithRetry, 1500);
+    setTimeout(tryLoadConstellationWithRetry, 1500 + constellationRetryCount * 1000);
   }
 }
+// Every early exit below now reports WHY into the debug log (logs are
+// always collected in the background; long-press the logo to see them).
+// Added 06.07.2026 while hunting a silent "profile doesn't restore" on a
+// weak network — before this, all six exit paths looked identical from
+// the outside: nothing happened.
+function dbgUser(msg){ if (typeof updateDebugInfo === 'function') updateDebugInfo('getUser: ' + msg); }
 async function loadMyConstellationFromChain() {
   try {
     const addr = tonConnectUI?.account?.address;
-    if (!addr) return;
+    if (!addr) { dbgUser('no wallet address yet'); return; }
     if (window.TonCoreExtrasReady) await window.TonCoreExtrasReady;
-    if (!window.TonCore?.Address) return;
+    if (!window.TonCore?.Address) { dbgUser('TonCore.Address not loaded (CDN?)'); return; }
     const addrCell = beginCellSafe();
-    if (!addrCell) return;
+    if (!addrCell) { dbgUser('beginCell unavailable'); return; }
     const cell = window.TonCore.beginCell().storeAddress(window.TonCore.Address.parse(addr)).endCell();
     const addrBoc = bytesToBase64(cell.toBoc());
     const data = await tonFetch({ address: CONTRACT_ADDRESS, method: 'getUser', stack: [['tvm.Slice', addrBoc]] });
+    if (!data?.ok || data?.result?.exit_code !== 0) {
+      dbgUser('bad response ok=' + data?.ok + ' exit_code=' + data?.result?.exit_code + ' err=' + (data?.error || '').slice(0,120));
+      return;
+    }
     const entry = data?.result?.stack?.[0];
-    if (typeof debugMode !== 'undefined' && debugMode) updateDebugInfo('getUser RAW: ' + JSON.stringify(entry).slice(0, 400));
-    if (!entry || entry[0] === 'null') return; // never registered — nothing to show
+    dbgUser('RAW: ' + JSON.stringify(entry).slice(0, 400));
+    if (!entry || entry[0] === 'null') { dbgUser('not registered on-chain'); return; }
     const elements = entry[1]?.elements || entry[1];
     if (!elements || elements.length < 13) {
       console.warn('getUser: unexpected stack shape', entry);
-      if (typeof debugMode !== 'undefined' && debugMode) updateDebugInfo('getUser unexpected shape');
+      dbgUser('unexpected stack shape, elements=' + (elements ? elements.length : 'none'));
       return;
     }
     // Real tuple-element format confirmed 04.07.2026 via getCityCount —
@@ -2965,7 +2979,7 @@ async function loadMyConstellationFromChain() {
     if (typeof refreshOnChainProfileNote === 'function') refreshOnChainProfileNote();
 
     const hasConstellation = getBool(elements[5]);
-    if (typeof debugMode !== 'undefined' && debugMode) updateDebugInfo('getUser parsed: hasConstellation=' + hasConstellation);
+    dbgUser('parsed OK, hasConstellation=' + hasConstellation);
     if (!hasConstellation) return;
     const constName = getStr(elements[6]);
     const isRare = getBool(elements[7]);
@@ -2974,7 +2988,7 @@ async function loadMyConstellationFromChain() {
     const nftData = { name: constName, story, rare: isRare, constData: { name: constName, stars: seededStars(constName, 5) } };
     myNfts.push(nftData);
     renderRestoredNftCard(nftData);
-  } catch(e) { console.warn('getUser load failed', e); }
+  } catch(e) { console.warn('getUser load failed', e); dbgUser('EXCEPTION: ' + (e && e.message)); }
 }
 function beginCellSafe(){ try { return !!(window.TonCore && window.TonCore.beginCell); } catch(e){ return false; } }
 
