@@ -961,10 +961,6 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
     <div id="updateOnChainHint" style="display:none;font-size:11px;color:#6b7280;text-align:center;margin-bottom:10px">This is what everyone else actually sees — city, map, and story</div>
     <div class="tx-status" id="txUpdateProfile" style="margin-bottom:10px"></div>
 
-    <div style="border:1px solid rgba(147,51,234,.18);background:rgba(147,51,234,.05);border-radius:12px;padding:10px 14px;margin-bottom:10px;font-size:11px;line-height:1.55;color:#9c93b8">
-      <b style="color:#c4a8f5">Fun fact:</b> vitiligo.ton isn't just a name — it's a real TON domain, pointing straight at this contract. You can send TON there directly from any wallet, no app needed, and it lands here.
-    </div>
-
     <a href="https://t.me/vitiligo_ton" target="_blank" style="display:block;text-align:center;padding:12px;border:1px solid rgba(147,51,234,.3);border-radius:12px;color:#a78bfa;font-size:13px;text-decoration:none;margin-bottom:8px">
       💬 Write to the team
     </a>
@@ -1082,6 +1078,15 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
     <div style="margin-top:20px;padding:12px 16px;background:rgba(147,51,234,.08);border-radius:10px;border:1px solid rgba(147,51,234,.2)">
       <div style="font-size:12px;color:#a78bfa;margin-bottom:4px">Don't have a TON wallet?</div>
       <div style="font-size:12px;color:#6b7280">Download <b style="color:#c4b5fd">Tonkeeper</b> from App Store or Google Play — it's free. Top up with 1–2 TON to get started.</div>
+    </div>
+
+    <!-- Fun fact moved here from the Profile page 06.07.2026 — on Profile
+         it cost ~120px that pushed the counted-user layout (which also
+         shows the Update on-chain button) past one screen. It's trivia,
+         not a daily-use control; the "How it works" sheet is exactly
+         where a curious person goes. -->
+    <div style="border:1px solid rgba(147,51,234,.18);background:rgba(147,51,234,.05);border-radius:12px;padding:10px 14px;margin-top:16px;font-size:11px;line-height:1.55;color:#9c93b8;text-align:left">
+      <b style="color:#c4a8f5">Fun fact:</b> vitiligo.ton isn't just a name — it's a real TON domain, pointing straight at this contract. You can send TON there directly from any wallet, no app needed, and it lands here.
     </div>
 
     <button onclick="closeModal('modalHelp')" class="btn-main" style="margin-top:20px">Got it ✦</button>
