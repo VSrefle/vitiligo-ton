@@ -763,32 +763,22 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
       <div class="milestone-track"><div class="milestone-fill" id="milestoneFill"></div></div>
     </div>
 
-    <!-- Discovery + city teasers now sit side by side instead of stacked
-         — same information, half the vertical space. -->
-    <div style="display:flex;gap:10px;margin-bottom:16px">
-      <div id="discoveryTeaserHome" style="flex:1;background:rgba(147,51,234,.1);border:1px solid rgba(147,51,234,.22);border-radius:12px;padding:10px 12px;text-align:center">
-        <div style="font-size:9px;color:#a78bfa;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px">Constellations</div>
-        <div class="skl loading" style="font-size:16px;font-weight:700;color:white" id="discoveryCountHome">0 <span style="font-size:11px;color:#a78bfa;font-weight:400">of 88</span></div>
-        <div style="height:4px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:6px">
-          <div id="discoveryBarHome" style="height:100%;background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:2px;width:0%;transition:width .6s ease"></div>
-        </div>
+    <!-- 06.07.2026: the "Top cities" teaser was removed from Home — it
+         duplicated the full list that already lives on the Map tab, and
+         it was the ONE block whose data arrived after the atomic reveal
+         (cities load through a long request chain), so it popped in
+         seconds after every other number on the page. Now everything
+         Home shows comes from the three startup requests and appears in
+         a single paint; cities live where they belong, one tap away
+         (the "on the map →" link below). The discovery card takes the
+         full width again. -->
+    <div id="discoveryTeaserHome" style="background:rgba(147,51,234,.1);border:1px solid rgba(147,51,234,.22);border-radius:12px;padding:10px 14px;text-align:center;margin-bottom:16px">
+      <div style="font-size:9px;color:#a78bfa;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px">Constellations</div>
+      <div class="skl loading" style="font-size:16px;font-weight:700;color:white" id="discoveryCountHome">0 <span style="font-size:11px;color:#a78bfa;font-weight:400">of 88</span></div>
+      <div style="height:4px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:6px">
+        <div id="discoveryBarHome" style="height:100%;background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:2px;width:0%;transition:width .6s ease"></div>
       </div>
-
-      <!-- Visible from the start with cosmic skeleton rows (was
-           display:none until city data arrived — which made the
-           Constellations card span full width and then abruptly shrink
-           to half when this one popped in). If the city list turns out
-           empty or fails to load, JS hides it and the layout gracefully
-           returns to a single full-width card — the rare case gets the
-           jump, not every launch. -->
-      <div id="cityTeaserHome" style="flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px 12px">
-        <div style="font-size:9px;color:#a78bfa;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">Top cities</div>
-        <div id="cityTeaserList" style="font-size:12px;color:#e9d5ff;line-height:1.6">
-          <div class="skl loading">City name 0</div>
-          <div class="skl loading" style="margin-top:3px">City 0</div>
-        </div>
-        <div class="page-sub" id="cityTeaserLink" style="margin-top:4px;cursor:pointer;color:#a78bfa;font-size:11px">See map →</div>
-      </div>
+      <div class="page-sub" id="cityTeaserLink" style="margin-top:8px;cursor:pointer;color:#a78bfa;font-size:11px">Cities on the map →</div>
     </div>
 
     <!-- Banner + CTA live in one wrapper pinned to the bottom edge of the
@@ -3067,19 +3057,13 @@ function renderRestoredNftCard(nftData) {
 }
 
 async function loadCitiesFromChain() {
-  // The Home teaser starts visible with skeleton rows, so the two-card
-  // grid never jumps. Its fallback: if there's genuinely nothing to show
-  // (empty contract, all rows failed to parse, request error), hide it —
-  // an empty skeleton shimmering forever would be a lie about data that
-  // isn't coming.
-  const hideCityTeaser = () => { const t = document.getElementById('cityTeaserHome'); if (t) t.style.display = 'none'; };
   try {
     if (window.TonCoreExtrasReady) await window.TonCoreExtrasReady;
     const sizeData = await tonFetch({ address: CONTRACT_ADDRESS, method: 'cityCountsSize', stack: [] });
     const sizeHex = sizeData?.result?.stack?.[0]?.[1];
     const size = sizeHex ? parseInt(sizeHex, 16) : 0;
     if (typeof debugMode !== 'undefined' && debugMode) updateDebugInfo('cityCountsSize = ' + size);
-    if (!size) { hideCityTeaser(); return; } // stays on the "No one has marked their city yet" empty state
+    if (!size) return; // stays on the "No one has marked their city yet" empty state
 
     const cities = [];
     for (let i = 0; i < size; i++) {
@@ -3131,22 +3115,7 @@ async function loadCitiesFromChain() {
       </div>`).join('')
       + (remainder > 0 ? `<div style="text-align:center;padding:10px;color:#6b7280;font-size:12px">+ ${remainder} more ${remainder === 1 ? 'city' : 'cities'}</div>` : '');
 
-    // Home teaser — added 04.07.2026, top 3 cities only, reusing the same
-    // sorted data already fetched above rather than a second round of calls.
-    // Since 06.07.2026 the card is visible from launch with skeleton rows;
-    // here we either replace them with real data or hide the card if
-    // parsing left us with nothing.
-    const homeTeaser = document.getElementById('cityTeaserHome');
-    const homeList = document.getElementById('cityTeaserList');
-    if (homeTeaser && homeList) {
-      if (cities.length) {
-        homeList.innerHTML = cities.slice(0, 3).map(c => `
-        <div style="display:flex;justify-content:space-between"><span>${c.city}</span><span style="color:#a78bfa;font-weight:600">${c.count}</span></div>`).join('');
-      } else {
-        hideCityTeaser();
-      }
-    }
-  } catch(e) { console.log('City list load failed', e); hideCityTeaser(); }
+  } catch(e) { console.log('City list load failed', e); }
 }
 // Called via .then() chain after loadInitialChainData() now — see that
 // call site — instead of firing independently here.
@@ -3428,7 +3397,7 @@ const RU_TEXT = {
   "I have vitiligo ✦":"У меня витилиго ✦","just look around first":"сначала просто осмотрюсь",
   "just vitiligo · just us · just beautiful":"просто витилиго · просто мы · просто красиво",
   "people counted":"людей посчитано","constellations minted":"созвездий заминчено",
-  "Constellations":"Созвездия","of 88":"из 88","Top cities":"Топ городов","See map →":"На карту →",
+  "Constellations":"Созвездия","of 88":"из 88","Top cities":"Топ городов","See map →":"На карту →","Cities on the map →":"Города на карте →",
   "Count me in ✦":"Посчитайте меня ✦","View my constellation →":"Моё созвездие →",
   "Make another constellation ✦":"Сделать ещё созвездие ✦",
   "🎉 Congratulations — you're counted":"🎉 Поздравляем — ты посчитан",
