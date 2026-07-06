@@ -197,24 +197,54 @@ html,body{
    together in the underlying code. Switched to an unmistakable solid
    skeleton bar with a shimmer sweep — the standard, clearly-visible
    loading pattern, readable against any background. */
-.cnum.loading{
-  color:transparent;position:relative;user-select:none;
+/* Loading skeleton, third design pass:
+   v1 (04.07) — soft purple nebula glow: honest but invisible against the
+   cosmos backdrop, especially on the gold counter.
+   v2 (05.07 morning) — solid grey bar + white shimmer: unmistakably a
+   skeleton, but looked like it wandered in from a corporate dashboard.
+   v3 (05.07 evening, current) — cosmic and light: a faint purple nebula
+   track with a wisp of tiny stars, and a comet (bright core, purple tail)
+   drifting across instead of the flat white sweep. Visibility is kept by
+   the thin bordered track shape, not by fill brightness — that's what v1
+   was missing. Shared by the big counters (.cnum) and the small numbers
+   (.skl: milestone "N / goal", discovery "N of 88") so every loading
+   number on screen speaks the same language.
+   The `!important` on color is required: .cnum-gold sets its gold with
+   !important, which would otherwise beat this and let the placeholder
+   "0" show through the skeleton (seen on a live screenshot 05.07). */
+.cnum.loading,.skl.loading{
+  color:transparent!important;position:relative;user-select:none;
 }
-.cnum.loading::before{
+.cnum.loading *,.skl.loading *{visibility:hidden}
+.cnum.loading::before,.skl.loading::before{
   content:'';position:absolute;left:6px;right:6px;top:8px;bottom:8px;
-  border-radius:8px;background:rgba(255,255,255,.14);
-  overflow:hidden;
+  border-radius:9px;border:.5px solid rgba(192,132,252,.28);
+  background:
+    radial-gradient(circle at 16% 38%, rgba(255,255,255,.9) 0, rgba(255,255,255,.9) 1px, transparent 1.8px),
+    radial-gradient(circle at 41% 70%, rgba(233,213,255,.7) 0, rgba(233,213,255,.7) .8px, transparent 1.5px),
+    radial-gradient(circle at 63% 28%, rgba(255,255,255,.8) 0, rgba(255,255,255,.8) 1px, transparent 1.7px),
+    radial-gradient(circle at 86% 62%, rgba(233,213,255,.6) 0, rgba(233,213,255,.6) .8px, transparent 1.5px),
+    linear-gradient(120deg, rgba(147,51,234,.16), rgba(76,29,149,.10) 55%, rgba(147,51,234,.16));
 }
-.cnum.loading::after{
+.cnum.loading::after,.skl.loading::after{
   content:'';position:absolute;left:6px;right:6px;top:8px;bottom:8px;
-  border-radius:8px;
-  background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);
-  background-size:200% 100%;
-  animation:cnumShimmer 1.3s ease-in-out infinite;
+  border-radius:9px;overflow:hidden;
+  background:linear-gradient(100deg,
+    transparent 36%,
+    rgba(192,132,252,.22) 45%,
+    rgba(233,213,255,.5) 49.5%,
+    rgba(255,255,255,.85) 50%,
+    rgba(192,132,252,.28) 53%,
+    transparent 64%);
+  background-size:240% 100%;
+  animation:cnumShimmer 2.2s ease-in-out infinite;
 }
+/* The small numbers are ~16-20px tall — the big counter's 8px vertical
+   inset would collapse their track to a sliver. */
+.skl.loading::before,.skl.loading::after{left:0;right:0;top:1px;bottom:1px;border-radius:7px}
 @keyframes cnumShimmer{
-  0%{background-position:150% 0}
-  100%{background-position:-50% 0}
+  0%{background-position:170% 0}
+  100%{background-position:-70% 0}
 }
 .counter-meta{display:flex;flex-direction:column;gap:4px}
 .clabel{font-size:9px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
@@ -656,7 +686,7 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
 
     <div style="background:rgba(147,51,234,.1);border:1px solid rgba(147,51,234,.22);border-radius:12px;padding:14px 16px;margin-bottom:16px">
       <div style="font-size:10px;color:#a78bfa;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px" id="milestoneLabel">Goal: 100 people</div>
-      <div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:8px" id="milestoneSub">0 / 100</div>
+      <div class="skl loading" style="font-size:20px;font-weight:700;color:#fff;margin-bottom:8px" id="milestoneSub">0 / 100</div>
       <div class="milestone-track"><div class="milestone-fill" id="milestoneFill"></div></div>
     </div>
 
@@ -665,7 +695,7 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
     <div style="display:flex;gap:10px;margin-bottom:16px">
       <div id="discoveryTeaserHome" style="flex:1;background:rgba(147,51,234,.1);border:1px solid rgba(147,51,234,.22);border-radius:12px;padding:10px 12px;text-align:center">
         <div style="font-size:9px;color:#a78bfa;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px">Constellations</div>
-        <div style="font-size:16px;font-weight:700;color:white" id="discoveryCountHome">0 <span style="font-size:11px;color:#a78bfa;font-weight:400">of 88</span></div>
+        <div class="skl loading" style="font-size:16px;font-weight:700;color:white" id="discoveryCountHome">0 <span style="font-size:11px;color:#a78bfa;font-weight:400">of 88</span></div>
         <div style="height:4px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:6px">
           <div id="discoveryBarHome" style="height:100%;background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:2px;width:0%;transition:width .6s ease"></div>
         </div>
@@ -700,7 +730,7 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
 
     <div id="discoveryProgress" style="background:rgba(147,51,234,.12);border:1px solid rgba(147,51,234,.25);border-radius:12px;padding:12px 16px;margin-bottom:16px;text-align:center">
       <div style="font-size:11px;color:#a78bfa;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Real constellations discovered</div>
-      <div style="font-size:22px;font-weight:700;color:white" id="discoveryCount">0 <span style="font-size:14px;color:#a78bfa;font-weight:400">of 88</span></div>
+      <div class="skl loading" style="font-size:22px;font-weight:700;color:white" id="discoveryCount">0 <span style="font-size:14px;color:#a78bfa;font-weight:400">of 88</span></div>
       <div style="height:4px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:8px">
         <div id="discoveryBar" style="height:100%;background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:2px;width:0%;transition:width .6s ease"></div>
       </div>
@@ -1411,7 +1441,7 @@ function fmtExact(n){ return n.toLocaleString('en-US'); }
 
 const MILESTONES = [100, 1000, 10000, 100000];
 // count/photoCount used to be implicit globals (only ever assigned inside
-// loadCounterFromChain's async success branch). updateMilestone() runs
+// loadInitialChainData's atomic reveal block). updateMilestone() runs
 // synchronously at page load, before that network call resolves, so
 // referencing `count` threw "count is not defined" — an uncaught
 // ReferenceError that silently killed every listener defined later in this
@@ -1472,30 +1502,20 @@ function tonFetch(body) {
   return result;
 }
 
-// Fetches which of the 88 real constellations are already taken, globally,
-// across every participant — fixes a real bug where this used to live only
-// in per-browser memory (reset on every reload, never shared between users,
+// Which of the 88 real constellations are already taken, globally, across
+// every participant — fixes a real bug where this used to live only in
+// per-browser memory (reset on every reload, never shared between users,
 // meaning two different people could both be told they'd "discovered" the
-// same constellation). Uses BigInt because 88 bits exceeds what a JS Number
-// can represent exactly.
-async function loadDiscoveredRealFromChain() {
-  try {
-    const data = await tonFetch({ address: CONTRACT_ADDRESS, method: 'realConstellationsMap', stack: [] });
-    const exitCode = data?.result?.exit_code;
-    const hex = data?.result?.stack?.[0]?.[1];
-    if (exitCode === 0 && hex) {
-      const bitmap = BigInt(hex.startsWith('0x') ? hex : '0x' + hex);
-      discoveredReal.clear();
-      for (let i = 0; i < 88; i++) {
-        if ((bitmap & (1n << BigInt(i))) !== 0n) discoveredReal.add(i);
-      }
-      updateDiscoveryProgress();
-    } else {
-      console.warn('realConstellationsMap get-method failed, exit_code:', exitCode);
-    }
-  } catch(e) { console.log('Real constellations map load failed', e); }
+// same constellation). Uses BigInt because 88 bits exceeds what a JS
+// Number can represent exactly. Since 05.07.2026 this is fetched inside
+// loadInitialChainData() below, together with the two counters.
+function applyDiscoveredBitmap(hex) {
+  const bitmap = BigInt(hex.startsWith('0x') ? hex : '0x' + hex);
+  discoveredReal.clear();
+  for (let i = 0; i < 88; i++) {
+    if ((bitmap & (1n << BigInt(i))) !== 0n) discoveredReal.add(i);
+  }
 }
-loadDiscoveredRealFromChain();
 
 function updateDiscoveryProgress() {
   const found = discoveredReal.size;
@@ -1511,68 +1531,62 @@ function updateDiscoveryProgress() {
   if (barHome) barHome.style.width = Math.min(100, (found / 88) * 100) + '%';
 }
 
-async function loadCounterFromChain() {
-  // Both numbers go through the same rate-limited queue (toncenter's free
-  // tier allows only 1 request/second) and neither is written to the
-  // screen until BOTH are ready — that part is unchanged since 04.07.2026.
-  //
-  // What changed 05.07.2026: both requests are ENQUEUED back-to-back,
-  // synchronously, before awaiting anything. The old code awaited
-  // totalCount's response first and only then enqueued photoCount — and in
-  // that gap the wallet auto-reconnect's getUser calls (with retries, each
-  // occupying a ≥1.15s queue slot) could slip into the queue between the
-  // two counter requests, stretching the skeleton-shimmer wait to many
-  // seconds even though nothing was actually broken. tonFetch() reserves
-  // its queue slot at call time, so calling it twice in a row guarantees
-  // the two requests sit in adjacent slots and nothing can get between
-  // them.
+// Helper for the small parsing pattern every scalar get-method shares.
+function parseScalarResult(data, methodName) {
+  const exitCode = data?.result?.exit_code;
+  const hex = data?.result?.stack?.[0]?.[1];
+  if (exitCode === 0 && hex) return hex;
+  console.warn(methodName + ' get-method failed, exit_code:', exitCode);
+  return null;
+}
+
+// ── Unified startup load, 05.07.2026 ──
+// Previously realConstellationsMap was fetched by its own function that
+// revealed "N of 88" the moment it arrived, while the two counters (and
+// the milestone card derived from them) revealed separately — so Home
+// data popped in piece by piece, in queue order, each piece showing a
+// placeholder 0 until its turn came. Now every number Home shows at
+// startup is revealed in ONE synchronous block, only after all three
+// responses are in. All three requests reserve adjacent slots in the
+// rate-limited queue synchronously, up front, so nothing (e.g. the wallet
+// reconnect's getUser calls) can slip between them and stretch the wait.
+// The cities teaser is exempt on purpose: it's a long per-city request
+// chain, it starts hidden (no fake 0 to show), and appears when ready.
+async function loadInitialChainData() {
+  const pMap   = tonFetch({ address: CONTRACT_ADDRESS, method: 'realConstellationsMap', stack: [] });
   const pTotal = tonFetch({ address: CONTRACT_ADDRESS, method: 'totalCount', stack: [] });
   const pPhoto = tonFetch({ address: CONTRACT_ADDRESS, method: 'photoCount', stack: [] });
 
-  let newCount = null, newPhotoCount = null;
+  // Each response is parsed independently — one failing get-method should
+  // degrade only its own number (to an honest 0/empty), not block the rest.
+  let mapHex = null, newCount = 0, newPhotoCount = 0;
+  try { mapHex = parseScalarResult(await pMap, 'realConstellationsMap'); }
+  catch(e) { console.log('Real constellations map load failed', e); }
+  try { const hex = parseScalarResult(await pTotal, 'totalCount'); if (hex) newCount = parseInt(hex, 16); }
+  catch(e) { console.log('Counter load failed', e); }
+  try { const hex = parseScalarResult(await pPhoto, 'photoCount'); if (hex) newPhotoCount = parseInt(hex, 16); }
+  catch(e) { console.log('Photo counter load failed', e); }
 
-  try {
-    const data = await pTotal;
-    const exitCode = data?.result?.exit_code;
-    const hex = data?.result?.stack?.[0]?.[1];
-    if (exitCode === 0 && hex) {
-      newCount = parseInt(hex, 16);
-    } else {
-      console.warn('totalCount get-method failed, exit_code:', exitCode);
-      newCount = 0;
-    }
-  } catch(e) { console.log('Counter load failed', e); newCount = 0; }
-
-  try {
-    const data2 = await pPhoto;
-    const exitCode2 = data2?.result?.exit_code;
-    const hex2 = data2?.result?.stack?.[0]?.[1];
-    if (exitCode2 === 0 && hex2) {
-      newPhotoCount = parseInt(hex2, 16);
-    } else {
-      console.warn('photoCount get-method failed, exit_code:', exitCode2);
-      newPhotoCount = 0;
-    }
-  } catch(e) { console.log('Photo counter load failed', e); newPhotoCount = 0; }
-
-  // Update both together now that both are known.
+  // ── Single atomic reveal — everything below happens in one synchronous
+  // block, so every number on Home appears in the same paint. ──
+  if (mapHex) applyDiscoveredBitmap(mapHex);
   count = newCount;
-  numEl.classList.remove('loading');
-  numEl.textContent = fmt(count); numEl.title = fmtExact(count)+' people';
-  updateMilestone();
   photoCount = newPhotoCount;
-  numPhotosEl.classList.remove('loading');
+  numEl.textContent = fmt(count); numEl.title = fmtExact(count)+' people';
   numPhotosEl.textContent = fmt(photoCount); numPhotosEl.title = fmtExact(photoCount)+' constellations';
+  updateMilestone();
+  updateDiscoveryProgress();
+  ['cnum','cnumPhotos','milestoneSub','discoveryCountHome','discoveryCount'].forEach(id => {
+    document.getElementById(id)?.classList.remove('loading');
+  });
 }
 // loadCitiesFromChain() used to fire independently at the same time as
-// loadCounterFromChain() — since both share one rate-limited queue, its
-// request could slip in between totalCount and photoCount's two calls
-// (which happen inside one function, but each is a separate turn of the
-// event loop), stretching the visible gap between "People counted" and
-// "Constellations minted" to several seconds even though they sit side by
-// side. Chaining it after loadCounterFromChain finishes keeps that pair
-// adjacent in the queue.
-loadCounterFromChain().then(() => { if (typeof loadCitiesFromChain === 'function') loadCitiesFromChain(); });
+// the startup reads — since everything shares one rate-limited queue, its
+// requests could slip in between them, stretching the wait for the main
+// numbers by many seconds. Chaining it after loadInitialChainData()
+// finishes keeps the startup trio adjacent in the queue and lets the
+// city teaser/list arrive afterwards, when it's ready.
+loadInitialChainData().then(() => { if (typeof loadCitiesFromChain === 'function') loadCitiesFromChain(); });
 updateMilestone();
 
 // Same undeclared-variable bug as 'connected' below — tickTimer was read/
@@ -2163,7 +2177,7 @@ const MYTHICAL_FALLBACKS = [
 const REAL_DISCOVERY_CHANCE = 88 / 1000000; // ~0.0088%
 const MILESTONE_REAL_CHANCE = 0.05; // every 100th mint gets 5% bonus real chance
 
-// Track which real constellations have been discovered — see loadDiscoveredRealFromChain()
+// Track which real constellations have been discovered — see loadInitialChainData()
 
 function selectConstellation(nftCountSoFar) {
   const upcomingMintNumber = nftCountSoFar + 1;
@@ -3002,7 +3016,7 @@ async function loadCitiesFromChain() {
     }
   } catch(e) { console.log('City list load failed', e); }
 }
-// Called via .then() chain after loadCounterFromChain() now — see that
+// Called via .then() chain after loadInitialChainData() now — see that
 // call site — instead of firing independently here.
 document.getElementById('cityTeaserLink')?.addEventListener('click', () => {
   document.querySelector('[data-page="map"]')?.click();
