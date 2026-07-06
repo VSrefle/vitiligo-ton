@@ -598,24 +598,42 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
   max-width:280px;opacity:0;transition:all .35s;z-index:150;pointer-events:none;
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* Paired with the tiny pre-paint script below — hides onboarding before
+   the first frame for anyone who has already completed it on this
+   device. See the comment above #welcome for the history. */
+html.vt-onboarded .welcome{display:none}
 </style>
+<script>
+// Runs synchronously in <head>, before ANY of <body> is rendered — the
+// only way to guarantee zero-frame hiding. Everything async (TonConnect
+// reconnect, chain reads) is too late: the ghost has already been
+// painted. try/catch because localStorage can throw in some webviews.
+try{if(localStorage.getItem('vt_onboarded')==='1')document.documentElement.classList.add('vt-onboarded')}catch(e){}
+</script>
 </head>
 <body>
 
 <canvas id="starfield"></canvas>
 
 <!-- WELCOME -->
-<!-- 05.07.2026 — removed the synchronous pre-paint hide that used to live
-     here. It checked a single device-wide flag, not tied to any specific
-     wallet, so switching to a brand-new wallet on a device that had
-     already joined with a DIFFERENT wallet incorrectly hid onboarding for
-     someone who hadn't actually joined yet. There's no way to know which
-     wallet is about to reconnect this early (TonConnect's reconnect is
-     async) — so onboarding now always starts visible, and is closed by
-     the wallet-aware check in refreshCountedBanner() once we actually
-     know whether THIS connected wallet has joined. Returning users on
-     their own device may see a brief flash before it closes; that's an
-     honest tradeoff for not showing the wrong thing to someone else. -->
+<!-- Flag history, because this has flip-flopped:
+     · Originally hidden via a device-wide "seen" flag.
+     · 05.07.2026 — flag removed: it was treated as "this wallet has
+       joined", and a NEW wallet on an already-joined device wrongly
+       skipped onboarding. Onboarding started always-visible, closed
+       async by the wallet-aware check in refreshCountedBanner() — which
+       produced a guaranteed ~1-2s ghost of the "100,000,000" screen
+       fading over Home on EVERY launch for returning users (caught on a
+       live screenshot 06.07).
+     · 06.07.2026 — flag reinstated with corrected semantics:
+       'vt_onboarded' means "a person on this device has completed
+       onboarding", nothing about wallets. Onboarding is education for
+       the human, not account state — switching wallets doesn't reset
+       what the human has already read. Set in closeWelcome() (every
+       path), checked synchronously pre-paint by the <head> script, so
+       returning visitors get zero frames of it. The wallet-aware
+       auto-close stays as a bonus path for counted users on a fresh
+       device. -->
 <div class="welcome" id="welcome">
 
   <!-- ONBOARDING DOTS -->
@@ -1827,6 +1845,10 @@ function goOb(n) {
 }
 
 function closeWelcome(){
+  // Every close path — button, skip, or the wallet-aware auto-close —
+  // counts as "this person has been through onboarding on this device".
+  // Read pre-paint by the <head> script (see comment above #welcome).
+  try{localStorage.setItem('vt_onboarded','1')}catch(e){}
   document.getElementById('welcome').classList.add('fade');
   setTimeout(()=>{document.getElementById('welcome').style.display='none';},600);
   // Previously this force-navigated straight to the photo-upload screen
