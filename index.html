@@ -71,9 +71,11 @@ body{animation:appEnter .8s ease-out}
   position:fixed;inset:0;z-index:150;background:var(--bg);
   display:flex;flex-direction:column;align-items:center;
   justify-content:center;padding:36px 28px;text-align:center;
-  transition:opacity .6s ease;
+  transition:opacity .8s ease;
 }
 .welcome.fade{opacity:0;pointer-events:none}
+.ob-screen{animation:obEnter .55s ease-out}
+@keyframes obEnter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .welcome-glow{
   width:130px;height:130px;border-radius:50%;
   background:radial-gradient(circle,rgba(168,85,247,.3) 0%,rgba(168,85,247,.04) 65%,transparent 100%);
@@ -129,6 +131,10 @@ body{animation:appEnter .8s ease-out}
 /* LAYOUT */
 .page{display:none;min-height:100vh;padding-bottom:72px;position:relative;z-index:1}
 .page.active{display:block}
+/* Applied by closeWelcome() — the page underneath rises softly while the
+   onboarding overlay dissolves above it. */
+.page.page-enter{animation:pageEnter .9s ease-out}
+@keyframes pageEnter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 /* Home's content is now intentionally compact (fits one screen without
    scrolling, see 04.07.2026 redesign) — forcing it to still stretch to
    min-height:100vh left an ugly empty gap at the bottom. Other pages keep
@@ -598,42 +604,27 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
   max-width:280px;opacity:0;transition:all .35s;z-index:150;pointer-events:none;
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-/* Paired with the tiny pre-paint script below — hides onboarding before
-   the first frame for anyone who has already completed it on this
-   device. See the comment above #welcome for the history. */
-html.vt-onboarded .welcome{display:none}
 </style>
-<script>
-// Runs synchronously in <head>, before ANY of <body> is rendered — the
-// only way to guarantee zero-frame hiding. Everything async (TonConnect
-// reconnect, chain reads) is too late: the ghost has already been
-// painted. try/catch because localStorage can throw in some webviews.
-try{if(localStorage.getItem('vt_onboarded')==='1')document.documentElement.classList.add('vt-onboarded')}catch(e){}
-</script>
 </head>
 <body>
 
 <canvas id="starfield"></canvas>
 
 <!-- WELCOME -->
-<!-- Flag history, because this has flip-flopped:
+<!-- Policy history, because this has flip-flopped three times:
      · Originally hidden via a device-wide "seen" flag.
-     · 05.07.2026 — flag removed: it was treated as "this wallet has
-       joined", and a NEW wallet on an already-joined device wrongly
-       skipped onboarding. Onboarding started always-visible, closed
-       async by the wallet-aware check in refreshCountedBanner() — which
-       produced a guaranteed ~1-2s ghost of the "100,000,000" screen
-       fading over Home on EVERY launch for returning users (caught on a
-       live screenshot 06.07).
-     · 06.07.2026 — flag reinstated with corrected semantics:
-       'vt_onboarded' means "a person on this device has completed
-       onboarding", nothing about wallets. Onboarding is education for
-       the human, not account state — switching wallets doesn't reset
-       what the human has already read. Set in closeWelcome() (every
-       path), checked synchronously pre-paint by the <head> script, so
-       returning visitors get zero frames of it. The wallet-aware
-       auto-close stays as a bonus path for counted users on a fresh
-       device. -->
+     · 05.07.2026 — flag removed (a NEW wallet on an already-joined
+       device wrongly skipped onboarding); closed async by the
+       wallet-aware check instead, which produced a ~1-2s ghost of the
+       first screen fading over Home on every launch.
+     · 06.07.2026 morning — flag briefly reinstated as pre-paint hide.
+     · 06.07.2026, FINAL by product decision: the three onboarding
+       screens show for EVERYONE on EVERY launch. They carry the idea and
+       mood of the project and double as the entry ritual; a person
+       closes them by tapping through (or "just look around"), never by
+       any automatic logic. No seen-flags, no wallet-aware auto-close —
+       both were removed deliberately; don't reintroduce them without
+       reading this note. -->
 <div class="welcome" id="welcome">
 
   <!-- ONBOARDING DOTS -->
@@ -1845,12 +1836,20 @@ function goOb(n) {
 }
 
 function closeWelcome(){
-  // Every close path — button, skip, or the wallet-aware auto-close —
-  // counts as "this person has been through onboarding on this device".
-  // Read pre-paint by the <head> script (see comment above #welcome).
-  try{localStorage.setItem('vt_onboarded','1')}catch(e){}
   document.getElementById('welcome').classList.add('fade');
-  setTimeout(()=>{document.getElementById('welcome').style.display='none';},600);
+  setTimeout(()=>{document.getElementById('welcome').style.display='none';},800);
+  // Soft landing, 06.07.2026 — while the overlay dissolves (.8s, matches
+  // the CSS transition above), the active page underneath gently fades
+  // and rises into place, so leaving onboarding feels like one continuous
+  // motion instead of a curtain snapping away. The forced reflow
+  // (offsetWidth) restarts the animation if the class was ever applied
+  // before.
+  const p = document.querySelector('.page.active');
+  if (p) {
+    p.classList.remove('page-enter'); void p.offsetWidth;
+    p.classList.add('page-enter');
+    p.addEventListener('animationend', () => p.classList.remove('page-enter'), { once:true });
+  }
   // Previously this force-navigated straight to the photo-upload screen
   // right after onboarding, skipping Home (the default landing page) and
   // its counter/mission context — landing on "tap to upload a photo" with
@@ -2055,17 +2054,11 @@ function refreshCountedBanner(){
   const note = document.getElementById('alreadyCountedNote');
   const mintBtnEl = document.getElementById('mintBtn');
   if (note) note.style.display = isJoinedLocal() ? 'block' : 'none';
-  // This is the only place that closes onboarding for an already-joined
-  // person — checked against the CURRENTLY connected wallet's own status
-  // (isJoinedLocal), once TonConnect actually finishes reconnecting.
-  // There's no synchronous shortcut here anymore (see the comment above
-  // #welcome) — a device-wide flag previously caused onboarding to
-  // wrongly stay hidden when someone switched to a different, not-yet-
-  // joined wallet on the same device.
-  if (isJoinedLocal()) {
-    const w = document.getElementById('welcome');
-    if (w && getComputedStyle(w).display !== 'none') closeWelcome();
-  }
+  // The wallet-aware auto-close of onboarding that used to live here was
+  // removed 06.07.2026 — onboarding now shows for everyone on every
+  // launch and is closed only by the person tapping through it (see the
+  // policy note above #welcome). Auto-closing it mid-read was exactly
+  // what produced the fading "ghost" over Home.
   // Only touch mintBtn's label when it isn't mid-flow (i.e. not disabled
   // from an in-progress upload, not showing the post-mint "✓ Counted!"
   // state) — this just sets the correct default/reset label.
