@@ -51,7 +51,7 @@
 html,body{
   background:var(--bg);color:var(--text);
   font-family:'Space Grotesk',sans-serif;
-  min-height:100vh;overflow-x:hidden;
+  min-height:var(--tg-viewport-stable-height,100vh);overflow-x:hidden;
 }
 /* Gentle app entry, 06.07.2026 — the app used to snap onto the screen at
    full brightness in a single frame, which felt abrupt for a product
@@ -129,7 +129,14 @@ body{animation:appEnter .8s ease-out}
 .social-toast-text b{color:#c084fc;font-weight:500}
 
 /* LAYOUT */
-.page{display:none;min-height:100vh;padding-bottom:72px;position:relative;z-index:1}
+/* min-height uses Telegram's --tg-viewport-stable-height (injected and
+   kept up to date by telegram-web-app.js) with a 100vh fallback for
+   plain browsers. Inside the Telegram webview 100vh reports MORE than
+   the actually visible area, so pages were forced taller than the
+   screen and every tab scrolled slightly even when its content fit —
+   the "there's still scrolling" bug that no amount of content
+   compaction could fix. */
+.page{display:none;min-height:var(--tg-viewport-stable-height,100vh);padding-bottom:72px;position:relative;z-index:1}
 .page.active{display:block}
 /* Applied by closeWelcome() — the page underneath rises softly while the
    onboarding overlay dissolves above it. */
@@ -150,7 +157,7 @@ body{animation:appEnter .8s ease-out}
    place, thumb-reachable, regardless of how much content is above it. */
 .home{
   padding:0 18px;display:flex;flex-direction:column;
-  min-height:calc(100vh - 88px);justify-content:space-between;
+  min-height:calc(var(--tg-viewport-stable-height,100vh) - 88px);justify-content:space-between;
 }
 .topbar{
   display:flex;align-items:center;justify-content:space-between;
@@ -470,13 +477,13 @@ body{animation:appEnter .8s ease-out}
    same rule Home already follows: smaller avatar, tighter header
    paddings — the header was eating ~180px for what is essentially
    decoration. */
-.profile-header{display:flex;flex-direction:column;align-items:center;padding:12px 0 10px;text-align:center}
+.profile-header{display:flex;flex-direction:column;align-items:center;padding:8px 0 8px;text-align:center}
 .avatar{
-  width:56px;height:56px;border-radius:50%;
+  width:48px;height:48px;border-radius:50%;
   background:radial-gradient(circle at 40% 40%,#4c1d95,#1e1b4b);
   border:2px solid rgba(147,51,234,.4);
   display:flex;align-items:center;justify-content:center;
-  font-size:22px;margin-bottom:8px;position:relative;
+  font-size:19px;margin-bottom:6px;position:relative;
   box-shadow:0 0 28px rgba(147,51,234,.22);
 }
 .avatar-badge{position:absolute;bottom:-2px;right:-2px;background:var(--bg);border-radius:50%;padding:2px;font-size:12px;line-height:1}
@@ -496,7 +503,7 @@ body{animation:appEnter .8s ease-out}
   border-radius:40px;padding:4px 11px;font-size:11px;color:#c084fc;
 }
 
-.form-label{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:5px;margin-top:10px;display:block}
+.form-label{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:4px;margin-top:8px;display:block}
 .form-input{
   width:100%;background:var(--surface);border:.5px solid var(--border);
   border-radius:14px;padding:11px 14px;font-size:15px;color:var(--text);
@@ -804,7 +811,7 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
          clear this is for trying again (a fresh roll at a rarer
          constellation, another 1 TON), not a sign they aren't counted yet. -->
     <div id="alreadyCountedNote" style="display:none;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#6ee7b7;text-align:center">
-      ✦ You're already counted — this is for making another constellation, for a chance at something rarer
+      ✦ You're counted — this mints another constellation, a fresh roll at something rarer
     </div>
 
     <div class="upload-area" id="uploadArea">
@@ -840,16 +847,18 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
     <button class="btn-main" id="mintBtn" disabled>Count me in ✦</button>
     <button class="btn-ghost" id="resetBtn" style="display:none;margin-top:0">Try another photo</button>
 
-    <!-- Moved here from Profile 04.07.2026 — Profile is now purely about
-         personal info and account actions; anything constellation-related
-         lives together on this tab instead of being split across two
-         differently-purposed screens. -->
-    <label class="form-label" style="margin-top:24px;display:block">My constellations <span id="constCount" style="color:#a78bfa;font-weight:400"></span></label>
-    <div class="nft-grid" id="nftGrid">
-      <div class="nft-card nft-add" id="addNftBtn">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(192,132,252,.3)" stroke-width="1.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        <span>Add photo · 1 TON</span>
-      </div>
+    <!-- Moved here from Profile 04.07.2026; reworked 06.07.2026: the grid
+         used to contain a dashed "Add photo · 1 TON" tile — a leftover
+         from when the grid lived on Profile and the tile navigated here.
+         With both on one tab it duplicated the upload area above (two
+         identical dashed "add a photo" fields on one screen). Now the
+         upload flow is the single entry point, the grid is purely a
+         gallery, and the whole section stays hidden until there's at
+         least one constellation to show (an empty gallery says nothing
+         the flow above doesn't). -->
+    <div id="myConstSection" style="display:none">
+      <label class="form-label" style="margin-top:24px;display:block">My constellations <span id="constCount" style="color:#a78bfa;font-weight:400"></span></label>
+      <div class="nft-grid" id="nftGrid"></div>
     </div>
 
   </div>
@@ -957,9 +966,9 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
          fields (fieldName/fieldCountry/fieldCity/fieldAge) are never
          retroactively sent on-chain by themselves — this button is the
          explicit, deliberate action that does that. -->
-    <button class="btn-main" id="updateOnChainBtn" style="display:none;margin-top:12px;margin-bottom:6px;background:transparent;border:1px solid rgba(147,51,234,.4);color:var(--purple-light)">Update on-chain profile · 0.02 TON</button>
-    <div id="updateOnChainHint" style="display:none;font-size:11px;color:#6b7280;text-align:center;margin-bottom:10px">This is what everyone else actually sees — city, map, and story</div>
-    <div class="tx-status" id="txUpdateProfile" style="margin-bottom:10px"></div>
+    <button class="btn-main" id="updateOnChainBtn" style="display:none;margin-top:10px;margin-bottom:5px;padding:13px;background:transparent;border:1px solid rgba(147,51,234,.4);color:var(--purple-light)">Update on-chain profile · 0.02 TON</button>
+    <div id="updateOnChainHint" style="display:none;font-size:10px;color:#6b7280;text-align:center;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Visible to everyone — city, map, and story</div>
+    <div class="tx-status" id="txUpdateProfile" style="margin-bottom:6px"></div>
 
     <a href="https://t.me/vitiligo_ton" target="_blank" style="display:block;text-align:center;padding:12px;border:1px solid rgba(147,51,234,.3);border-radius:12px;color:#a78bfa;font-size:13px;text-decoration:none;margin-bottom:8px">
       💬 Write to the team
@@ -1924,11 +1933,6 @@ document.querySelectorAll('.nav-item').forEach(btn=>{
     }
   });
 });
-document.getElementById('addNftBtn').addEventListener('click',()=>{
-  document.querySelector('[data-page="stars"]').click();
-  uploadArea.click();
-});
-
 /* ── MODALS ── */
 // Debug panel is hidden by default now that the app is past the initial
 // bring-up phase — it still logs everything into the DOM in the background
@@ -2608,7 +2612,7 @@ document.getElementById('modalMintConfirm').addEventListener('click', async ()=>
       openNftDetail(nftData);
     });
 
-    grid.insertBefore(card,document.getElementById('addNftBtn'));
+    grid.appendChild(card);
     refreshConstCount();
 
     setTimeout(()=>{
@@ -2677,8 +2681,11 @@ document.getElementById('modalNftShare').addEventListener('click',()=>{
 // Just keeps a simple count next to the "My constellations" label instead.
 function refreshConstCount(){
   const el = document.getElementById('constCount');
-  if (!el) return;
-  el.textContent = myNfts.length ? `(${myNfts.length})` : '';
+  if (el) el.textContent = myNfts.length ? `(${myNfts.length})` : '';
+  // The gallery section only exists on screen once there's something in
+  // it — see the comment at #myConstSection.
+  const sec = document.getElementById('myConstSection');
+  if (sec) sec.style.display = myNfts.length ? 'block' : 'none';
 }
 refreshConstCount();
 
@@ -2978,8 +2985,7 @@ function beginCellSafe(){ try { return !!(window.TonCore && window.TonCore.begin
 // live mint flow.
 function renderRestoredNftCard(nftData) {
   const grid = document.getElementById('nftGrid');
-  const addBtn = document.getElementById('addNftBtn');
-  if (!grid || !addBtn) return;
+  if (!grid) return;
   const gold = nftData.rare;
   const card = document.createElement('div');
   card.className = 'nft-card' + (gold ? ' rare' : '');
@@ -3008,7 +3014,7 @@ function renderRestoredNftCard(nftData) {
   infoBar.innerHTML = `<div class="nft-name">${nftData.name}</div>${nftData.story ? `<div class="nft-story">"${nftData.story}"</div>` : ''}`;
   card.appendChild(infoBar);
   card.addEventListener('click', () => openNftDetail(nftData));
-  grid.insertBefore(card, addBtn);
+  grid.appendChild(card);
   refreshConstCount();
 }
 
