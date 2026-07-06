@@ -135,15 +135,23 @@ body{animation:appEnter .8s ease-out}
    onboarding overlay dissolves above it. */
 .page.page-enter{animation:pageEnter .9s ease-out}
 @keyframes pageEnter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-/* Home's content is now intentionally compact (fits one screen without
-   scrolling, see 04.07.2026 redesign) — forcing it to still stretch to
-   min-height:100vh left an ugly empty gap at the bottom. Other pages keep
-   the full-height behavior since their empty states rely on it for
-   vertical centering. */
-#page-home{min-height:0}
+/* History: #page-home once had min-height:0 (04-05.07) because compact
+   content + forced 100vh left a dead gap under the CTA. Since 06.07.2026
+   the gap problem is solved the opposite way — .home stretches to the
+   viewport and distributes the free space BETWEEN its blocks
+   (justify-content:space-between), with the CTA anchored at the bottom.
+   So the page keeps its default min-height and .home does the work. */
 
 /* HOME */
-.home{padding:0 18px}
+/* Since 06.07.2026 Home is a flex column stretched to the full viewport
+   (minus the nav): the blocks distribute the free vertical space between
+   them instead of piling at the top and leaving a dead gap above the
+   nav, and the CTA sits anchored at the bottom — always in the same
+   place, thumb-reachable, regardless of how much content is above it. */
+.home{
+  padding:0 18px;display:flex;flex-direction:column;
+  min-height:calc(100vh - 88px);justify-content:space-between;
+}
 .topbar{
   display:flex;align-items:center;justify-content:space-between;
   padding:16px 0 0;padding-top:max(16px,env(safe-area-inset-top));
@@ -690,9 +698,12 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
          the data cards. Wording: was "unique by design", which read like
          product copy — as if people were manufactured objects; "by
          nature" says the same thing about uniqueness while pointing at
-         its true origin. -->
-    <h1 class="headline">People with vitiligo<br>are <em>unique by nature</em></h1>
-    <p class="sub">just vitiligo · just us · just beautiful</p>
+         its true origin. Wrapped in one div so the flex space-between on
+         .home keeps the headline and its tagline together. -->
+    <div>
+      <h1 class="headline">People with vitiligo<br>are <em>unique by nature</em></h1>
+      <p class="sub" style="margin-bottom:0">just vitiligo · just us · just beautiful</p>
+    </div>
 
     <!-- Added 04.07.2026 — cosmos animation now serves as a literal
          backdrop for the counters (merged into one block, not two stacked
@@ -749,14 +760,20 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
       </div>
     </div>
 
-    <!-- Added 04.07.2026 — shown instead of the plain tagline once a
-         returning visitor is confirmed counted, so the app greets them
-         rather than repeating the same first-time pitch forever. -->
-    <div id="countedBanner" style="display:none;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);border-radius:12px;padding:12px 16px;margin-bottom:16px;text-align:center;color:#6ee7b7;font-size:14px">
-      🎉 Congratulations — you're counted
-    </div>
+    <!-- Banner + CTA live in one wrapper pinned to the bottom edge of the
+         stretched Home column (padding keeps a small breathing gap above
+         the nav). The button's position is now static in the truest
+         sense: same spot on every launch, counted or not. -->
+    <div style="padding-bottom:14px">
+      <!-- Added 04.07.2026 — shown instead of the plain tagline once a
+           returning visitor is confirmed counted, so the app greets them
+           rather than repeating the same first-time pitch forever. -->
+      <div id="countedBanner" style="display:none;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);border-radius:12px;padding:12px 16px;margin-bottom:12px;text-align:center;color:#6ee7b7;font-size:14px">
+        🎉 Congratulations — you're counted
+      </div>
 
-    <button class="btn-main" id="countBtn">Count me in ✦</button>
+      <button class="btn-main" id="countBtn" style="margin-bottom:0">Count me in ✦</button>
+    </div>
   </div>
 </div>
 
@@ -919,25 +936,15 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
 
     <label class="form-label">Name</label>
     <input type="text" class="form-input" id="fieldName" placeholder="Your name">
-    <!-- Country and City share one row since 06.07.2026 — together with
-         the smaller header this is what lets Profile fit a single screen.
-         Each half keeps its own relative wrapper so the autocomplete
-         dropdown opens under its own field at half width. -->
-    <div style="display:flex;gap:10px">
-      <div style="flex:1;min-width:0">
-        <label class="form-label">Country</label>
-        <div style="position:relative">
-          <input type="text" class="form-input" id="fieldCountry" placeholder="Country..." autocomplete="off" oninput="filterCountries(this.value)" onfocus="filterCountries(this.value)">
-          <div id="countryDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#12103a;border:1px solid rgba(147,51,234,.3);border-radius:8px;max-height:180px;overflow-y:auto;z-index:100;margin-top:2px"></div>
-        </div>
-      </div>
-      <div style="flex:1;min-width:0">
-        <label class="form-label">City</label>
-        <div style="position:relative">
-          <input type="text" class="form-input" id="fieldCity" placeholder="City..." autocomplete="off" oninput="filterCities(this.value)" onfocus="filterCities(this.value)">
-          <div id="cityDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#12103a;border:1px solid rgba(147,51,234,.3);border-radius:8px;max-height:180px;overflow-y:auto;z-index:100;margin-top:2px"></div>
-        </div>
-      </div>
+    <label class="form-label">Country</label>
+    <div style="position:relative">
+      <input type="text" class="form-input" id="fieldCountry" placeholder="Country — start typing..." autocomplete="off" oninput="filterCountries(this.value)" onfocus="filterCountries(this.value)">
+      <div id="countryDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#12103a;border:1px solid rgba(147,51,234,.3);border-radius:8px;max-height:180px;overflow-y:auto;z-index:100;margin-top:2px"></div>
+    </div>
+    <label class="form-label">City</label>
+    <div style="position:relative">
+      <input type="text" class="form-input" id="fieldCity" placeholder="City — start typing..." autocomplete="off" oninput="filterCities(this.value)" onfocus="filterCities(this.value)">
+      <div id="cityDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#12103a;border:1px solid rgba(147,51,234,.3);border-radius:8px;max-height:180px;overflow-y:auto;z-index:100;margin-top:2px"></div>
     </div>
     <label class="form-label">Age</label>
     <select class="form-input" id="fieldAge">
@@ -958,16 +965,12 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
       <b style="color:#c4a8f5">Fun fact:</b> vitiligo.ton isn't just a name — it's a real TON domain, pointing straight at this contract. You can send TON there directly from any wallet, no app needed, and it lands here.
     </div>
 
-    <!-- One row of two half-width buttons since 06.07.2026 (were two
-         stacked full-width rows) — part of the same single-screen pass. -->
-    <div style="display:flex;gap:8px;margin-bottom:12px">
-      <a href="https://t.me/vitiligo_ton" target="_blank" style="flex:1;text-align:center;padding:12px 8px;border:1px solid rgba(147,51,234,.3);border-radius:12px;color:#a78bfa;font-size:13px;text-decoration:none">
-        💬 Write to the team
-      </a>
-      <button onclick="openModal('modalHelp')" style="flex:1;text-align:center;padding:12px 8px;border:1px solid rgba(147,51,234,.2);border-radius:12px;color:#6b7280;font-size:13px;background:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">
-        💡 How it works
-      </button>
-    </div>
+    <a href="https://t.me/vitiligo_ton" target="_blank" style="display:block;text-align:center;padding:12px;border:1px solid rgba(147,51,234,.3);border-radius:12px;color:#a78bfa;font-size:13px;text-decoration:none;margin-bottom:8px">
+      💬 Write to the team
+    </a>
+    <button onclick="openModal('modalHelp')" style="display:block;width:100%;text-align:center;padding:12px;border:1px solid rgba(147,51,234,.2);border-radius:12px;color:#6b7280;font-size:13px;background:none;cursor:pointer;font-family:'Space Grotesk',sans-serif;margin-bottom:12px">
+      💡 How it works
+    </button>
   </div>
 </div>
 
