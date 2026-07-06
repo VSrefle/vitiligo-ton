@@ -458,18 +458,22 @@ body{animation:appEnter .8s ease-out}
 
 /* PROFILE PAGE */
 .profile-page{padding:0 18px}
-.profile-header{display:flex;flex-direction:column;align-items:center;padding:28px 0 20px;text-align:center}
+/* Compacted 06.07.2026 so Profile fits one screen without scrolling,
+   same rule Home already follows: smaller avatar, tighter header
+   paddings — the header was eating ~180px for what is essentially
+   decoration. */
+.profile-header{display:flex;flex-direction:column;align-items:center;padding:12px 0 10px;text-align:center}
 .avatar{
-  width:76px;height:76px;border-radius:50%;
+  width:56px;height:56px;border-radius:50%;
   background:radial-gradient(circle at 40% 40%,#4c1d95,#1e1b4b);
   border:2px solid rgba(147,51,234,.4);
   display:flex;align-items:center;justify-content:center;
-  font-size:28px;margin-bottom:12px;position:relative;
+  font-size:22px;margin-bottom:8px;position:relative;
   box-shadow:0 0 28px rgba(147,51,234,.22);
 }
-.avatar-badge{position:absolute;bottom:-2px;right:-2px;background:var(--bg);border-radius:50%;padding:2px;font-size:14px;line-height:1}
-.profile-name{font-family:'Outfit',sans-serif;font-size:20px;font-weight:300;margin-bottom:4px;color:#e9e0ff}
-.profile-handle{font-size:13px;color:var(--muted)}
+.avatar-badge{position:absolute;bottom:-2px;right:-2px;background:var(--bg);border-radius:50%;padding:2px;font-size:12px;line-height:1}
+.profile-name{font-family:'Outfit',sans-serif;font-size:18px;font-weight:300;margin-bottom:2px;color:#e9e0ff}
+.profile-handle{font-size:12px;color:var(--muted)}
 
 .sky-card{
   background:#020110;border-radius:20px;
@@ -484,10 +488,10 @@ body{animation:appEnter .8s ease-out}
   border-radius:40px;padding:4px 11px;font-size:11px;color:#c084fc;
 }
 
-.form-label{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:8px;margin-top:16px;display:block}
+.form-label{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:5px;margin-top:10px;display:block}
 .form-input{
   width:100%;background:var(--surface);border:.5px solid var(--border);
-  border-radius:14px;padding:13px 16px;font-size:15px;color:var(--text);
+  border-radius:14px;padding:11px 14px;font-size:15px;color:var(--text);
   font-family:'Space Grotesk',sans-serif;outline:none;transition:border-color .2s,background .2s;
 }
 .form-input:focus{border-color:rgba(147,51,234,.45)}
@@ -681,6 +685,15 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
       </div>
     </div>
 
+    <!-- Moved to the top of Home 06.07.2026 — the manifesto now opens the
+         page (statement first, numbers second), instead of hiding below
+         the data cards. Wording: was "unique by design", which read like
+         product copy — as if people were manufactured objects; "by
+         nature" says the same thing about uniqueness while pointing at
+         its true origin. -->
+    <h1 class="headline">People with vitiligo<br>are <em>unique by nature</em></h1>
+    <p class="sub">just vitiligo · just us · just beautiful</p>
+
     <!-- Added 04.07.2026 — cosmos animation now serves as a literal
          backdrop for the counters (merged into one block, not two stacked
          ones) to save vertical space so Home fits on screen without
@@ -735,9 +748,6 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
         <div class="page-sub" id="cityTeaserLink" style="margin-top:4px;cursor:pointer;color:#a78bfa;font-size:11px">See map →</div>
       </div>
     </div>
-
-    <h1 class="headline">People with vitiligo<br>are <em>unique by design</em></h1>
-    <p class="sub">just vitiligo · just us · just beautiful</p>
 
     <!-- Added 04.07.2026 — shown instead of the plain tagline once a
          returning visitor is confirmed counted, so the app greets them
@@ -909,15 +919,25 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
 
     <label class="form-label">Name</label>
     <input type="text" class="form-input" id="fieldName" placeholder="Your name">
-    <label class="form-label">Country</label>
-    <div style="position:relative">
-      <input type="text" class="form-input" id="fieldCountry" placeholder="Country — start typing..." autocomplete="off" oninput="filterCountries(this.value)" onfocus="filterCountries(this.value)">
-      <div id="countryDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#12103a;border:1px solid rgba(147,51,234,.3);border-radius:8px;max-height:180px;overflow-y:auto;z-index:100;margin-top:2px"></div>
-    </div>
-    <label class="form-label">City</label>
-    <div style="position:relative">
-      <input type="text" class="form-input" id="fieldCity" placeholder="City — start typing..." autocomplete="off" oninput="filterCities(this.value)" onfocus="filterCities(this.value)">
-      <div id="cityDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#12103a;border:1px solid rgba(147,51,234,.3);border-radius:8px;max-height:180px;overflow-y:auto;z-index:100;margin-top:2px"></div>
+    <!-- Country and City share one row since 06.07.2026 — together with
+         the smaller header this is what lets Profile fit a single screen.
+         Each half keeps its own relative wrapper so the autocomplete
+         dropdown opens under its own field at half width. -->
+    <div style="display:flex;gap:10px">
+      <div style="flex:1;min-width:0">
+        <label class="form-label">Country</label>
+        <div style="position:relative">
+          <input type="text" class="form-input" id="fieldCountry" placeholder="Country..." autocomplete="off" oninput="filterCountries(this.value)" onfocus="filterCountries(this.value)">
+          <div id="countryDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#12103a;border:1px solid rgba(147,51,234,.3);border-radius:8px;max-height:180px;overflow-y:auto;z-index:100;margin-top:2px"></div>
+        </div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <label class="form-label">City</label>
+        <div style="position:relative">
+          <input type="text" class="form-input" id="fieldCity" placeholder="City..." autocomplete="off" oninput="filterCities(this.value)" onfocus="filterCities(this.value)">
+          <div id="cityDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#12103a;border:1px solid rgba(147,51,234,.3);border-radius:8px;max-height:180px;overflow-y:auto;z-index:100;margin-top:2px"></div>
+        </div>
+      </div>
     </div>
     <label class="form-label">Age</label>
     <select class="form-input" id="fieldAge">
@@ -930,20 +950,24 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
          fields (fieldName/fieldCountry/fieldCity/fieldAge) are never
          retroactively sent on-chain by themselves — this button is the
          explicit, deliberate action that does that. -->
-    <button class="btn-main" id="updateOnChainBtn" style="display:none;margin-top:20px;margin-bottom:6px;background:transparent;border:1px solid rgba(147,51,234,.4);color:var(--purple-light)">Update on-chain profile · 0.02 TON</button>
-    <div id="updateOnChainHint" style="display:none;font-size:11px;color:#6b7280;text-align:center;margin-bottom:16px">This is what everyone else actually sees — city, map, and story</div>
-    <div class="tx-status" id="txUpdateProfile" style="margin-bottom:16px"></div>
+    <button class="btn-main" id="updateOnChainBtn" style="display:none;margin-top:12px;margin-bottom:6px;background:transparent;border:1px solid rgba(147,51,234,.4);color:var(--purple-light)">Update on-chain profile · 0.02 TON</button>
+    <div id="updateOnChainHint" style="display:none;font-size:11px;color:#6b7280;text-align:center;margin-bottom:10px">This is what everyone else actually sees — city, map, and story</div>
+    <div class="tx-status" id="txUpdateProfile" style="margin-bottom:10px"></div>
 
-    <div style="border:1px solid rgba(147,51,234,.18);background:rgba(147,51,234,.05);border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:12px;line-height:1.6;color:#9c93b8">
+    <div style="border:1px solid rgba(147,51,234,.18);background:rgba(147,51,234,.05);border-radius:12px;padding:10px 14px;margin-bottom:10px;font-size:11px;line-height:1.55;color:#9c93b8">
       <b style="color:#c4a8f5">Fun fact:</b> vitiligo.ton isn't just a name — it's a real TON domain, pointing straight at this contract. You can send TON there directly from any wallet, no app needed, and it lands here.
     </div>
 
-    <a href="https://t.me/vitiligo_ton" target="_blank" style="display:block;text-align:center;padding:14px;border:1px solid rgba(147,51,234,.3);border-radius:12px;color:#a78bfa;font-size:14px;text-decoration:none;margin-bottom:8px">
-      💬 Write to the team
-    </a>
-    <button onclick="openModal('modalHelp')" style="display:block;width:100%;text-align:center;padding:14px;border:1px solid rgba(147,51,234,.2);border-radius:12px;color:#6b7280;font-size:14px;background:none;cursor:pointer;margin-bottom:32px">
-      💡 How it works
-    </button>
+    <!-- One row of two half-width buttons since 06.07.2026 (were two
+         stacked full-width rows) — part of the same single-screen pass. -->
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <a href="https://t.me/vitiligo_ton" target="_blank" style="flex:1;text-align:center;padding:12px 8px;border:1px solid rgba(147,51,234,.3);border-radius:12px;color:#a78bfa;font-size:13px;text-decoration:none">
+        💬 Write to the team
+      </a>
+      <button onclick="openModal('modalHelp')" style="flex:1;text-align:center;padding:12px 8px;border:1px solid rgba(147,51,234,.2);border-radius:12px;color:#6b7280;font-size:13px;background:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">
+        💡 How it works
+      </button>
+    </div>
   </div>
 </div>
 
@@ -1069,7 +1093,7 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
       <div class="sheet-preview-icon">✦</div>
       <div>
         <div class="sheet-preview-title">vitiligo.ton</div>
-        <div class="sheet-preview-sub">People with vitiligo are unique by design</div>
+        <div class="sheet-preview-sub">People with vitiligo are unique by nature</div>
       </div>
     </div>
     <div class="sheet-options">
@@ -2766,9 +2790,9 @@ document.getElementById('copyBtn').addEventListener('click', function(){
 
 document.getElementById('shareMore').addEventListener('click', ()=>{
   if(tg){
-    tg.openTelegramLink(`https://t.me/share/url?url=https://${refLink}&text=${encodeURIComponent("Join vitiligo.ton — people with vitiligo are unique by design ✦")}`);
+    tg.openTelegramLink(`https://t.me/share/url?url=https://${refLink}&text=${encodeURIComponent("Join vitiligo.ton — people with vitiligo are unique by nature ✦")}`);
   } else if(navigator.share){
-    navigator.share({title:'vitiligo.ton', text:'Join vitiligo.ton — people with vitiligo are unique by design', url:'https://'+refLink}).catch(()=>{});
+    navigator.share({title:'vitiligo.ton', text:'Join vitiligo.ton — people with vitiligo are unique by nature', url:'https://'+refLink}).catch(()=>{});
   } else {
     openModal('shareSheet');
   }
@@ -3069,36 +3093,41 @@ document.getElementById('cityTeaserLink')?.addEventListener('click', () => {
 });
 
 // ── COUNTRY LIST ──
-const COUNTRIES = [
-  "Afghanistan","Albania","Algeria","Argentina","Armenia","Australia","Austria","Azerbaijan",
-  "Bangladesh","Belarus","Belgium","Bolivia","Bosnia and Herzegovina","Brazil","Bulgaria",
-  "Cambodia","Canada","Chile","China","Colombia","Croatia","Cuba","Czech Republic",
-  "Denmark","Dominican Republic","Ecuador","Egypt","Ethiopia","Finland","France","Georgia",
-  "Germany","Ghana","Greece","Guatemala","Honduras","Hungary","India","Indonesia","Iran",
-  "Iraq","Ireland","Israel","Italy","Japan","Jordan","Kazakhstan","Kenya","Kuwait",
-  "Kyrgyzstan","Latvia","Lebanon","Lithuania","Malaysia","Mexico","Moldova","Mongolia",
-  "Morocco","Myanmar","Nepal","Netherlands","New Zealand","Nigeria","North Korea","Norway",
-  "Pakistan","Panama","Paraguay","Peru","Philippines","Poland","Portugal","Romania","Russia",
-  "Saudi Arabia","Senegal","Serbia","Singapore","Slovakia","South Africa","South Korea","Spain",
-  "Sri Lanka","Sudan","Sweden","Switzerland","Syria","Tajikistan","Thailand","Tunisia","Turkey",
-  "Turkmenistan","Uganda","Ukraine","United Arab Emirates","United Kingdom","United States",
-  "Uruguay","Uzbekistan","Venezuela","Vietnam","Yemen","Zimbabwe"
-].sort();
+// Since 06.07.2026 the country list is derived from CITIES_BY_COUNTRY
+// (defined further down, before first use at runtime since suggestions
+// only fire on input) merged with countries that have no city in our
+// hints yet — one source of truth, so a country auto-filled from a city
+// pick is always also a valid suggestion here.
+const EXTRA_COUNTRIES = [
+  "Albania","Bolivia","Bosnia and Herzegovina","Guatemala","Honduras","Moldova","Yemen"
+];
+let COUNTRIES = [];
 
 function filterCountries(val) {
   const dd = document.getElementById('countryDropdown');
   if (!val || val.length < 1) { dd.style.display='none'; return; }
+  if (!COUNTRIES.length) COUNTRIES = [...new Set([...Object.keys(CITIES_BY_COUNTRY), ...EXTRA_COUNTRIES])].sort();
   const filtered = COUNTRIES.filter(c => c.toLowerCase().startsWith(val.toLowerCase())).slice(0, 8);
   if (!filtered.length) { dd.style.display='none'; return; }
+  // data attribute + delegated listener instead of inline onclick — same
+  // apostrophe fix as the city dropdown (Côte d'Ivoire broke the old
+  // inline-quoted call).
   dd.innerHTML = filtered.map(c =>
-    `<div onclick="selectCountry('${c}')" style="padding:10px 14px;cursor:pointer;font-size:14px;color:#e9d5ff;border-bottom:1px solid rgba(147,51,234,.1)" onmouseover="this.style.background='rgba(147,51,234,.15)'" onmouseout="this.style.background=''">${c}</div>`
+    `<div data-country="${c}" style="padding:10px 14px;cursor:pointer;font-size:14px;color:#e9d5ff;border-bottom:1px solid rgba(147,51,234,.1)" onmouseover="this.style.background='rgba(147,51,234,.15)'" onmouseout="this.style.background=''">${c}</div>`
   ).join('');
   dd.style.display = 'block';
 }
 
+document.getElementById('countryDropdown').addEventListener('click', e => {
+  const item = e.target.closest('[data-country]');
+  if (!item) return;
+  selectCountry(item.dataset.country);
+});
+
 function selectCountry(country) {
   document.getElementById('fieldCountry').value = country;
   document.getElementById('countryDropdown').style.display = 'none';
+  if (typeof refreshFieldHighlights === 'function') refreshFieldHighlights();
 }
 
 document.addEventListener('click', e => {
@@ -3106,83 +3135,202 @@ document.addEventListener('click', e => {
     document.getElementById('countryDropdown').style.display = 'none';
   }
 });
-const CITIES = [
-  // East & Southeast Asia
-  "Tokyo","Delhi","Shanghai","Beijing","Osaka","Chongqing","Guangzhou","Shenzhen","Chengdu","Nanjing",
-  "Wuhan","Xian","Hong Kong","Harbin","Shenyang","Suzhou","Seoul","Nagoya","Busan","Incheon",
-  "Taipei","Kaohsiung","Sapporo","Yokohama","Fukuoka","Tianjin","Qingdao","Dalian","Ulaanbaatar","Pyongyang",
-  "Manila","Jakarta","Bangkok","Ho Chi Minh City","Hanoi","Kuala Lumpur","Yangon","Singapore","Surabaya","Bandung",
-  "Medan","Phnom Penh","Vientiane","Cebu City","Davao City","Chiang Mai","Da Nang",
-  // South Asia
-  "Mumbai","Kolkata","Bangalore","Chennai","Hyderabad","Ahmedabad","Surat","Pune","Kanpur","Jaipur",
-  "Karachi","Lahore","Dhaka","Kabul","Islamabad","Colombo","Kathmandu","Chittagong","Multan","Faisalabad",
-  "Peshawar","Nagpur","Lucknow","Patna","Bhopal","Indore",
-  // Middle East
-  "Istanbul","Tehran","Baghdad","Riyadh","Ankara","Jeddah","Dubai","Abu Dhabi","Doha","Kuwait City",
-  "Amman","Beirut","Damascus","Muscat","Manama","Jerusalem","Tel Aviv",
-  // Africa
-  "Kinshasa","Lagos","Luanda","Khartoum","Nairobi","Johannesburg","Dar es Salaam","Casablanca","Abidjan","Cape Town",
-  "Accra","Alexandria","Cairo","Addis Ababa","Kampala","Dakar","Algiers","Tunis","Maputo","Lusaka","Harare",
-  "Kigali","Yaoundé","Douala","Bamako","Ouagadougou","Freetown","Monrovia","Tripoli","Rabat","Pretoria",
-  "Durban","Ibadan","Kano","Abuja","Mogadishu","Antananarivo","Lubumbashi","Bujumbura","N'Djamena","Niamey","Conakry",
-  // Europe
-  "Paris","London","Madrid","Berlin","Rome","Barcelona","Vienna","Warsaw","Kyiv","Minsk",
-  "Amsterdam","Brussels","Lisbon","Dublin","Stockholm","Copenhagen","Oslo","Helsinki","Athens","Budapest",
-  "Prague","Bucharest","Sofia","Zagreb","Belgrade","Zurich","Milan","Naples","Munich","Hamburg",
-  "Frankfurt","Manchester",
-  // Americas
-  "São Paulo","Mexico City","Buenos Aires","Rio de Janeiro","Bogotá","Lima","Santiago","Belo Horizonte","Medellín","Caracas",
-  "Quito","Guayaquil","Montevideo","Asunción","La Paz","Santa Cruz de la Sierra","Guadalajara","Monterrey","Havana","Santo Domingo",
-  "San Juan","Panama City","San José","Brasília","Fortaleza","Salvador","Recife","Porto Alegre","Curitiba",
-  "New York","Los Angeles","Chicago","Miami","Houston","Dallas","Toronto","Philadelphia",
-  // Oceania
-  "Sydney","Melbourne","Brisbane","Perth","Auckland","Wellington","Suva",
-  // Central Asia & Caucasus
-  "Almaty","Tashkent","Baku","Tbilisi","Yerevan","Bishkek","Dushanbe","Ashgabat",
-  // Russia (kept from the original list)
-  "Moscow","Saint Petersburg","Norilsk","Yekaterinburg","Novosibirsk","Omsk","Samara","Ufa","Chelyabinsk","Rostov-on-Don",
-  "Kazan","Voronezh","Perm","Krasnodar","Saratov","Tyumen","Irkutsk","Krasnoyarsk","Khabarovsk","Vladivostok",
-  "Nizhny Novgorod","Volgograd","Barnaul","Tomsk","Kemerovo","Naberezhnye Chelny","Kaliningrad","Tula","Sochi","Stavropol",
-  "Makhachkala","Yaroslavl","Izhevsk","Ulyanovsk","Nizhny Tagil","Ulan-Ude","Orenburg","Novokuznetsk","Ryazan","Astrakhan",
-  "Penza","Lipetsk","Kirov","Cheboksary","Balashikha","Bryansk","Ivanovo","Magnitogorsk","Tver","Belgorod",
-  "Vladikavkaz","Chita","Kaluga","Surgut","Smolensk","Volzhsky","Cherepovets","Vologda","Saransk","Yakutsk",
-  "Grozny","Podolsk","Kursk","Tambov","Petrozavodsk","Sterlitamak","Kostroma","Nizhnevartovsk","Orel","Novorossiysk",
-  "Angarsk","Blagoveshchensk","Syktyvkar","Murmansk","Tolyatti",
-  // United States
-  "Phoenix","San Antonio","San Diego","San Jose","Austin","Jacksonville","Fort Worth","Columbus","Charlotte","San Francisco",
-  "Indianapolis","Seattle","Denver","Washington","Boston","El Paso","Nashville","Detroit","Oklahoma City","Portland",
-  "Las Vegas","Memphis","Louisville","Baltimore","Milwaukee","Albuquerque","Tucson","Fresno","Sacramento","Kansas City",
-  "Mesa","Atlanta","Omaha","Colorado Springs","Raleigh","Long Beach","Virginia Beach","Oakland","Minneapolis","Tulsa",
-  "Bakersfield","Tampa","Wichita","Arlington","New Orleans","Cleveland","Honolulu","Anaheim","Pittsburgh","St. Louis",
-  "Cincinnati","Orlando",
-  // Europe — major non-capital cities plus capitals not yet listed
-  "Birmingham","Glasgow","Liverpool","Leeds","Edinburgh","Bristol","Sheffield","Newcastle",
-  "Marseille","Lyon","Toulouse","Nice","Nantes","Strasbourg","Bordeaux","Lille",
-  "Cologne","Stuttgart","Düsseldorf","Dortmund","Essen","Leipzig","Bremen","Dresden","Hanover","Nuremberg",
-  "Turin","Palermo","Genoa","Bologna","Florence","Bari","Catania","Venice",
-  "Valencia","Seville","Zaragoza","Málaga","Bilbao","Porto",
-  "Rotterdam","The Hague","Utrecht","Antwerp","Ghent",
-  "Kraków","Łódź","Wrocław","Poznań","Gdańsk","Brno","Graz","Salzburg",
-  "Geneva","Basel","Bern","Lausanne","Gothenburg","Malmö","Bergen","Aarhus","Espoo",
-  "Thessaloniki","Cluj-Napoca","Timișoara","Plovdiv","Split","Novi Sad","Cork",
-  "Kharkiv","Odesa","Dnipro","Lviv","Bratislava","Ljubljana","Vilnius","Riga","Tallinn"
-].sort();
+// Restructured 06.07.2026: was a flat array of 421 names — now grouped by
+// country, so picking a city can auto-fill the Country field (one action
+// instead of two; most people know their city faster than they think
+// about form fields). The flat CITIES array and the CITY_COUNTRY lookup
+// are both derived from this single source below.
+const CITIES_BY_COUNTRY = {
+  "Japan":["Tokyo","Osaka","Nagoya","Sapporo","Yokohama","Fukuoka"],
+  "China":["Shanghai","Beijing","Chongqing","Guangzhou","Shenzhen","Chengdu","Nanjing","Wuhan","Xian","Hong Kong","Harbin","Shenyang","Suzhou","Tianjin","Qingdao","Dalian"],
+  "South Korea":["Seoul","Busan","Incheon"],
+  "Taiwan":["Taipei","Kaohsiung"],
+  "Mongolia":["Ulaanbaatar"],
+  "North Korea":["Pyongyang"],
+  "Philippines":["Manila","Cebu City","Davao City"],
+  "Indonesia":["Jakarta","Surabaya","Bandung","Medan"],
+  "Thailand":["Bangkok","Chiang Mai"],
+  "Vietnam":["Ho Chi Minh City","Hanoi","Da Nang"],
+  "Malaysia":["Kuala Lumpur"],
+  "Myanmar":["Yangon"],
+  "Singapore":["Singapore"],
+  "Cambodia":["Phnom Penh"],
+  "Laos":["Vientiane"],
+  "India":["Delhi","Mumbai","Kolkata","Bangalore","Chennai","Hyderabad","Ahmedabad","Surat","Pune","Kanpur","Jaipur","Nagpur","Lucknow","Patna","Bhopal","Indore"],
+  "Pakistan":["Karachi","Lahore","Islamabad","Multan","Faisalabad","Peshawar"],
+  "Bangladesh":["Dhaka","Chittagong"],
+  "Afghanistan":["Kabul"],
+  "Sri Lanka":["Colombo"],
+  "Nepal":["Kathmandu"],
+  "Turkey":["Istanbul","Ankara"],
+  "Iran":["Tehran"],
+  "Iraq":["Baghdad"],
+  "Saudi Arabia":["Riyadh","Jeddah"],
+  "United Arab Emirates":["Dubai","Abu Dhabi"],
+  "Qatar":["Doha"],
+  "Kuwait":["Kuwait City"],
+  "Jordan":["Amman"],
+  "Lebanon":["Beirut"],
+  "Syria":["Damascus"],
+  "Oman":["Muscat"],
+  "Bahrain":["Manama"],
+  "Israel":["Jerusalem","Tel Aviv"],
+  "DR Congo":["Kinshasa","Lubumbashi"],
+  "Nigeria":["Lagos","Ibadan","Kano","Abuja"],
+  "Angola":["Luanda"],
+  "Sudan":["Khartoum"],
+  "Kenya":["Nairobi"],
+  "South Africa":["Johannesburg","Cape Town","Pretoria","Durban"],
+  "Tanzania":["Dar es Salaam"],
+  "Morocco":["Casablanca","Rabat"],
+  "Côte d'Ivoire":["Abidjan"],
+  "Ghana":["Accra"],
+  "Egypt":["Alexandria","Cairo"],
+  "Ethiopia":["Addis Ababa"],
+  "Uganda":["Kampala"],
+  "Senegal":["Dakar"],
+  "Algeria":["Algiers"],
+  "Tunisia":["Tunis"],
+  "Mozambique":["Maputo"],
+  "Zambia":["Lusaka"],
+  "Zimbabwe":["Harare"],
+  "Rwanda":["Kigali"],
+  "Cameroon":["Yaoundé","Douala"],
+  "Mali":["Bamako"],
+  "Burkina Faso":["Ouagadougou"],
+  "Sierra Leone":["Freetown"],
+  "Liberia":["Monrovia"],
+  "Libya":["Tripoli"],
+  "Somalia":["Mogadishu"],
+  "Madagascar":["Antananarivo"],
+  "Burundi":["Bujumbura"],
+  "Chad":["N'Djamena"],
+  "Niger":["Niamey"],
+  "Guinea":["Conakry"],
+  "France":["Paris","Marseille","Lyon","Toulouse","Nice","Nantes","Strasbourg","Bordeaux","Lille"],
+  "United Kingdom":["London","Manchester","Birmingham","Glasgow","Liverpool","Leeds","Edinburgh","Bristol","Sheffield","Newcastle"],
+  "Spain":["Madrid","Barcelona","Valencia","Seville","Zaragoza","Málaga","Bilbao"],
+  "Germany":["Berlin","Munich","Hamburg","Frankfurt","Cologne","Stuttgart","Düsseldorf","Dortmund","Essen","Leipzig","Bremen","Dresden","Hanover","Nuremberg"],
+  "Italy":["Rome","Milan","Naples","Turin","Palermo","Genoa","Bologna","Florence","Bari","Catania","Venice"],
+  "Austria":["Vienna","Graz","Salzburg"],
+  "Poland":["Warsaw","Kraków","Łódź","Wrocław","Poznań","Gdańsk"],
+  "Ukraine":["Kyiv","Kharkiv","Odesa","Dnipro","Lviv"],
+  "Belarus":["Minsk"],
+  "Netherlands":["Amsterdam","Rotterdam","The Hague","Utrecht"],
+  "Belgium":["Brussels","Antwerp","Ghent"],
+  "Portugal":["Lisbon","Porto"],
+  "Ireland":["Dublin","Cork"],
+  "Sweden":["Stockholm","Gothenburg","Malmö"],
+  "Denmark":["Copenhagen","Aarhus"],
+  "Norway":["Oslo","Bergen"],
+  "Finland":["Helsinki","Espoo"],
+  "Greece":["Athens","Thessaloniki"],
+  "Hungary":["Budapest"],
+  "Czech Republic":["Prague","Brno"],
+  "Romania":["Bucharest","Cluj-Napoca","Timișoara"],
+  "Bulgaria":["Sofia","Plovdiv"],
+  "Croatia":["Zagreb","Split"],
+  "Serbia":["Belgrade","Novi Sad"],
+  "Switzerland":["Zurich","Geneva","Basel","Bern","Lausanne"],
+  "Slovakia":["Bratislava"],
+  "Slovenia":["Ljubljana"],
+  "Lithuania":["Vilnius"],
+  "Latvia":["Riga"],
+  "Estonia":["Tallinn"],
+  "Brazil":["São Paulo","Rio de Janeiro","Belo Horizonte","Brasília","Fortaleza","Salvador","Recife","Porto Alegre","Curitiba"],
+  "Mexico":["Mexico City","Guadalajara","Monterrey"],
+  "Argentina":["Buenos Aires"],
+  "Colombia":["Bogotá","Medellín"],
+  "Peru":["Lima"],
+  "Chile":["Santiago"],
+  "Venezuela":["Caracas"],
+  "Ecuador":["Quito","Guayaquil"],
+  "Uruguay":["Montevideo"],
+  "Paraguay":["Asunción"],
+  "Bolivia":["La Paz","Santa Cruz de la Sierra"],
+  "Cuba":["Havana"],
+  "Dominican Republic":["Santo Domingo"],
+  "Puerto Rico":["San Juan"],
+  "Panama":["Panama City"],
+  "Costa Rica":["San José"],
+  "United States":["New York","Los Angeles","Chicago","Miami","Houston","Dallas","Philadelphia","Phoenix","San Antonio","San Diego","San Jose","Austin","Jacksonville","Fort Worth","Columbus","Charlotte","San Francisco","Indianapolis","Seattle","Denver","Washington","Boston","El Paso","Nashville","Detroit","Oklahoma City","Portland","Las Vegas","Memphis","Louisville","Baltimore","Milwaukee","Albuquerque","Tucson","Fresno","Sacramento","Kansas City","Mesa","Atlanta","Omaha","Colorado Springs","Raleigh","Long Beach","Virginia Beach","Oakland","Minneapolis","Tulsa","Bakersfield","Tampa","Wichita","Arlington","New Orleans","Cleveland","Honolulu","Anaheim","Pittsburgh","St. Louis","Cincinnati","Orlando"],
+  "Canada":["Toronto"],
+  "Australia":["Sydney","Melbourne","Brisbane","Perth"],
+  "New Zealand":["Auckland","Wellington"],
+  "Fiji":["Suva"],
+  "Kazakhstan":["Almaty"],
+  "Uzbekistan":["Tashkent"],
+  "Azerbaijan":["Baku"],
+  "Georgia":["Tbilisi"],
+  "Armenia":["Yerevan"],
+  "Kyrgyzstan":["Bishkek"],
+  "Tajikistan":["Dushanbe"],
+  "Turkmenistan":["Ashgabat"],
+  "Russia":["Moscow","Saint Petersburg","Norilsk","Yekaterinburg","Novosibirsk","Omsk","Samara","Ufa","Chelyabinsk","Rostov-on-Don","Kazan","Voronezh","Perm","Krasnodar","Saratov","Tyumen","Irkutsk","Krasnoyarsk","Khabarovsk","Vladivostok","Nizhny Novgorod","Volgograd","Barnaul","Tomsk","Kemerovo","Naberezhnye Chelny","Kaliningrad","Tula","Sochi","Stavropol","Makhachkala","Yaroslavl","Izhevsk","Ulyanovsk","Nizhny Tagil","Ulan-Ude","Orenburg","Novokuznetsk","Ryazan","Astrakhan","Penza","Lipetsk","Kirov","Cheboksary","Balashikha","Bryansk","Ivanovo","Magnitogorsk","Tver","Belgorod","Vladikavkaz","Chita","Kaluga","Surgut","Smolensk","Volzhsky","Cherepovets","Vologda","Saransk","Yakutsk","Grozny","Podolsk","Kursk","Tambov","Petrozavodsk","Sterlitamak","Kostroma","Nizhnevartovsk","Orel","Novorossiysk","Angarsk","Blagoveshchensk","Syktyvkar","Murmansk","Tolyatti"]
+};
+const CITY_COUNTRY = {};
+const CITIES = [];
+for (const country in CITIES_BY_COUNTRY) {
+  for (const c of CITIES_BY_COUNTRY[country]) { CITY_COUNTRY[c] = country; CITIES.push(c); }
+}
+CITIES.sort();
+
+// Fills Country from the chosen/typed city. Deliberately overwrites a
+// mismatched country on an explicit dropdown pick (the person just told
+// us where their city is — a stale country would be the wrong thing to
+// keep), and briefly flashes the field so the auto-fill is noticed, not
+// mysterious.
+function autofillCountryFromCity(city) {
+  const country = CITY_COUNTRY[city];
+  if (!country) return;
+  const el = document.getElementById('fieldCountry');
+  if (!el || el.value.trim() === country) return;
+  el.value = country;
+  el.style.transition = 'background .25s';
+  el.style.background = 'rgba(147,51,234,.22)';
+  setTimeout(() => { el.style.background = ''; }, 450);
+  if (typeof refreshFieldHighlights === 'function') refreshFieldHighlights();
+  if (typeof checkProfileCompletion === 'function') checkProfileCompletion();
+}
 
 function filterCities(val) {
   const dd = document.getElementById('cityDropdown');
   if (!val || val.length < 1) { dd.style.display='none'; return; }
   const filtered = CITIES.filter(c => c.toLowerCase().startsWith(val.toLowerCase())).slice(0, 8);
   if (!filtered.length) { dd.style.display='none'; return; }
+  // Items carry the city in a data attribute + one delegated listener (see
+  // below) instead of the old inline onclick="selectCity('...')" — which
+  // silently broke on any name containing an apostrophe (N'Djamena: the
+  // quote ended the JS string). The muted suffix shows which country will
+  // be auto-filled, so the pick is informed.
   dd.innerHTML = filtered.map(c =>
-    `<div onclick="selectCity('${c}')" style="padding:10px 14px;cursor:pointer;font-size:14px;color:#e9d5ff;border-bottom:1px solid rgba(147,51,234,.1)" onmouseover="this.style.background='rgba(147,51,234,.15)'" onmouseout="this.style.background=''">${c}</div>`
+    `<div data-city="${c}" style="padding:10px 14px;cursor:pointer;font-size:14px;color:#e9d5ff;border-bottom:1px solid rgba(147,51,234,.1)" onmouseover="this.style.background='rgba(147,51,234,.15)'" onmouseout="this.style.background=''">${c} <span style="font-size:11px;color:#7d6f9e">· ${CITY_COUNTRY[c] || ''}</span></div>`
   ).join('');
   dd.style.display = 'block';
 }
 
+document.getElementById('cityDropdown').addEventListener('click', e => {
+  const item = e.target.closest('[data-city]');
+  if (!item) return;
+  selectCity(item.dataset.city);
+});
+
 function selectCity(city) {
   document.getElementById('fieldCity').value = city;
   document.getElementById('cityDropdown').style.display = 'none';
+  autofillCountryFromCity(city);
+  if (typeof refreshFieldHighlights === 'function') refreshFieldHighlights();
 }
+
+// Also catch a city typed in full by hand (no dropdown tap): on leaving
+// the field, an exact case-insensitive match against the known list
+// normalizes the spelling and fills the country the same way.
+document.getElementById('fieldCity').addEventListener('change', function(){
+  const typed = this.value.trim().toLowerCase();
+  if (!typed) return;
+  const match = CITIES.find(c => c.toLowerCase() === typed);
+  if (match) { this.value = match; autofillCountryFromCity(match); }
+});
 
 document.addEventListener('click', e => {
   if (!e.target.closest('#fieldCity') && !e.target.closest('#cityDropdown')) {
