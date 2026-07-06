@@ -53,6 +53,15 @@ html,body{
   font-family:'Space Grotesk',sans-serif;
   min-height:100vh;overflow-x:hidden;
 }
+/* Gentle app entry, 06.07.2026 — the app used to snap onto the screen at
+   full brightness in a single frame, which felt abrupt for a product
+   whose whole mood is a quiet night sky. One slow opacity fade on launch,
+   like eyes adjusting to the dark. Deliberately opacity-only: a transform
+   here would turn <body> into the containing block for every
+   position:fixed child (bottom nav, modals, onboarding overlay) for the
+   duration of the animation and make them visibly jump. */
+body{animation:appEnter .8s ease-out}
+@keyframes appEnter{from{opacity:0}to{opacity:1}}
 
 /* STARFIELD */
 #starfield{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
@@ -701,9 +710,19 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
         </div>
       </div>
 
-      <div id="cityTeaserHome" style="display:none;flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px 12px">
+      <!-- Visible from the start with cosmic skeleton rows (was
+           display:none until city data arrived — which made the
+           Constellations card span full width and then abruptly shrink
+           to half when this one popped in). If the city list turns out
+           empty or fails to load, JS hides it and the layout gracefully
+           returns to a single full-width card — the rare case gets the
+           jump, not every launch. -->
+      <div id="cityTeaserHome" style="flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px 12px">
         <div style="font-size:9px;color:#a78bfa;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">Top cities</div>
-        <div id="cityTeaserList" style="font-size:12px;color:#e9d5ff;line-height:1.6"></div>
+        <div id="cityTeaserList" style="font-size:12px;color:#e9d5ff;line-height:1.6">
+          <div class="skl loading">City name 0</div>
+          <div class="skl loading" style="margin-top:3px">City 0</div>
+        </div>
         <div class="page-sub" id="cityTeaserLink" style="margin-top:4px;cursor:pointer;color:#a78bfa;font-size:11px">See map →</div>
       </div>
     </div>
@@ -2947,13 +2966,19 @@ function renderRestoredNftCard(nftData) {
 }
 
 async function loadCitiesFromChain() {
+  // The Home teaser starts visible with skeleton rows, so the two-card
+  // grid never jumps. Its fallback: if there's genuinely nothing to show
+  // (empty contract, all rows failed to parse, request error), hide it —
+  // an empty skeleton shimmering forever would be a lie about data that
+  // isn't coming.
+  const hideCityTeaser = () => { const t = document.getElementById('cityTeaserHome'); if (t) t.style.display = 'none'; };
   try {
     if (window.TonCoreExtrasReady) await window.TonCoreExtrasReady;
     const sizeData = await tonFetch({ address: CONTRACT_ADDRESS, method: 'cityCountsSize', stack: [] });
     const sizeHex = sizeData?.result?.stack?.[0]?.[1];
     const size = sizeHex ? parseInt(sizeHex, 16) : 0;
     if (typeof debugMode !== 'undefined' && debugMode) updateDebugInfo('cityCountsSize = ' + size);
-    if (!size) return; // stays on the "No one has marked their city yet" empty state
+    if (!size) { hideCityTeaser(); return; } // stays on the "No one has marked their city yet" empty state
 
     const cities = [];
     for (let i = 0; i < size; i++) {
@@ -3007,14 +3032,20 @@ async function loadCitiesFromChain() {
 
     // Home teaser — added 04.07.2026, top 3 cities only, reusing the same
     // sorted data already fetched above rather than a second round of calls.
+    // Since 06.07.2026 the card is visible from launch with skeleton rows;
+    // here we either replace them with real data or hide the card if
+    // parsing left us with nothing.
     const homeTeaser = document.getElementById('cityTeaserHome');
     const homeList = document.getElementById('cityTeaserList');
     if (homeTeaser && homeList) {
-      homeList.innerHTML = cities.slice(0, 3).map(c => `
+      if (cities.length) {
+        homeList.innerHTML = cities.slice(0, 3).map(c => `
         <div style="display:flex;justify-content:space-between"><span>${c.city}</span><span style="color:#a78bfa;font-weight:600">${c.count}</span></div>`).join('');
-      homeTeaser.style.display = 'block';
+      } else {
+        hideCityTeaser();
+      }
     }
-  } catch(e) { console.log('City list load failed', e); }
+  } catch(e) { console.log('City list load failed', e); hideCityTeaser(); }
 }
 // Called via .then() chain after loadInitialChainData() now — see that
 // call site — instead of firing independently here.
