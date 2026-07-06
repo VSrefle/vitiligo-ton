@@ -623,11 +623,35 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
   max-width:280px;opacity:0;transition:all .35s;z-index:150;pointer-events:none;
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* Language screen is hidden pre-paint for anyone who already picked a
+   language (html class set by the tiny head script below) — same
+   zero-frame technique the onboarding briefly used. */
+html.vt-langpicked #langScreen{display:none}
 </style>
+<script>
+// Pre-paint language check — must run before <body> renders so returning
+// visitors never see the language screen flash. try/catch: localStorage
+// can throw in some webviews.
+try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('vt-langpicked')}catch(e){}
+</script>
 </head>
 <body>
 
 <canvas id="starfield"></canvas>
+
+<!-- LANGUAGE PICKER — shows before onboarding on the very first launch
+     (product decision 06.07.2026: language is the ONE thing asked before
+     the three welcome screens; remembered in localStorage, switchable
+     later from Profile). Bilingual by nature — a person who needs it
+     hasn't told us their language yet. -->
+<div class="welcome" id="langScreen" style="z-index:200">
+  <div class="welcome-glow"><div class="welcome-star">✦</div></div>
+  <div class="ob-title">Choose your language<br>Выберите язык</div>
+  <div style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:260px;margin-top:24px">
+    <button class="welcome-btn" data-pick-lang="en" style="width:100%">English</button>
+    <button class="welcome-btn" data-pick-lang="ru" style="width:100%">Русский</button>
+  </div>
+</div>
 
 <!-- WELCOME -->
 <!-- Policy history, because this has flip-flopped three times:
@@ -973,9 +997,19 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
     <a href="https://t.me/vitiligo_ton" target="_blank" style="display:block;text-align:center;padding:12px;border:1px solid rgba(147,51,234,.3);border-radius:12px;color:#a78bfa;font-size:13px;text-decoration:none;margin-bottom:8px">
       💬 Write to the team
     </a>
-    <button onclick="openModal('modalHelp')" style="display:block;width:100%;text-align:center;padding:12px;border:1px solid rgba(147,51,234,.2);border-radius:12px;color:#6b7280;font-size:13px;background:none;cursor:pointer;font-family:'Space Grotesk',sans-serif;margin-bottom:12px">
+    <button onclick="openModal('modalHelp')" style="display:block;width:100%;text-align:center;padding:12px;border:1px solid rgba(147,51,234,.2);border-radius:12px;color:#6b7280;font-size:13px;background:none;cursor:pointer;font-family:'Space Grotesk',sans-serif;margin-bottom:10px">
       💡 How it works
     </button>
+
+    <!-- Language switcher (06.07.2026, part of the i18n pass). Each name
+         stays in its own language on purpose — the row must be readable
+         to someone who picked the wrong language. -->
+    <div style="display:flex;gap:8px;justify-content:center;align-items:center;margin-bottom:12px;font-size:12px;color:#6b7280">
+      <span>🌐</span>
+      <span data-langswitch="en" style="cursor:pointer;color:#a78bfa">English</span>
+      <span style="opacity:.4">·</span>
+      <span data-langswitch="ru" style="cursor:pointer;color:#a78bfa">Русский</span>
+    </div>
   </div>
 </div>
 
@@ -3370,6 +3404,169 @@ document.addEventListener('click', e => {
 
 // Genesis star is created inside the cosmic canvas IIFE above (see "Genesis star in center").
 // Canvas pulse animation handled inside cosmic canvas IIFE above
+
+
+/* ══════════════ I18N — language picker + Russian translation ══════════════
+   Added 06.07.2026. Architecture, so the next language is cheap to add:
+   1) RU_TEXT — exact-match map for leaf text nodes, placeholders, titles
+      and dynamically inserted strings (toasts, buttons, statuses). A
+      MutationObserver re-applies it to anything added later, so JS code
+      keeps writing English and it gets translated on arrival — no need
+      to thread t() through 3000 lines.
+   2) RU_HTML — per-selector innerHTML overrides for mixed/nested blocks
+      (onboarding screens, Home headline, Fun fact) where node-by-node
+      replacement would fight the markup.
+   3) RU_RX — regex rules for composite strings with live numbers.
+   English is the source language in the DOM; applyLang() is one-way
+   EN→RU, so switching back to EN from Profile simply reloads the page. */
+const LANG_KEY = 'vt_lang';
+let LANG = (function(){ try { return localStorage.getItem(LANG_KEY) || ''; } catch(e){ return ''; } })();
+
+const RU_TEXT = {
+  "People with vitiligo":"Люди с витилиго","in the world":"в мире",
+  "We can change that →":"Мы можем это изменить →","Tell me more →":"Расскажи ещё →",
+  "I have vitiligo ✦":"У меня витилиго ✦","just look around first":"сначала просто осмотрюсь",
+  "just vitiligo · just us · just beautiful":"просто витилиго · просто мы · просто красиво",
+  "people counted":"людей посчитано","constellations minted":"созвездий заминчено",
+  "Constellations":"Созвездия","of 88":"из 88","Top cities":"Топ городов","See map →":"На карту →",
+  "Count me in ✦":"Посчитайте меня ✦","View my constellation →":"Моё созвездие →",
+  "Make another constellation ✦":"Сделать ещё созвездие ✦",
+  "🎉 Congratulations — you're counted":"🎉 Поздравляем — ты посчитан",
+  "Home":"Главная","Constellation":"Созвездие","Map":"Карта","Invite":"Позвать","Profile":"Профиль",
+  "Your constellation":"Твоё созвездие","Your vitiligo becomes real stars":"Твоё витилиго становится настоящими звёздами",
+  "Real constellations discovered":"Настоящих созвездий открыто",
+  "Each real constellation appears only once across all participants":"Каждое настоящее созвездие появляется лишь один раз на всех участников",
+  "Upload":"Фото","Detect":"Поиск","Map stars":"Звёзды","Save":"Минт",
+  "✦ You're counted — this mints another constellation, a fresh roll at something rarer":"✦ Ты уже посчитан — это минт ещё одного созвездия, новый шанс на что-то более редкое",
+  "Tap to upload a photo":"Нажми, чтобы загрузить фото","with your vitiligo patch":"с твоим пятном витилиго",
+  "Your body disappears. Only stars remain.":"Тело исчезает. Остаются только звёзды.",
+  "Try another photo":"Другое фото","My constellations":"Мои созвездия",
+  "Tell your story (optional)":"Расскажи свою историю (по желанию)",
+  "This becomes part of your constellation — visible to you and whoever you gift it to":"Это станет частью твоего созвездия — увидишь ты и тот, кому ты его подаришь",
+  "Confirm 1 TON to mint this constellation permanently on-chain ✦":"Подтверди 1 TON, чтобы заминтить созвездие навсегда в блокчейне ✦",
+  "Rare constellation":"Редкое созвездие","Only 4% of people get this one":"Такое выпадает лишь 4% людей",
+  "★ RARE":"★ РЕДКОЕ","A new constellation is being born...":"Рождается новое созвездие...",
+  "✦ Generating your constellation...":"✦ Создаём твоё созвездие...",
+  "Where we are":"Где мы","Tap any star to see whose it is":"Нажми на звезду — узнаешь, чья она",
+  "No one has marked their city yet — be the first ✦":"Никто ещё не отметил свой город — будь первым ✦",
+  "Share vitiligo.ton":"Поделись vitiligo.ton","Someone you know might belong here too":"Кто-то из твоих знакомых тоже может быть здесь",
+  "Know someone with vitiligo?":"Знаешь кого-то с витилиго?",
+  "Send them your link. When they join, you both light up the sky a little brighter.":"Отправь свою ссылку. Когда они присоединятся, вы оба зажжёте небо чуть ярче.",
+  "Share":"Поделиться","tap to copy":"нажми — скопируется","✓ copied":"✓ скопировано",
+  "Friend joins & counts in":"Друг присоединяется и считается",
+  "Their star appears on the canvas — for everyone to see, including you":"Его звезда появляется на холсте — её видят все, включая тебя",
+  "Copy link":"Скопировать ссылку","Send to chat":"Отправить в чат","🎁 Gift to friend":"🎁 Подарить другу",
+  "People with vitiligo are unique by nature":"Люди с витилиго уникальны от природы",
+  "Name":"Имя","Country":"Страна","City":"Город","Age":"Возраст",
+  "Your name":"Твоё имя","Country — start typing...":"Страна — начни печатать...",
+  "City — start typing...":"Город — начни печатать...","Select your age":"Выбери возраст",
+  "Update on-chain profile · 0.02 TON":"Обновить профиль в блокчейне · 0.02 TON",
+  "Visible to everyone — city, map, and story":"Видно всем — город, карта и история",
+  "💬 Write to the team":"💬 Написать команде","💡 How it works":"💡 Как это работает",
+  "How it works":"Как это работает","Got it ✦":"Понятно ✦",
+  "Press \"I have vitiligo ✦\"":"Нажми «У меня витилиго ✦»",
+  "You'll go to the photo upload screen":"Откроется экран загрузки фото",
+  "Upload a photo of your vitiligo":"Загрузи фото своего витилиго",
+  "The algorithm finds the patches and builds your personal constellation":"Алгоритм найдёт пятна и соберёт твоё личное созвездие",
+  "Press \"Count me in ✦\"":"Нажми «Посчитайте меня ✦»",
+  "Connect your TON wallet (Tonkeeper) and confirm 1 TON":"Подключи TON-кошелёк (Tonkeeper) и подтверди 1 TON",
+  "Your star appears on the canvas":"Твоя звезда появится на холсте",
+  "On the shared canvas you're a single star among everyone else. Tap it any time to reveal your full constellation — its shape, its name, its story.":"На общем холсте ты — одна звезда среди всех. Нажми на неё в любой момент, чтобы раскрыть своё созвездие — его форму, имя и историю.",
+  "Join the count forever":"Присоединись к счёту навсегда","Don't have a TON wallet?":"Нет TON-кошелька?",
+  "Download":"Скачай","from App Store or Google Play — it's free. Top up with 1–2 TON to get started.":"из App Store или Google Play — это бесплатно. Пополни на 1–2 TON, чтобы начать.",
+  "Confirm — 1 TON":"Подтвердить — 1 TON","Cancel":"Отмена",
+  "⏳ Waiting for confirmation…":"⏳ Ждём подтверждения…","✓ Transaction confirmed!":"✓ Транзакция подтверждена!",
+  "✓ Counted!":"✓ Посчитан!","Link copied ✦":"Ссылка скопирована ✦",
+  "Connect your wallet first ✦":"Сначала подключи кошелёк ✦","Connecting wallet service, one moment…":"Подключаем кошелёк, секунду…",
+  "Please fill in name, country, city and age ✦":"Заполни имя, страну, город и возраст ✦",
+  "Please fill your name, country, city and age first ✦":"Сначала заполни имя, страну, город и возраст ✦",
+  "Upload a photo of your vitiligo to join the count ✦":"Загрузи фото витилиго, чтобы попасть в счёт ✦",
+  "On-chain profile updated ✦":"Профиль в блокчейне обновлён ✦",
+  "No story added yet.":"История пока не добавлена.","✦ Owner: ":"✦ Владелец: ",
+  "Wallet connect is unavailable — check your connection and reload the page.":"Подключение кошелька недоступно — проверь связь и перезагрузи страницу.",
+  "Payment setup failed to load — please reload the page and try again.":"Оплата не загрузилась — перезагрузи страницу и попробуй снова.",
+  "Something went wrong with your constellation — try uploading the photo again.":"Что-то пошло не так с созвездием — попробуй загрузить фото ещё раз."
+};
+
+const RU_HTML = {
+  "#ob0 .ob-title":"людей с витилиго<br>в мире",
+  "#ob0 .ob-body":"Никто никогда не считал по-настоящему — ни переписи, ни точного числа, лишь оценки, повторяемые десятилетиями. Мы строим первый настоящий счёт: по одному честному человеку, навсегда записанному в блокчейне.",
+  "#ob1 .ob-title":"Твоё витилиго<br>становится созвездием",
+  "#ob1 .ob-body":"Загрузи фото — алгоритм найдёт твои пятна и превратит их в личную звёздную карту. Двух одинаковых не бывает. Твоя минтится один раз и остаётся твоей навсегда, надёжно на блокчейне TON.",
+  "#ob2 .ob-title":"Однажды каждый из нас<br>будет посчитан",
+  "#ob2 .ob-body":"Это мечта — не оценка, с которой можно спорить, а настоящее число, растущее по одному человеку, пока не станет всеми. Ты можешь стать частью этого уже сегодня.",
+  ".home .headline":"Люди с витилиго<br>— <em>уникальны от природы</em>"
+};
+
+const RU_RX = [
+  [/^Goal: (.+) people$/, "Цель: $1 человек"]
+];
+
+function _ruTr(raw){
+  const t = raw.trim();
+  if (!t) return null;
+  if (RU_TEXT[t] !== undefined) return raw.replace(t, RU_TEXT[t]);
+  for (const [rx, rep] of RU_RX) if (rx.test(t)) return raw.replace(t, t.replace(rx, rep));
+  return null;
+}
+function _ruNode(n){
+  if (n.nodeType === 3) { const r = _ruTr(n.nodeValue); if (r !== null) n.nodeValue = r; }
+}
+function _ruWalk(root){
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let n; while ((n = w.nextNode())) _ruNode(n);
+}
+function _ruAttrs(root){
+  (root.querySelectorAll ? root.querySelectorAll('[placeholder],[title]') : []).forEach(el => {
+    ['placeholder','title'].forEach(a => {
+      const v = el.getAttribute && el.getAttribute(a);
+      if (v && RU_TEXT[v.trim()]) el.setAttribute(a, RU_TEXT[v.trim()]);
+    });
+  });
+}
+let _langObserver = null;
+function applyLang(){
+  if (LANG !== 'ru') return;
+  document.documentElement.lang = 'ru';
+  for (const sel in RU_HTML) { const el = document.querySelector(sel); if (el) el.innerHTML = RU_HTML[sel]; }
+  _ruWalk(document.body); _ruAttrs(document);
+  if (!_langObserver) {
+    // Keeps later dynamic content (toasts, statuses, re-rendered numbers)
+    // translated. Self-terminating per node: once a node holds Russian
+    // text, it no longer matches the EN map, so mutations we cause don't
+    // loop.
+    _langObserver = new MutationObserver(muts => {
+      for (const m of muts) {
+        if (m.type === 'characterData') _ruNode(m.target);
+        if (m.addedNodes) m.addedNodes.forEach(nd => {
+          if (nd.nodeType === 3) _ruNode(nd);
+          else if (nd.nodeType === 1) { _ruWalk(nd); _ruAttrs(nd); }
+        });
+      }
+    });
+    _langObserver.observe(document.body, { subtree:true, childList:true, characterData:true });
+  }
+}
+
+// Language screen wiring: pick → remember → translate → dissolve.
+document.querySelectorAll('#langScreen [data-pick-lang]').forEach(b => b.addEventListener('click', () => {
+  LANG = b.dataset.pickLang;
+  try { localStorage.setItem(LANG_KEY, LANG); } catch(e){}
+  applyLang();
+  const ls = document.getElementById('langScreen');
+  ls.classList.add('fade');
+  setTimeout(() => { ls.style.display = 'none'; }, 800);
+}));
+// Returning visitor: screen is already hidden pre-paint by the head
+// script; this covers webviews where localStorage failed there.
+if (LANG) { const _ls = document.getElementById('langScreen'); if (_ls) _ls.style.display = 'none'; }
+// Profile switcher: setting the language and reloading is the simplest
+// correct path — translation is one-way EN→RU in the live DOM.
+document.querySelectorAll('[data-langswitch]').forEach(el => el.addEventListener('click', () => {
+  try { localStorage.setItem(LANG_KEY, el.dataset.langswitch); } catch(e){}
+  location.reload();
+}));
+applyLang();
 
 </script>
 </body>
