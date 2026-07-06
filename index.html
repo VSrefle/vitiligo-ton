@@ -736,49 +736,59 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
       <p class="sub" style="margin-bottom:0">just vitiligo · just us · just beautiful</p>
     </div>
 
-    <!-- Added 04.07.2026 — cosmos animation now serves as a literal
-         backdrop for the counters (merged into one block, not two stacked
-         ones) to save vertical space so Home fits on screen without
-         scrolling. Purely decorative, no taps/zoom (that lives on
-         Constellation now). -->
+    <!-- Added 04.07.2026 — cosmos animation as a literal backdrop for the
+         counters. Extended 06.07.2026: the Goal and Constellations
+         progress cards used to sit below as two separate rectangles with
+         mismatched alignment (goal left-aligned, discovery centered) —
+         visual noise of three competing frames. Now both live INSIDE this
+         one cosmos block, as a symmetric two-column footer under the
+         counters: same alignment, same thin bars, one card total. All
+         element ids are unchanged, so the JS that fills them (atomic
+         reveal, updateMilestone, updateDiscoveryProgress) didn't move. -->
     <div style="position:relative;border-radius:20px;overflow:hidden;margin:10px 0 14px;background:#040b18;border:.5px solid rgba(147,51,234,.15)">
       <canvas id="heroCosmos" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas>
-      <div class="dual-counter" style="position:relative;background:transparent;border:none;margin-bottom:0">
+      <!-- Stacked vertically 06.07.2026 (was side-by-side): the count is
+           the product — it must always show the EXACT number, and a
+           half-width column can't fit "12,847,391" without the K/M
+           rounding that fmt() does. Full-width rows can. Numbers are
+           written with fmtExact() everywhere for the same reason. -->
+      <div class="dual-counter" style="position:relative;background:transparent;border:none;margin-bottom:0;flex-direction:column;gap:10px;padding:16px 10px 12px">
         <div class="counter-block">
           <div class="cnum loading" id="cnum">0</div>
           <div class="clabel">people counted</div>
           <div class="live-row" id="liveRow"><div class="wdot" style="background:var(--green)"></div>live</div>
         </div>
-        <div class="counter-divider"></div>
+        <div class="counter-divider" style="width:56%;height:.5px"></div>
         <div class="counter-block">
           <div class="cnum cnum-gold loading" id="cnumPhotos">0</div>
           <div class="clabel">constellations minted</div>
         </div>
       </div>
-    </div>
-
-    <div style="background:rgba(147,51,234,.1);border:1px solid rgba(147,51,234,.22);border-radius:12px;padding:14px 16px;margin-bottom:16px">
-      <div style="font-size:10px;color:#a78bfa;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px" id="milestoneLabel">Goal: 100 people</div>
-      <div class="skl loading" style="font-size:20px;font-weight:700;color:#fff;margin-bottom:8px" id="milestoneSub">0 / 100</div>
-      <div class="milestone-track"><div class="milestone-fill" id="milestoneFill"></div></div>
-    </div>
-
-    <!-- 06.07.2026: the "Top cities" teaser was removed from Home — it
-         duplicated the full list that already lives on the Map tab, and
-         it was the ONE block whose data arrived after the atomic reveal
-         (cities load through a long request chain), so it popped in
-         seconds after every other number on the page. Now everything
-         Home shows comes from the three startup requests and appears in
-         a single paint; cities live where they belong, one tap away
-         (the "on the map →" link below). The discovery card takes the
-         full width again. -->
-    <div id="discoveryTeaserHome" style="background:rgba(147,51,234,.1);border:1px solid rgba(147,51,234,.22);border-radius:12px;padding:10px 14px;text-align:center;margin-bottom:16px">
-      <div style="font-size:9px;color:#a78bfa;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px">Constellations</div>
-      <div class="skl loading" style="font-size:16px;font-weight:700;color:white" id="discoveryCountHome">0 <span style="font-size:11px;color:#a78bfa;font-weight:400">of 88</span></div>
-      <div style="height:4px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:6px">
-        <div id="discoveryBarHome" style="height:100%;background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:2px;width:0%;transition:width .6s ease"></div>
+      <!-- 06.07.2026, second pass: Goal and Constellations were briefly a
+           two-column footer — rejected (half-width columns re-create the
+           same "no room for the exact number" problem the stacked
+           counters just solved). Everything inside the card is now ONE
+           vertical list, every row full-width and centered: exact people
+           count → exact constellations count → goal progress → discovery
+           progress → cities link. The cosmos canvas backdrop covers the
+           whole card, list rows included. -->
+      <div style="position:relative;padding:12px 16px 4px;border-top:.5px solid rgba(147,51,234,.15)">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:5px">
+          <div style="font-size:9px;color:#a78bfa;letter-spacing:1px;text-transform:uppercase;white-space:nowrap" id="milestoneLabel">Goal: 100 people</div>
+          <div class="skl loading" style="font-size:14px;font-weight:700;color:#fff;text-align:right" id="milestoneSub">0 / 100</div>
+        </div>
+        <div class="milestone-track" style="height:3px"><div class="milestone-fill" id="milestoneFill"></div></div>
       </div>
-      <div class="page-sub" id="cityTeaserLink" style="margin-top:8px;cursor:pointer;color:#a78bfa;font-size:11px">Cities on the map →</div>
+      <div style="position:relative;padding:12px 16px 4px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:5px">
+          <div style="font-size:9px;color:#a78bfa;letter-spacing:1px;text-transform:uppercase;white-space:nowrap">Constellations</div>
+          <div class="skl loading" style="font-size:14px;font-weight:700;color:#fff;text-align:right" id="discoveryCountHome">0 <span style="font-size:11px;color:#a78bfa;font-weight:400">of 88</span></div>
+        </div>
+        <div style="height:3px;background:rgba(255,255,255,.08);border-radius:2px">
+          <div id="discoveryBarHome" style="height:100%;background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:2px;width:0%;transition:width .6s ease"></div>
+        </div>
+      </div>
+      <div class="page-sub" id="cityTeaserLink" style="position:relative;text-align:center;cursor:pointer;color:#a78bfa;font-size:11px;padding:12px 0 12px;margin:0">Cities on the map →</div>
     </div>
 
     <!-- Banner + CTA live in one wrapper pinned to the bottom edge of the
@@ -1524,6 +1534,11 @@ function addPixelToCanvas(color, isNFT, data) {
   }
 }
 /* ── LIVE COUNTER FROM BLOCKCHAIN ── */
+// Compact K/M/B formatting — used ONLY for goals and secondary numbers.
+// The two big counters and the milestone's current count use fmtExact()
+// by product decision (06.07.2026): the exact count IS the product —
+// "10K" would be an estimate, and estimates are exactly what this
+// project exists to replace.
 function fmt(n){
   if (n < 10000) return n.toLocaleString('en-US');
   if (n < 1000000) return (n/1000).toFixed(1).replace(/\.0$/,'') + 'K';
@@ -1555,7 +1570,7 @@ function updateMilestone(){
   const progress = Math.min(100, ((count - prevGoal) / (goal - prevGoal)) * 100);
   document.getElementById('milestoneLabel').textContent = `Goal: ${fmt(goal)} people`;
   document.getElementById('milestoneFill').style.width = progress + '%';
-  document.getElementById('milestoneSub').textContent = `${fmt(count)} / ${fmt(goal)}`;
+  document.getElementById('milestoneSub').textContent = `${fmtExact(count)} / ${fmt(goal)}`;
 }
 
 // Shared rate-limited queue for every toncenter.com call in this app.
@@ -1665,8 +1680,8 @@ async function loadInitialChainData() {
   if (mapHex) applyDiscoveredBitmap(mapHex);
   count = newCount;
   photoCount = newPhotoCount;
-  numEl.textContent = fmt(count); numEl.title = fmtExact(count)+' people';
-  numPhotosEl.textContent = fmt(photoCount); numPhotosEl.title = fmtExact(photoCount)+' constellations';
+  numEl.textContent = fmtExact(count); numEl.title = fmtExact(count)+' people';
+  numPhotosEl.textContent = fmtExact(photoCount); numPhotosEl.title = fmtExact(photoCount)+' constellations';
   updateMilestone();
   updateDiscoveryProgress();
   ['cnum','cnumPhotos','milestoneSub','discoveryCountHome','discoveryCount'].forEach(id => {
@@ -2587,7 +2602,7 @@ document.getElementById('modalMintConfirm').addEventListener('click', async ()=>
     if (!wasAlreadyJoined) {
       count++;
       numEl.classList.remove('loading');
-      numEl.textContent=fmt(count); numEl.title=fmtExact(count)+' people';
+      numEl.textContent=fmtExact(count); numEl.title=fmtExact(count)+' people';
       numEl.classList.add('flash'); setTimeout(()=>numEl.classList.remove('flash'),700);
       updateMilestone();
       const homeBtn=document.getElementById('countBtn');
@@ -2644,7 +2659,7 @@ document.getElementById('modalMintConfirm').addEventListener('click', async ()=>
       setTimeout(()=>{
         addPixelToCanvas(nftPixelColor,true,{constName: nftData.name, story: nftData.story, isRare: nftData.rare, isLegendary: nftData.isRealDiscovery || false, constData: nftData.constData});
         photoCount++; numPhotosEl.classList.remove('loading');
-        numPhotosEl.textContent=fmt(photoCount); numPhotosEl.title=fmtExact(photoCount)+' constellations';
+        numPhotosEl.textContent=fmtExact(photoCount); numPhotosEl.title=fmtExact(photoCount)+' constellations';
         numPhotosEl.classList.add('flash'); setTimeout(()=>numPhotosEl.classList.remove('flash'),600);
         showToast(gold ? '★ Rare constellation minted!' : '✦ Your constellation is on the canvas');
         if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
