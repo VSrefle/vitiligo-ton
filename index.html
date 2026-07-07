@@ -68,7 +68,7 @@ body{animation:appEnter .8s ease-out}
 
 /* WELCOME */
 .welcome{
-  position:fixed;inset:0;z-index:150;background:var(--bg);
+  position:fixed;inset:0;z-index:150;background-color:#080612;
   display:flex;flex-direction:column;align-items:center;
   justify-content:center;padding:36px 28px;text-align:center;
   transition:opacity .8s ease;
@@ -156,7 +156,7 @@ body{animation:appEnter .8s ease-out}
    nav, and the CTA sits anchored at the bottom — always in the same
    place, thumb-reachable, regardless of how much content is above it. */
 .home{
-  padding:0 18px;display:flex;flex-direction:column;
+  padding:0 18px;display:flex;flex-direction:column;gap:10px;
   min-height:calc(var(--tg-viewport-stable-height,100vh) - 88px);justify-content:space-between;
 }
 .topbar{
@@ -623,6 +623,30 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
   max-width:280px;opacity:0;transition:all .35s;z-index:150;pointer-events:none;
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* Constellation detail opens full screen — see the comment at
+   #modalNftDetail in the markup. */
+#modalNftDetail{align-items:stretch}
+#modalNftDetail .modal{
+  max-width:none;width:100%;max-height:none;
+  height:var(--tg-viewport-stable-height,100vh);
+  border-radius:0;overflow-y:auto;
+}
+/* 06.07.2026 — every full "window" (language screen, the three welcome
+   screens, all modals/sheets) shares the same cosmos-with-stars backdrop
+   as Home, instead of flat solid panels. Placed at the very end of the
+   stylesheet so no earlier background shorthand can wipe the image. */
+.welcome,.modal{
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(255,255,255,.8) 0, rgba(255,255,255,.8) 1px, transparent 1.9px),
+    radial-gradient(circle at 34% 62%, rgba(233,213,255,.6) 0, rgba(233,213,255,.6) .8px, transparent 1.5px),
+    radial-gradient(circle at 58% 30%, rgba(255,255,255,.7) 0, rgba(255,255,255,.7) 1px, transparent 1.8px),
+    radial-gradient(circle at 78% 74%, rgba(233,213,255,.55) 0, rgba(233,213,255,.55) .8px, transparent 1.5px),
+    radial-gradient(circle at 90% 24%, rgba(255,255,255,.6) 0, rgba(255,255,255,.6) .9px, transparent 1.6px),
+    radial-gradient(circle at 22% 86%, rgba(255,255,255,.5) 0, rgba(255,255,255,.5) .8px, transparent 1.5px),
+    radial-gradient(circle at 66% 90%, rgba(233,213,255,.45) 0, rgba(233,213,255,.45) .7px, transparent 1.4px),
+    radial-gradient(ellipse at 70% 15%, rgba(76,29,149,.25), transparent 60%),
+    radial-gradient(ellipse at 20% 85%, rgba(147,51,234,.12), transparent 55%);
+}
 /* Language screen is hidden pre-paint for anyone who already picked a
    language (html class set by the tiny head script below) — same
    zero-frame technique the onboarding briefly used. */
@@ -704,7 +728,6 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
     <button class="welcome-btn" id="welcomeBtn">I have vitiligo ✦</button>
   </div>
 
-  <div class="welcome-skip" id="welcomeSkip" style="display:none;position:absolute;left:28px;right:28px;bottom:28px">just look around first</div>
 
 </div>
 
@@ -733,7 +756,7 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
          .home keeps the headline and its tagline together. -->
     <div>
       <h1 class="headline">People with vitiligo<br>are <em>unique by nature</em></h1>
-      <p class="sub" style="margin-bottom:0">just vitiligo · just us · just beautiful</p>
+      <p class="sub" style="margin-bottom:0">just vitiligo · just us · just real</p>
     </div>
 
     <!-- Added 04.07.2026 — cosmos animation as a literal backdrop for the
@@ -840,7 +863,7 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
 
     <div class="upload-area" id="uploadArea">
       <div class="upload-icon">✦</div>
-      <div class="upload-text">Tap to upload a photo<br>with your vitiligo patch</div>
+      <div class="upload-text">Tap to upload a photo<br>with your vitiligo</div>
       <div class="upload-hint">Your body disappears. Only stars remain.</div>
     </div>
     <input type="file" id="fileInput" accept="image/*">
@@ -868,7 +891,7 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
       <div class="story-hint">This becomes part of your constellation — visible to you and whoever you gift it to</div>
     </div>
 
-    <button class="btn-main" id="mintBtn" disabled>Count me in ✦</button>
+    <button class="btn-main" id="mintBtn" disabled style="display:none">Count me in ✦</button>
     <button class="btn-ghost" id="resetBtn" style="display:none;margin-top:0">Try another photo</button>
 
     <!-- Moved here from Profile 04.07.2026; reworked 06.07.2026: the grid
@@ -912,7 +935,7 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
     </div>
 
     <div class="page-title" style="font-size:16px;margin-bottom:4px">Top cities</div>
-    <div class="page-sub" style="margin-bottom:14px">People with vitiligo worldwide</div>
+    <div class="page-sub" style="margin-bottom:14px">People with vitiligo who counted themselves in — by city</div>
     <div class="invite-empty" id="cityListEmpty">No one has marked their city yet — be the first ✦</div>
     <div id="cityListReal"></div>
   </div>
@@ -920,7 +943,12 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
 
 <!-- INVITE -->
 <div class="page" id="page-invite">
-  <div class="invite-page">
+  <!-- Restructured 06.07.2026: the Share action moved OUT of the info
+       card to the bottom edge of the screen — one-handed, thumb-reach,
+       same anchored spot as Home's CTA (the audience is mobile-first by
+       definition of a Telegram mini app). The tap-to-copy link sits right
+       above it. -->
+  <div class="invite-page" style="display:flex;flex-direction:column;min-height:calc(var(--tg-viewport-stable-height,100vh) - 88px)">
     <div class="page-title">Share vitiligo.ton</div>
     <div class="page-sub">Someone you know might belong here too</div>
 
@@ -928,15 +956,7 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
       <div class="invite-glow"></div>
       <div class="invite-icon">✦</div>
       <div class="invite-title">Know someone with vitiligo?</div>
-      <div class="invite-text">Send them your link. When they join, you both light up the sky a little brighter.</div>
-
-      <div class="share-row">
-        <button class="share-btn" id="shareMore"><span>↗</span> Share</button>
-      </div>
-
-      <div class="link-hint" id="copyBtn">
-        <span id="refLinkText">t.me/vitiligo_ton_bot</span><span class="link-hint-note">tap to copy</span>
-      </div>
+      <div class="invite-text" style="margin-bottom:0">Send them your link. When they join, you both light up the sky a little brighter.</div>
     </div>
 
     <div class="bonus-card">
@@ -947,6 +967,13 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
           <div class="bonus-desc">Their star appears on the canvas — for everyone to see, including you</div>
         </div>
       </div>
+    </div>
+
+    <div style="margin-top:auto;padding-bottom:14px">
+      <div class="link-hint" id="copyBtn" style="margin-bottom:12px">
+        <span id="refLinkText">t.me/vitiligo_ton_bot</span><span class="link-hint-note">tap to copy</span>
+      </div>
+      <button class="btn-main" id="shareMore" style="margin-bottom:0"><span>↗</span> Share</button>
     </div>
 
     <!-- "People you brought in" removed 03.07.2026: the contract has no
@@ -990,11 +1017,14 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
          fields (fieldName/fieldCountry/fieldCity/fieldAge) are never
          retroactively sent on-chain by themselves — this button is the
          explicit, deliberate action that does that. -->
-    <button class="btn-main" id="updateOnChainBtn" style="display:none;margin-top:10px;margin-bottom:5px;padding:13px;background:transparent;border:1px solid rgba(147,51,234,.4);color:var(--purple-light)">Update on-chain profile · 0.02 TON</button>
+    <!-- Restyled 06.07.2026: was a btn-main pill with its own outline look —
+         a third button family on one screen. It is a secondary action, so
+         it now matches "Write to the team" / "How it works" exactly. -->
+    <button id="updateOnChainBtn" style="display:none;width:100%;text-align:center;margin-top:12px;margin-bottom:5px;padding:12px;border:1px solid rgba(147,51,234,.3);border-radius:12px;color:#a78bfa;font-size:13px;background:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Update on-chain profile · 0.02 TON</button>
     <div id="updateOnChainHint" style="display:none;font-size:10px;color:#6b7280;text-align:center;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Visible to everyone — city, map, and story</div>
     <div class="tx-status" id="txUpdateProfile" style="margin-bottom:6px"></div>
 
-    <a href="https://t.me/vitiligo_ton" target="_blank" style="display:block;text-align:center;padding:12px;border:1px solid rgba(147,51,234,.3);border-radius:12px;color:#a78bfa;font-size:13px;text-decoration:none;margin-bottom:8px">
+    <a href="https://t.me/vitiligo_ton" target="_blank" style="display:block;text-align:center;padding:12px;border:1px solid rgba(147,51,234,.3);border-radius:12px;color:#a78bfa;font-size:13px;text-decoration:none;margin-top:16px;margin-bottom:8px">
       💬 Write to the team
     </a>
     <button onclick="openModal('modalHelp')" style="display:block;width:100%;text-align:center;padding:12px;border:1px solid rgba(147,51,234,.2);border-radius:12px;color:#6b7280;font-size:13px;background:none;cursor:pointer;font-family:'Space Grotesk',sans-serif;margin-bottom:10px">
@@ -1004,7 +1034,7 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
     <!-- Language switcher (06.07.2026, part of the i18n pass). Each name
          stays in its own language on purpose — the row must be readable
          to someone who picked the wrong language. -->
-    <div style="display:flex;gap:8px;justify-content:center;align-items:center;margin-bottom:12px;font-size:12px;color:#6b7280">
+    <div style="display:flex;gap:8px;justify-content:center;align-items:center;margin-top:20px;margin-bottom:14px;font-size:12px;color:#6b7280">
       <span>🌐</span>
       <span data-langswitch="en" style="cursor:pointer;color:#a78bfa">English</span>
       <span style="opacity:.4">·</span>
@@ -1050,20 +1080,24 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
 </div>
 
 <!-- MODAL: NFT DETAIL -->
+<!-- Redesigned 06.07.2026: opens FULL SCREEN — a constellation cost
+     1 TON, a half-sheet with three lines undersold it. The view is now a
+     ceremony: big sky, the shape, its mythology, an inspiration block,
+     the personal story. The Share/Gift buttons were removed entirely by
+     product decision — this screen is for feeling, not distribution
+     (sharing lives on the Invite tab). -->
 <div class="modal-backdrop" id="modalNftDetail">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-nft-preview" id="modalNftPreview">
+  <div class="modal" style="position:relative;padding-bottom:24px">
+    <div id="modalNftClose" style="position:absolute;top:14px;right:14px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(147,51,234,.35);border-radius:10px;color:#a78bfa;font-size:15px;cursor:pointer;z-index:5">✕</div>
+    <div class="modal-nft-preview" id="modalNftPreview" style="margin-top:26px">
       <canvas id="modalNftCanvas"></canvas>
     </div>
     <div class="modal-nft-title" id="modalNftTitle">✦ Constellation</div>
     <div class="modal-nft-owner" id="modalNftOwner" style="display:none;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#fbbf24;text-align:center;margin-bottom:6px;font-weight:600">✦ Owner: —</div>
-    <div class="modal-nft-desc" id="modalNftDesc" style="font-size:13px;line-height:1.65;color:#c9b8f0;font-style:italic;padding:0 6px;margin-bottom:10px"></div>
+    <div id="nftInspireStats" style="text-align:center;font-size:12px;color:#a78bfa;margin:2px 0 12px"></div>
+    <div class="modal-nft-desc" id="modalNftDesc" style="font-size:13px;line-height:1.65;color:#c9b8f0;font-style:italic;padding:0 6px;margin-bottom:12px"></div>
+    <div id="nftInspire" style="border:1px solid rgba(147,51,234,.2);background:rgba(147,51,234,.06);border-radius:14px;padding:14px 16px;font-size:13px;line-height:1.7;color:#c9b8f0;margin-bottom:12px">This exact pattern exists once in the universe — drawn not by chance, but by skin. Of the eighty-eight constellations humanity has ever named, this shape now carries a human light. It is written on the blockchain forever: it cannot be repeated, and it cannot be taken away.</div>
     <div class="modal-nft-story" id="modalNftStory">No story added yet.</div>
-    <div class="modal-nft-actions" id="modalNftActions">
-      <div class="modal-nft-btn" id="modalNftShare">Share</div>
-      <div class="modal-nft-btn primary" id="modalNftGift">🎁 Gift to friend</div>
-    </div>
   </div>
 </div>
 
@@ -1911,8 +1945,6 @@ function goOb(n) {
     if (screen) screen.style.display = i === n ? 'flex' : 'none';
     if (dot) dot.classList.toggle('active', i === n);
   });
-  const skip = document.getElementById('welcomeSkip');
-  if (skip) skip.style.display = n === 2 ? 'block' : 'none';
 }
 
 function closeWelcome(){
@@ -1946,7 +1978,6 @@ function closeWelcome(){
   // identically, so the goToStars parameter went away too.
 }
 document.getElementById('welcomeBtn').addEventListener('click',()=>closeWelcome());
-document.getElementById('welcomeSkip').addEventListener('click',()=>closeWelcome());
 
 /* ── SOCIAL PROOF TOAST: removed — fake activity conflicts with project's honesty principle ── */
 
@@ -2143,9 +2174,13 @@ function refreshCountedBanner(){
   if (!banner || !btn) return;
   if (isJoinedLocal()) {
     banner.style.display = 'block';
-    btn.textContent = 'View my constellation →';
+    // The "View my constellation →" button was removed 06.07.2026 — the
+    // bottom nav's Constellation tab is the navigation; a full-width CTA
+    // duplicating a tab was noise. The banner alone greets the counted.
+    btn.style.display = 'none';
   } else {
     banner.style.display = 'none';
+    btn.style.display = 'block';
     btn.textContent = 'Count me in ✦';
   }
 }
@@ -2556,6 +2591,10 @@ Make the name and mythology completely original — not based on any real-world 
   }
 
   mintBtn.disabled=false;
+  // The mint button lives hidden until a photo is processed (06.07.2026):
+  // in its idle-disabled state it duplicated the big upload area right
+  // above it — two "add a photo to continue" prompts on one screen.
+  mintBtn.style.display='block';
   resetBtn.style.display='block';
   setStep(4);
   nftPixelColor = gold ? '#fbbf24' : ['#6d28d9','#7c3aed','#9333ea','#8b5cf6','#a855f7'][Math.floor(Math.random()*5)];
@@ -2685,9 +2724,12 @@ function openNftDetail(nftData, showActions){
   const storyEl = document.getElementById('modalNftStory');
   storyEl.textContent = nftData.story || 'No story added yet.';
   storyEl.style.display = (nftData.story || showActions !== false) ? 'block' : 'none';
-  document.getElementById('modalNftActions').style.display = showActions === false ? 'none' : 'flex';
+  // Star count line — a small honest fact for the ceremony (no invented
+  // numbers: it's the template's real star count).
+  const statsEl = document.getElementById('nftInspireStats');
+  if (statsEl) statsEl.innerHTML = '<span>Stars in this constellation:</span> ' + (nftData.constData?.stars?.length || 0);
   const canvas = document.getElementById('modalNftCanvas');
-  const w = canvas.parentElement.offsetWidth || 300, h = w/1.6;
+  const w = canvas.parentElement.offsetWidth || 300, h = w/1.2;
   canvas.width=w; canvas.height=h;
   const ctx = canvas.getContext('2d');
   const gold = nftData.rare;
@@ -2704,14 +2746,7 @@ function openNftDetail(nftData, showActions){
   });
   openModal('modalNftDetail');
 }
-document.getElementById('modalNftGift').addEventListener('click',()=>{
-  closeModal('modalNftDetail');
-  openModal('shareSheet');
-});
-document.getElementById('modalNftShare').addEventListener('click',()=>{
-  closeModal('modalNftDetail');
-  openModal('shareSheet');
-});
+document.getElementById('modalNftClose').addEventListener('click',()=>closeModal('modalNftDetail'));
 
 // Replaces the old drawMySky()/"your personal night sky" canvas section
 // (removed 04.07.2026 — it duplicated the card grid above in a buggier
@@ -2732,7 +2767,7 @@ document.getElementById('resetBtn').addEventListener('click',()=>{
   uploadArea.style.display=''; resultWrap.style.display='none';
   constInfo.style.display='none'; storyWrap.style.display='none';
   rarityBanner.style.display='none';
-  mintBtn.disabled=true;
+  mintBtn.disabled=true; mintBtn.style.display='none';
   mintBtn.textContent = isJoinedLocal() ? 'Make another constellation ✦' : 'Count me in ✦'; mintBtn.classList.remove('done');
   resetBtn.style.display='none'; fileInput.value=''; setStep(1);
   currentConst=null; nftPixelColor=null;
@@ -3409,8 +3444,8 @@ let LANG = (function(){ try { return localStorage.getItem(LANG_KEY) || ''; } cat
 const RU_TEXT = {
   "People with vitiligo":"Люди с витилиго","in the world":"в мире",
   "We can change that →":"Мы можем это изменить →","Tell me more →":"Расскажи ещё →",
-  "I have vitiligo ✦":"У меня витилиго ✦","just look around first":"сначала просто осмотрюсь",
-  "just vitiligo · just us · just beautiful":"просто витилиго · просто мы · просто красиво",
+  "I have vitiligo ✦":"У меня витилиго ✦",
+  "just vitiligo · just us · just real":"просто витилиго · просто мы · просто настоящие",
   "people counted":"людей посчитано","constellations minted":"созвездий заминчено",
   "Constellations":"Созвездия","of 88":"из 88","Top cities":"Топ городов","See map →":"На карту →","Cities on the map →":"Города на карте →",
   "Count me in ✦":"Посчитайте меня ✦","View my constellation →":"Моё созвездие →",
@@ -3422,7 +3457,7 @@ const RU_TEXT = {
   "Each real constellation appears only once across all participants":"Каждое настоящее созвездие появляется лишь один раз на всех участников",
   "Upload":"Фото","Detect":"Поиск","Map stars":"Звёзды","Save":"Минт",
   "✦ You're counted — this mints another constellation, a fresh roll at something rarer":"✦ Ты уже посчитан — это минт ещё одного созвездия, новый шанс на что-то более редкое",
-  "Tap to upload a photo":"Нажми, чтобы загрузить фото","with your vitiligo patch":"с твоим пятном витилиго",
+  "Tap to upload a photo":"Нажми, чтобы загрузить фото","with your vitiligo":"с твоим витилиго",
   "Your body disappears. Only stars remain.":"Тело исчезает. Остаются только звёзды.",
   "Try another photo":"Другое фото","My constellations":"Мои созвездия",
   "Tell your story (optional)":"Расскажи свою историю (по желанию)",
@@ -3431,12 +3466,12 @@ const RU_TEXT = {
   "Rare constellation":"Редкое созвездие","Only 4% of people get this one":"Такое выпадает лишь 4% людей",
   "★ RARE":"★ РЕДКОЕ","A new constellation is being born...":"Рождается новое созвездие...",
   "✦ Generating your constellation...":"✦ Создаём твоё созвездие...",
-  "Where we are":"Где мы","Tap any star to see whose it is":"Нажми на звезду — узнаешь, чья она",
+  "Where we are":"Где мы","People with vitiligo who counted themselves in — by city":"Люди с витилиго, которые посчитали себя, — по городам","Tap any star to see whose it is":"Нажми на звезду — узнаешь, чья она",
   "No one has marked their city yet — be the first ✦":"Никто ещё не отметил свой город — будь первым ✦",
-  "Share vitiligo.ton":"Поделись vitiligo.ton","Someone you know might belong here too":"Кто-то из твоих знакомых тоже может быть здесь",
+  "Someone you know might belong here too":"Кто-то из твоих знакомых тоже может быть здесь",
   "Know someone with vitiligo?":"Знаешь кого-то с витилиго?",
   "Send them your link. When they join, you both light up the sky a little brighter.":"Отправь свою ссылку. Когда они присоединятся, вы оба зажжёте небо чуть ярче.",
-  "Share":"Поделиться","tap to copy":"нажми — скопируется","✓ copied":"✓ скопировано",
+  "Share":"Зажечь звезду ✦","Share vitiligo.ton":"Позови в vitiligo.ton","tap to copy":"нажми — скопируется","✓ copied":"✓ скопировано",
   "Friend joins & counts in":"Друг присоединяется и считается",
   "Their star appears on the canvas — for everyone to see, including you":"Его звезда появляется на холсте — её видят все, включая тебя",
   "Copy link":"Скопировать ссылку","Send to chat":"Отправить в чат","🎁 Gift to friend":"🎁 Подарить другу",
@@ -3466,7 +3501,7 @@ const RU_TEXT = {
   "Please fill your name, country, city and age first ✦":"Сначала заполни имя, страну, город и возраст ✦",
   "Upload a photo of your vitiligo to join the count ✦":"Загрузи фото витилиго, чтобы попасть в счёт ✦",
   "On-chain profile updated ✦":"Профиль в блокчейне обновлён ✦",
-  "No story added yet.":"История пока не добавлена.","✦ Owner: ":"✦ Владелец: ",
+  "No story added yet.":"История пока не добавлена.","Stars in this constellation:":"Звёзд в созвездии:","✦ Owner: ":"✦ Владелец: ",
   "Wallet connect is unavailable — check your connection and reload the page.":"Подключение кошелька недоступно — проверь связь и перезагрузи страницу.",
   "Payment setup failed to load — please reload the page and try again.":"Оплата не загрузилась — перезагрузи страницу и попробуй снова.",
   "Something went wrong with your constellation — try uploading the photo again.":"Что-то пошло не так с созвездием — попробуй загрузить фото ещё раз."
@@ -3479,7 +3514,8 @@ const RU_HTML = {
   "#ob1 .ob-body":"Загрузи фото — алгоритм найдёт твои пятна и превратит их в личную звёздную карту. Двух одинаковых не бывает. Твоя минтится один раз и остаётся твоей навсегда, надёжно на блокчейне TON.",
   "#ob2 .ob-title":"Однажды каждый из нас<br>будет посчитан",
   "#ob2 .ob-body":"Это мечта — не оценка, с которой можно спорить, а настоящее число, растущее по одному человеку, пока не станет всеми. Ты можешь стать частью этого уже сегодня.",
-  ".home .headline":"Люди с витилиго<br>— <em>уникальны от природы</em>"
+  ".home .headline":"Люди с витилиго<br>— <em>уникальны от природы</em>",
+  "#nftInspire":"Этот узор существует во вселенной в единственном экземпляре — его нарисовал не случай, а кожа. Из восьмидесяти восьми созвездий, которым человечество дало имена, эта форма теперь несёт свет человека. Она записана в блокчейне навсегда: её нельзя повторить и нельзя отнять."
 };
 
 const RU_RX = [
