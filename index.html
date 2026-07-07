@@ -975,24 +975,28 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
     <div class="page-title">Share vitiligo.ton</div>
     <div class="page-sub">Someone you know might belong here too</div>
 
-    <div class="invite-card">
-      <div class="invite-glow"></div>
-      <div class="invite-icon">✦</div>
-      <div class="invite-title">Know someone with vitiligo?</div>
-      <div class="invite-text" style="margin-bottom:0">Send them your link. When they join, you both light up the sky a little brighter.</div>
-    </div>
-
-    <div class="bonus-card">
-      <div class="bonus-row">
-        <div class="bonus-icon">⭐</div>
-        <div class="bonus-text">
-          <div class="bonus-title">Friend joins & counts in</div>
-          <div class="bonus-desc">Their star appears on the canvas — for everyone to see, including you</div>
+    <!-- Composed 07.07.2026: the tab used to be three separate islands
+         (info card, bonus card, actions) smeared over the screen height
+         by the flex gaps. Now one gathered card — pitch on top, the
+         "what happens" row as its footer — vertically centered in the
+         free space, with the actions anchored at the bottom as before. -->
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:8px 0">
+      <div class="invite-card" style="margin-bottom:0">
+        <div class="invite-glow"></div>
+        <div class="invite-icon">✦</div>
+        <div class="invite-title">Know someone with vitiligo?</div>
+        <div class="invite-text" style="margin-bottom:14px">Send them your link. When they join, you both light up the sky a little brighter.</div>
+        <div class="bonus-row" style="text-align:left;border-top:.5px solid rgba(147,51,234,.2);padding-top:14px">
+          <div class="bonus-icon">⭐</div>
+          <div class="bonus-text">
+            <div class="bonus-title">Friend joins & counts in</div>
+            <div class="bonus-desc">Their star appears on the canvas — for everyone to see, including you</div>
+          </div>
         </div>
       </div>
     </div>
 
-    <div style="margin-top:auto;padding-bottom:14px">
+    <div style="padding-bottom:14px">
       <div class="link-hint" id="copyBtn" style="margin-bottom:12px">
         <span id="refLinkText">t.me/vitiligo_ton_bot</span><span class="link-hint-note">tap to copy</span>
       </div>
@@ -1111,8 +1115,7 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
      (sharing lives on the Invite tab). -->
 <div class="modal-backdrop" id="modalNftDetail">
   <div class="modal" style="position:relative;padding-bottom:24px">
-    <div id="modalNftClose" style="position:absolute;top:14px;right:14px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(147,51,234,.35);border-radius:10px;color:#a78bfa;font-size:15px;cursor:pointer;z-index:5">✕</div>
-    <div class="modal-nft-preview" id="modalNftPreview" style="margin-top:26px">
+    <div class="modal-nft-preview" id="modalNftPreview" style="margin-top:8px">
       <canvas id="modalNftCanvas"></canvas>
     </div>
     <div class="modal-nft-title" id="modalNftTitle">✦ Constellation</div>
@@ -1121,6 +1124,11 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
     <div class="modal-nft-desc" id="modalNftDesc" style="font-size:13px;line-height:1.65;color:#c9b8f0;font-style:italic;padding:0 6px;margin-bottom:12px"></div>
     <div id="nftInspire" style="border:1px solid rgba(147,51,234,.2);background:rgba(147,51,234,.06);border-radius:14px;padding:14px 16px;font-size:13px;line-height:1.7;color:#c9b8f0;margin-bottom:12px"></div>
     <div class="modal-nft-story" id="modalNftStory">No story added yet.</div>
+    <!-- Closing moved from a top-right ✕ to a warm bottom button
+         07.07.2026: a cross reads like "dismiss an interruption", a
+         button reads like finishing a ceremony — and it sits in thumb
+         reach, same as every other primary action. -->
+    <button class="btn-main" id="modalNftGotIt" style="margin-top:16px;margin-bottom:0">Got it ✦</button>
   </div>
 </div>
 
@@ -2859,7 +2867,7 @@ function openNftDetail(nftData, showActions){
   });
   openModal('modalNftDetail');
 }
-document.getElementById('modalNftClose').addEventListener('click',()=>closeModal('modalNftDetail'));
+document.getElementById('modalNftGotIt').addEventListener('click',()=>closeModal('modalNftDetail'));
 
 // Replaces the old drawMySky()/"your personal night sky" canvas section
 // (removed 04.07.2026 — it duplicated the card grid above in a buggier
