@@ -1413,18 +1413,88 @@ if (cosmosCV) {
     cosmosCV.width = cW * DPR; cosmosCV.height = cH * DPR;
     cosmosCV.style.width = cW + 'px'; cosmosCV.style.height = cH + 'px';
     cosmosCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    buildCosmosBG();
+  }
+
+  /* ── Deep-space backdrop, 07.07.2026 ──
+     The old background was one faint radial gradient + flat dots: opened
+     full screen it read as an empty black rectangle ("космос без
+     туманности, не завораживает" — live feedback). Now a RICH static
+     backdrop — depth gradient, four nebulas, a diagonal Milky Way band
+     built from soft blobs, and ~700 grains of star dust clustered along
+     the band — is pre-rendered ONCE into an offscreen canvas here and
+     stamped with a single drawImage per frame. More beautiful AND
+     cheaper than the old per-frame gradient. Screen-space on purpose:
+     a sky's haze doesn't parallax noticeably; the world-space stars
+     above it provide the motion. */
+  let cosmosBG = null;
+  function buildCosmosBG() {
+    if (!cW || !cH) return;
+    cosmosBG = document.createElement('canvas');
+    cosmosBG.width = cW * DPR; cosmosBG.height = cH * DPR;
+    const b = cosmosBG.getContext('2d');
+    b.setTransform(DPR, 0, 0, DPR, 0, 0);
+    // depth: not flat black — a slow vertical drift of deep blues/violets
+    const base = b.createLinearGradient(0, 0, 0, cH);
+    base.addColorStop(0, '#060514'); base.addColorStop(.55, '#040b18'); base.addColorStop(1, '#070312');
+    b.fillStyle = base; b.fillRect(0, 0, cW, cH);
+    // nebulas
+    [[.2,.25,.55,'rgba(88,28,135,.16)'],[.78,.62,.6,'rgba(49,16,99,.22)'],
+     [.88,.14,.38,'rgba(147,51,234,.10)'],[.08,.85,.45,'rgba(126,34,206,.12)']].forEach(([x,y,r,c])=>{
+      const g = b.createRadialGradient(x*cW, y*cH, 0, x*cW, y*cH, r*Math.max(cW,cH));
+      g.addColorStop(0, c); g.addColorStop(1, 'transparent');
+      b.fillStyle = g; b.fillRect(0, 0, cW, cH);
+    });
+    // Milky Way: a diagonal band of overlapping soft blobs
+    const dx = Math.cos(-0.48), dy = Math.sin(-0.48);
+    const cx0 = cW*0.05, cy0 = cH*0.9, len = Math.hypot(cW, cH)*1.25;
+    for (let i = 0; i < 26; i++) {
+      const t = i/25;
+      const jit = (Math.sin(i*127.1)*43758.5453) % 1;           // deterministic
+      const off = (Math.abs(jit) - .5) * cH * 0.12;
+      const px = cx0 + dx*len*t - dy*off, py = cy0 + dy*len*t + dx*off;
+      const r = cW * (0.10 + (i % 5) * 0.022);
+      const g = b.createRadialGradient(px, py, 0, px, py, r);
+      g.addColorStop(0, 'rgba(196,176,240,0.05)');
+      g.addColorStop(.6, 'rgba(150,130,210,0.025)');
+      g.addColorStop(1, 'transparent');
+      b.fillStyle = g; b.fillRect(0, 0, cW, cH);
+    }
+    // star dust — hundreds of faint grains, denser along the band
+    for (let i = 0; i < 700; i++) {
+      let px, py;
+      if (i < 430) {
+        const along = Math.random();
+        const perp = (Math.random()+Math.random()+Math.random())/3 - .5; // ~gaussian
+        px = cx0 + dx*len*along - dy*perp*cH*0.4;
+        py = cy0 + dy*len*along + dx*perp*cH*0.4;
+      } else { px = Math.random()*cW; py = Math.random()*cH; }
+      if (px < 0 || px > cW || py < 0 || py > cH) continue;
+      b.globalAlpha = 0.03 + Math.random()*0.12;
+      b.fillStyle = Math.random() < .85 ? '#cfc4ef' : '#ffe9c4';
+      b.fillRect(px, py, Math.random() < .8 ? 1 : 1.5, 1);
+    }
+    b.globalAlpha = 1;
   }
   window.cosmosResize = cosmosResize;
   cosmosResize();
 
-  // Generate background stars
-  const bgStars = Array.from({length: 120}, () => ({
-    x: Math.random() * 2000, y: Math.random() * 2000,
-    r: 0.3 + Math.random() * 1.2,
-    a: 0.1 + Math.random() * 0.4,
-    ph: Math.random() * Math.PI * 2,
-    sp: 0.3 + Math.random() * 0.7
-  }));
+  // World-space background stars (they pan/zoom with the map). Upgraded
+  // 07.07.2026: 120 identical mustard dots → 320 stars in three colour
+  // families (lavender-white, pure white, a few warm gold), varied sizes,
+  // plus a dozen "hero" stars that get a tiny diffraction sparkle.
+  const bgStars = Array.from({length: 320}, () => {
+    const roll = Math.random();
+    return {
+      x: Math.random() * 2000, y: Math.random() * 2000,
+      r: 0.3 + Math.random() * 1.3,
+      a: 0.12 + Math.random() * 0.42,
+      ph: Math.random() * Math.PI * 2,
+      sp: 0.3 + Math.random() * 0.7,
+      col: roll < .55 ? '#cfc4ef' : roll < .92 ? '#ffffff' : '#ffd9a0',
+      hero: Math.random() < 0.04
+    };
+  });
 
   // Genesis star in center — placeholder data until the real founder
   // transaction happens, at which point this gets swapped for the actual
@@ -1538,25 +1608,30 @@ if (cosmosCV) {
 
   function drawCosmosFrame() {
     const t = performance.now() / 1000;
-    cosmosCtx.fillStyle = '#040b18';
-    cosmosCtx.fillRect(0, 0, cW, cH);
-
-    // Nebula
-    const ng = cosmosCtx.createRadialGradient(cW*0.4, cH*0.5, 0, cW*0.4, cH*0.5, cW*0.6);
-    ng.addColorStop(0, 'rgba(60,20,120,0.08)');
-    ng.addColorStop(1, 'transparent');
-    cosmosCtx.fillStyle = ng;
-    cosmosCtx.fillRect(0, 0, cW, cH);
+    if (cosmosBG) cosmosCtx.drawImage(cosmosBG, 0, 0, cW, cH);
+    else { cosmosCtx.fillStyle = '#040b18'; cosmosCtx.fillRect(0, 0, cW, cH); }
 
     // Background stars
     bgStars.forEach(s => {
       const [sx, sy] = w2s(s.x, s.y);
-      if (sx < -2 || sx > cW+2 || sy < -2 || sy > cH+2) return;
-      cosmosCtx.globalAlpha = s.a * (0.5 + 0.5 * Math.sin(t * s.sp + s.ph));
-      cosmosCtx.fillStyle = '#d4c080';
+      if (sx < -4 || sx > cW+4 || sy < -4 || sy > cH+4) return;
+      const tw = 0.5 + 0.5 * Math.sin(t * s.sp + s.ph);
+      const rr = s.r * Math.max(0.3, zoom * 0.3);
+      cosmosCtx.globalAlpha = s.a * tw;
+      cosmosCtx.fillStyle = s.col;
       cosmosCtx.beginPath();
-      cosmosCtx.arc(sx, sy, s.r * Math.max(0.3, zoom * 0.3), 0, Math.PI * 2);
+      cosmosCtx.arc(sx, sy, rr, 0, Math.PI * 2);
       cosmosCtx.fill();
+      // hero stars: a whisper of a diffraction cross when they flare
+      if (s.hero && tw > 0.55) {
+        cosmosCtx.globalAlpha = s.a * (tw - 0.55) * 0.9;
+        cosmosCtx.strokeStyle = s.col; cosmosCtx.lineWidth = 0.5;
+        const L = rr * 6;
+        cosmosCtx.beginPath();
+        cosmosCtx.moveTo(sx - L, sy); cosmosCtx.lineTo(sx + L, sy);
+        cosmosCtx.moveTo(sx, sy - L); cosmosCtx.lineTo(sx, sy + L);
+        cosmosCtx.stroke();
+      }
     });
 
     // Participants
@@ -1574,22 +1649,38 @@ if (cosmosCV) {
       cosmosCtx.fillStyle = g;
       cosmosCtx.beginPath(); cosmosCtx.arc(sx, sy, sz * 3, 0, Math.PI * 2); cosmosCtx.fill();
 
-      // 4 rays for genesis
-      if (p.isGenesis && sz > 2) {
-        for (let i = 0; i < 4; i++) {
+      // Diffraction spikes, 07.07.2026 — the old genesis rays were four
+      // blocky fillRect bars ("топорная звезда"). Now: four long + four
+      // short soft rays, needle-thin gradients that taper to nothing,
+      // like a real bright star in a photograph. Legendary/rare/own
+      // stars get a smaller version of the same sparkle.
+      const spiky = p.isGenesis || p.isMe || p.type === 'legendary' || p.type === 'rare';
+      if (spiky && sz > 2) {
+        for (let i = 0; i < (p.isGenesis ? 8 : 4); i++) {
           cosmosCtx.save(); cosmosCtx.translate(sx, sy); cosmosCtx.rotate(i * Math.PI / 4);
-          const sl = sz * 4;
+          const long = (i % 2 === 0);
+          const sl = sz * (p.isGenesis ? (long ? 5 : 2.4) : 2.8);
           const sg = cosmosCtx.createLinearGradient(-sl, 0, sl, 0);
-          sg.addColorStop(0, 'transparent'); sg.addColorStop(0.5, `rgba(255,255,255,${0.3*pulse})`); sg.addColorStop(1, 'transparent');
+          const ra = (p.isGenesis ? 0.4 : 0.25) * pulse;
+          sg.addColorStop(0, 'transparent');
+          sg.addColorStop(0.5, `rgba(255,255,255,${ra.toFixed(2)})`);
+          sg.addColorStop(1, 'transparent');
           cosmosCtx.globalAlpha = 1; cosmosCtx.fillStyle = sg;
-          cosmosCtx.fillRect(-sl, -sz*0.06, sl*2, sz*0.12); cosmosCtx.restore();
+          const th = Math.max(0.4, sz * 0.035);
+          cosmosCtx.fillRect(-sl, -th/2, sl*2, th); cosmosCtx.restore();
         }
       }
 
-      // Core
+      // Core: white-hot centre melting into the star's colour — a glowing
+      // point of light instead of the old flat disc.
+      const coreR = Math.max(1, sz * 0.4);
+      const cg = cosmosCtx.createRadialGradient(sx, sy, 0, sx, sy, coreR);
+      cg.addColorStop(0, '#ffffff');
+      cg.addColorStop(0.45, col);
+      cg.addColorStop(1, 'rgba(0,0,0,0)');
       cosmosCtx.globalAlpha = pulse;
-      cosmosCtx.fillStyle = col;
-      cosmosCtx.beginPath(); cosmosCtx.arc(sx, sy, Math.max(1, sz * 0.4), 0, Math.PI * 2); cosmosCtx.fill();
+      cosmosCtx.fillStyle = cg;
+      cosmosCtx.beginPath(); cosmosCtx.arc(sx, sy, coreR, 0, Math.PI * 2); cosmosCtx.fill();
 
       // Label
       if (p.isMe && sz > 8) {
