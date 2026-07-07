@@ -170,9 +170,19 @@ body{animation:appEnter .8s ease-out}
    nav, and the CTA sits anchored at the bottom — always in the same
    place, thumb-reachable, regardless of how much content is above it. */
 .home{
-  padding:0 18px;display:flex;flex-direction:column;gap:10px;
-  min-height:calc(var(--tg-viewport-stable-height,100vh) - 88px);justify-content:space-between;
+  padding:0 18px;display:flex;flex-direction:column;gap:8px;
+  /* --tg-viewport-height first (07.07): stable-height can under-report
+     the visible area in expanded mode, floating the CTA above the real
+     bottom edge — the "button crept up again" complaint. Chain: live
+     height → stable → plain vh. space-between stays: with the compact
+     card below, blocks stretch across the window and the CTA block
+     lands at the very bottom, thumb reach. */
+  min-height:calc(var(--tg-viewport-height,var(--tg-viewport-stable-height,100vh)) - 88px);
+  justify-content:space-between;
 }
+/* Stacked counters at 44px outgrew one screen — 34px keeps
+   "12,847,391" exact and Home scroll-free. Scoped to .home. */
+.home .cnum{font-size:34px}
 .topbar{
   display:flex;align-items:center;justify-content:space-between;
   padding:16px 0 0;padding-top:max(16px,env(safe-area-inset-top));
@@ -827,13 +837,13 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
            half-width column can't fit "12,847,391" without the K/M
            rounding that fmt() does. Full-width rows can. Numbers are
            written with fmtExact() everywhere for the same reason. -->
-      <div class="dual-counter" style="position:relative;background:transparent;border:none;margin-bottom:0;flex-direction:column;gap:10px;padding:16px 10px 12px">
+      <div class="dual-counter" style="position:relative;background:transparent;border:none;margin-bottom:0;flex-direction:column;gap:6px;padding:10px 10px 8px">
         <div class="counter-block">
           <div class="cnum loading" id="cnum">0</div>
           <div class="clabel">people counted</div>
           <div class="live-row" id="liveRow"><div class="wdot" style="background:var(--green)"></div>live</div>
         </div>
-        <div class="counter-divider" style="width:56%;height:.5px"></div>
+        <div class="counter-divider" style="width:56%;height:.5px;margin:2px 0"></div>
         <div class="counter-block">
           <div class="cnum cnum-gold loading" id="cnumPhotos">0</div>
           <div class="clabel">constellations minted</div>
@@ -847,14 +857,14 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
            count → exact constellations count → goal progress → discovery
            progress → cities link. The cosmos canvas backdrop covers the
            whole card, list rows included. -->
-      <div style="position:relative;padding:12px 16px 4px;border-top:.5px solid rgba(147,51,234,.15)">
+      <div style="position:relative;padding:9px 16px 2px;border-top:.5px solid rgba(147,51,234,.15)">
         <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:5px">
           <div style="font-size:9px;color:#a78bfa;letter-spacing:1px;text-transform:uppercase;white-space:nowrap" id="milestoneLabel">Goal: 100 people</div>
           <div class="skl loading" style="font-size:14px;font-weight:700;color:#fff;text-align:right" id="milestoneSub">0 / 100</div>
         </div>
         <div class="milestone-track" style="height:3px"><div class="milestone-fill" id="milestoneFill"></div></div>
       </div>
-      <div style="position:relative;padding:12px 16px 4px">
+      <div style="position:relative;padding:9px 16px 2px">
         <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:5px">
           <div style="font-size:9px;color:#a78bfa;letter-spacing:1px;text-transform:uppercase;white-space:nowrap">Constellations</div>
           <div class="skl loading" style="font-size:14px;font-weight:700;color:#fff;text-align:right" id="discoveryCountHome">0 <span style="font-size:11px;color:#a78bfa;font-weight:400">of 88</span></div>
@@ -1012,7 +1022,7 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
        same anchored spot as Home's CTA (the audience is mobile-first by
        definition of a Telegram mini app). The tap-to-copy link sits right
        above it. -->
-  <div class="invite-page" style="display:flex;flex-direction:column;min-height:calc(var(--tg-viewport-stable-height,100vh) - 88px)">
+  <div class="invite-page" style="display:flex;flex-direction:column;min-height:calc(var(--tg-viewport-height,var(--tg-viewport-stable-height,100vh)) - 88px)">
     <div class="page-title">Share vitiligo.ton</div>
     <div class="page-sub">Someone you know might belong here too</div>
 
@@ -1092,7 +1102,7 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
     <div id="updateOnChainHint" style="display:none;font-size:10px;color:#6b7280;text-align:center;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Visible to everyone — city, map, and story</div>
     <div class="tx-status" id="txUpdateProfile" style="margin-bottom:6px"></div>
 
-    <a href="https://t.me/vitiligo_ton" target="_blank" style="display:block;text-align:center;padding:12px;border:1px solid rgba(147,51,234,.3);border-radius:12px;color:#a78bfa;font-size:13px;text-decoration:none;margin-top:16px;margin-bottom:8px">
+    <a href="https://t.me/vitiligo_ton" target="_blank" style="display:block;text-align:center;padding:12px;border:1px solid rgba(147,51,234,.3);border-radius:12px;color:#a78bfa;font-size:13px;text-decoration:none;margin-top:34px;margin-bottom:8px">
       💬 Write to the team
     </a>
     <button onclick="openModal('modalHelp')" style="display:block;width:100%;text-align:center;padding:12px;border:1px solid rgba(147,51,234,.2);border-radius:12px;color:#6b7280;font-size:13px;background:none;cursor:pointer;font-family:'Space Grotesk',sans-serif;margin-bottom:10px">
@@ -1102,7 +1112,7 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
     <!-- Language switcher (06.07.2026, part of the i18n pass). Each name
          stays in its own language on purpose — the row must be readable
          to someone who picked the wrong language. -->
-    <div style="display:flex;gap:8px;justify-content:center;align-items:center;margin-top:20px;margin-bottom:14px;font-size:12px;color:#6b7280">
+    <div style="display:flex;gap:8px;justify-content:center;align-items:center;margin-top:26px;margin-bottom:16px;font-size:12px;color:#6b7280">
       <span>🌐</span>
       <span data-langswitch="en" style="cursor:pointer;color:#a78bfa">English</span>
       <span style="opacity:.4">·</span>
@@ -1205,52 +1215,52 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
 <div class="modal-backdrop" id="modalHelp">
   <div class="modal" style="padding-bottom:32px">
     <div class="modal-handle"></div>
-    <div class="modal-title" style="margin-bottom:20px">How it works</div>
+    <div class="modal-title" style="margin-bottom:6px">How it works</div>
+    <!-- Rewritten 07.07.2026 for the split model: counting and
+         constellations are two different acts. The price line is set by
+         JS depending on registerPathReady() so the modal never lies
+         about what the app actually charges today. -->
+    <div id="helpPriceNote" style="text-align:center;font-size:11px;color:#a78bfa;margin-bottom:18px"></div>
 
     <div style="display:flex;flex-direction:column;gap:16px;text-align:left">
 
       <div style="display:flex;gap:12px;align-items:flex-start">
         <div style="min-width:32px;height:32px;border-radius:50%;background:rgba(147,51,234,.2);border:1px solid rgba(147,51,234,.4);display:flex;align-items:center;justify-content:center;color:#a78bfa;font-size:14px;font-weight:600">1</div>
         <div>
-          <div style="color:white;font-size:14px;font-weight:500;margin-bottom:2px">Press "I have vitiligo ✦"</div>
-          <div style="color:#6b7280;font-size:13px">You'll go to the photo upload screen</div>
+          <div style="color:white;font-size:14px;font-weight:500;margin-bottom:2px">Count yourself in</div>
+          <div style="color:#6b7280;font-size:13px">Fill your profile, confirm in your TON wallet — and you are in the number forever. Your star lights up on the shared sky.</div>
         </div>
       </div>
 
       <div style="display:flex;gap:12px;align-items:flex-start">
         <div style="min-width:32px;height:32px;border-radius:50%;background:rgba(147,51,234,.2);border:1px solid rgba(147,51,234,.4);display:flex;align-items:center;justify-content:center;color:#a78bfa;font-size:14px;font-weight:600">2</div>
         <div>
-          <div style="color:white;font-size:14px;font-weight:500;margin-bottom:2px">Upload a photo of your vitiligo</div>
-          <div style="color:#6b7280;font-size:13px">The algorithm finds the patches and builds your personal constellation</div>
+          <div style="color:white;font-size:14px;font-weight:500;margin-bottom:2px">Turn your vitiligo into a constellation</div>
+          <div style="color:#6b7280;font-size:13px">Upload a photo — the algorithm reads your skin and builds a constellation only you could have. Each mint is also a fresh chance to discover one of the 88 real constellations — each opens once, ever.</div>
         </div>
       </div>
 
       <div style="display:flex;gap:12px;align-items:flex-start">
         <div style="min-width:32px;height:32px;border-radius:50%;background:rgba(147,51,234,.2);border:1px solid rgba(147,51,234,.4);display:flex;align-items:center;justify-content:center;color:#a78bfa;font-size:14px;font-weight:600">3</div>
         <div>
-          <div style="color:white;font-size:14px;font-weight:500;margin-bottom:2px">Press "Count me in ✦"</div>
-          <div style="color:#6b7280;font-size:13px">Connect your TON wallet (Tonkeeper) and confirm 1 TON</div>
+          <div style="color:white;font-size:14px;font-weight:500;margin-bottom:2px">Find each other</div>
+          <div style="color:#6b7280;font-size:13px">The map shows counted people by city; tap any star on the sky to see whose it is and read its legend.</div>
         </div>
       </div>
 
       <div style="display:flex;gap:12px;align-items:flex-start">
         <div style="min-width:32px;height:32px;border-radius:50%;background:rgba(147,51,234,.2);border:1px solid rgba(147,51,234,.4);display:flex;align-items:center;justify-content:center;color:#a78bfa;font-size:14px;font-weight:600">✦</div>
         <div>
-          <div style="color:white;font-size:14px;font-weight:500;margin-bottom:2px">Your star appears on the canvas</div>
-          <div style="color:#6b7280;font-size:13px">On the shared canvas you're a single star among everyone else. Tap it any time to reveal your full constellation — its shape, its name, its story.</div>
+          <div style="color:white;font-size:14px;font-weight:500;margin-bottom:2px">The number can never be faked</div>
+          <div style="color:#6b7280;font-size:13px">Every unit of the count is a real person recorded on the TON blockchain — permanent, public, verifiable.</div>
         </div>
       </div>
 
     </div>
 
-    <div style="margin-top:20px;padding:12px 16px;background:rgba(147,51,234,.08);border-radius:10px;border:1px solid rgba(147,51,234,.2)">
-      <div style="font-size:12px;color:#a78bfa;margin-bottom:4px">Don't have a TON wallet?</div>
-      <div style="font-size:12px;color:#6b7280">Download <b style="color:#c4b5fd">Tonkeeper</b> from App Store or Google Play — it's free. Top up with 1–2 TON to get started.</div>
-    </div>
-
     <!-- Fun fact moved here from the Profile page 06.07.2026 — on Profile
          it cost ~120px that pushed the counted-user layout (which also
-         shows the Update on-chain button) past one screen. It's trivia,
+         shows the Update on-chain button) past one screen. It is trivia,
          not a daily-use control; the "How it works" sheet is exactly
          where a curious person goes. -->
     <div style="border:1px solid rgba(147,51,234,.18);background:rgba(147,51,234,.05);border-radius:12px;padding:10px 14px;margin-top:16px;font-size:11px;line-height:1.55;color:#9c93b8;text-align:left">
@@ -1608,7 +1618,12 @@ if (cosmosCV) {
   if (rstBtn) rstBtn.onclick = () => { zoom = 0.15; vx = 900; vy = 900; };
   const meBtn = document.getElementById('cosmosMe');
   if (meBtn) meBtn.onclick = () => {
-    const my = cosmosParts.find(p => p.isMe) || cosmosParts[0];
+    // No fallback to cosmosParts[0] anymore (07.07): for a connected but
+    // not-yet-counted wallet ME used to fly to the GENESIS star — i.e.
+    // confidently показывало чужую звезду как "мою". Honest answer
+    // instead: you are not on this sky yet.
+    const my = cosmosParts.find(p => p.isMe);
+    if (!my) { showToast("You're not on this sky yet — count yourself in ✦"); return; }
     const tz = 4, sv = vx, svy = vy, sz = zoom;
     const ev = my.x - cW/tz/2, evy = my.y - cH/tz/2;
     const t0 = performance.now(), dur = 800;
@@ -1654,6 +1669,37 @@ if (cosmosCV) {
   function drawCosmosFrame() {
     const t = performance.now() / 1000;
     if (cosmosBG) cosmosCtx.drawImage(cosmosBG, 0, 0, cW, cH);
+
+    // ── Comets, 07.07.2026 — a rare streak crossing the sky every
+    // ~8–16 s: bright head, tail dissolving behind. Screen-space (a
+    // meteor doesn't belong to the map), one at a time, cheap: one
+    // gradient line + one dot per frame while alive. ──
+    if (!window.__comet && (!window.__cometNext || performance.now() > window.__cometNext)) {
+      const edge = Math.random() < .5;
+      const a = (Math.random() * .5 + .2) * Math.PI * (Math.random() < .5 ? 1 : -1) / 2 + (edge ? 0 : Math.PI/2);
+      window.__comet = {
+        x: Math.random() * cW * .8 + cW * .1,
+        y: Math.random() * cH * .3,
+        dx: Math.cos(a + Math.PI/4), dy: Math.abs(Math.sin(a + Math.PI/4)),
+        sp: (cW + cH) / 1400, born: performance.now(), life: 1400 + Math.random()*800
+      };
+    }
+    if (window.__comet) {
+      const c = window.__comet, age = performance.now() - c.born, k = age / c.life;
+      if (k >= 1) { window.__comet = null; window.__cometNext = performance.now() + 8000 + Math.random()*8000; }
+      else {
+        const px = c.x + c.dx * c.sp * age * .06, py = c.y + c.dy * c.sp * age * .06;
+        const tail = 90 * (1 - Math.abs(k - .5) * 1.2);
+        const fade = k < .15 ? k/.15 : k > .8 ? (1-k)/.2 : 1;
+        const tg = cosmosCtx.createLinearGradient(px - c.dx*tail, py - c.dy*tail, px, py);
+        tg.addColorStop(0,'transparent');
+        tg.addColorStop(1,'rgba(233,213,255,'+(0.7*fade).toFixed(2)+')');
+        cosmosCtx.globalAlpha = 1; cosmosCtx.strokeStyle = tg; cosmosCtx.lineWidth = 1.4;
+        cosmosCtx.beginPath(); cosmosCtx.moveTo(px - c.dx*tail, py - c.dy*tail); cosmosCtx.lineTo(px, py); cosmosCtx.stroke();
+        cosmosCtx.fillStyle = 'rgba(255,255,255,'+(0.9*fade).toFixed(2)+')';
+        cosmosCtx.beginPath(); cosmosCtx.arc(px, py, 1.6, 0, Math.PI*2); cosmosCtx.fill();
+      }
+    }
     else { cosmosCtx.fillStyle = '#040b18'; cosmosCtx.fillRect(0, 0, cW, cH); }
 
     // Background stars — TILED infinitely (07.07.2026). They used to
@@ -1667,7 +1713,7 @@ if (cosmosCV) {
     const TILE = 2000, step = TILE * zoom;
     bgStars.forEach(s => {
       const tw = 0.5 + 0.5 * Math.sin(t * s.sp + s.ph);
-      const rr = s.r * Math.max(0.3, zoom * 0.3);
+      const rr = s.r * Math.max(0.3, zoom * 0.3) * 1.15;
       const ox = (((s.x - vx) % TILE) + TILE) % TILE * zoom;
       const oy = (((s.y - vy) % TILE) + TILE) % TILE * zoom;
       cosmosCtx.fillStyle = s.col;
@@ -1675,7 +1721,7 @@ if (cosmosCV) {
         if (sx < -4) continue;
         for (let sy = oy - step; sy < cH + 4; sy += step) {
           if (sy < -4) continue;
-          cosmosCtx.globalAlpha = s.a * tw;
+          cosmosCtx.globalAlpha = Math.min(1, s.a * tw * 1.3);
           cosmosCtx.beginPath();
           cosmosCtx.arc(sx, sy, rr, 0, Math.PI * 2);
           cosmosCtx.fill();
@@ -2635,7 +2681,19 @@ let lastStoryText='';
 
 function setStep(n){for(let i=1;i<=4;i++) document.getElementById('ps'+i).classList.toggle('active',i<=n);}
 
-uploadArea.addEventListener('click',()=>fileInput.click());
+uploadArea.addEventListener('click',()=>{
+  // Order of the split model (07.07): first you COUNT yourself in, then
+  // constellations are an optional collection on top. Gated by
+  // registerPathReady(): until the contract batch enables the cheap
+  // path, the combined 1 TON flow stays open for everyone — otherwise a
+  // not-yet-counted person would have no way in at all.
+  if (registerPathReady() && !isJoinedLocal()) {
+    showToast('First count yourself in ✦ Constellations come after');
+    document.querySelector('[data-page="home"]')?.click();
+    return;
+  }
+  fileInput.click();
+});
 
 fileInput.addEventListener('change',e=>{
   const file=e.target.files[0]; if(!file)return;
@@ -2842,6 +2900,14 @@ mintBtn.addEventListener('click',()=>{
 
 let nftCount=0;
 let myNfts = [];
+// The help sheet's price line reflects what the app actually charges
+// TODAY (see comment in #modalHelp).
+(function(){
+  const pn = document.getElementById('helpPriceNote');
+  if (pn) pn.textContent = registerPathReady()
+    ? 'Count — 0.1 TON · Constellation — 1 TON · Profile update — 0.02 TON'
+    : 'For now: first count + constellation together — 1 TON · Profile update — 0.02 TON';
+})();
 document.getElementById('modalRegisterClose').addEventListener('click',()=>closeModal('modalRegister'));
 document.getElementById('modalRegisterConfirm').addEventListener('click', async ()=>{
   updateDebugInfo('CLICKED register confirm');
@@ -3089,21 +3155,78 @@ function openNftDetail(nftData, showActions){
   if (statsEl) statsEl.innerHTML = '<span>Stars in this constellation:</span> ' + (nftData.constData?.stars?.length || 0);
   const inspireEl = document.getElementById('nftInspire');
   if (inspireEl) inspireEl.innerHTML = constellationStory(nftData);
+  /* Ceremony canvas, rebuilt 07.07.2026. Two live complaints fixed:
+     (1) restored constellations drew as "5 dots squeezed against one
+     edge" — raw seeded coordinates were mapped straight to the canvas
+     with no fitting; now the pattern's bounding box is normalized into
+     a padded frame, centered, aspect preserved;
+     (2) the backdrop was one flat glow — now the same cosmos language
+     as the Map: depth gradient, nebulas, deterministic star dust (seeded
+     by the constellation's name, so ITS sky is always the same), plus
+     connecting lines between the stars and a diffraction sparkle on the
+     brightest one. */
   const canvas = document.getElementById('modalNftCanvas');
-  const w = canvas.parentElement.offsetWidth || 300, h = w/1.2;
+  const w = canvas.parentElement.offsetWidth || 300, h = Math.round(w/1.1);
   canvas.width=w; canvas.height=h;
   const ctx = canvas.getContext('2d');
   const gold = nftData.rare;
-  ctx.fillStyle='#020110'; ctx.fillRect(0,0,w,h);
-  const ng = ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,w*.4);
-  ng.addColorStop(0, gold?'rgba(245,158,11,.2)':'rgba(76,29,149,.2)'); ng.addColorStop(1,'transparent');
-  ctx.fillStyle=ng; ctx.beginPath(); ctx.arc(w/2,h/2,w*.4,0,Math.PI*2); ctx.fill();
-  nftData.constData.stars.forEach((s,i)=>{
-    const sx=s.x*w, sy=s.y*h, sz=i===0?4:2;
-    const g=ctx.createRadialGradient(sx,sy,0,sx,sy,sz*5);
-    g.addColorStop(0,gold?'rgba(253,230,138,.5)':'rgba(200,170,255,.45)'); g.addColorStop(1,'transparent');
-    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,sy,sz*5,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='rgba(255,252,255,.96)'; ctx.beginPath(); ctx.arc(sx,sy,sz,0,Math.PI*2); ctx.fill();
+  // deterministic rand from the constellation identity
+  let sd = 0; const idStr = (nftData.name||'') + (nftData.constData?.stars?.length||0);
+  for (let i=0;i<idStr.length;i++) sd = (sd*31 + idStr.charCodeAt(i)) >>> 0;
+  const rnd = () => { sd = (sd*1103515245 + 12345) >>> 0; return (sd>>>8)/16777216; };
+  // depth
+  const base = ctx.createLinearGradient(0,0,0,h);
+  base.addColorStop(0,'#060514'); base.addColorStop(.6,'#040b18'); base.addColorStop(1,'#070312');
+  ctx.fillStyle=base; ctx.fillRect(0,0,w,h);
+  // nebulas (gold-tinted for rare)
+  [[.25,.3,.55],[ .78,.7,.5],[.6,.15,.35]].forEach(([x,y,r],i)=>{
+    const g=ctx.createRadialGradient(x*w,y*h,0,x*w,y*h,r*w);
+    g.addColorStop(0, gold && i===0 ? 'rgba(245,158,11,.14)' : ['rgba(88,28,135,.18)','rgba(49,16,99,.2)','rgba(147,51,234,.1)'][i]);
+    g.addColorStop(1,'transparent');
+    ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+  });
+  // star dust — its own, always the same
+  for (let i=0;i<140;i++){
+    ctx.globalAlpha = .04 + rnd()*.16;
+    ctx.fillStyle = rnd() < .85 ? '#cfc4ef' : '#ffe9c4';
+    ctx.fillRect(rnd()*w, rnd()*h, rnd()<.8?1:1.5, 1);
+  }
+  ctx.globalAlpha = 1;
+  // fit the pattern: bbox → padded centered frame, aspect preserved
+  const raw = nftData.constData?.stars || [];
+  let mnx=1,mxx=0,mny=1,mxy=0;
+  raw.forEach(p=>{mnx=Math.min(mnx,p.x);mxx=Math.max(mxx,p.x);mny=Math.min(mny,p.y);mxy=Math.max(mxy,p.y);});
+  const bw = Math.max(mxx-mnx, .0001), bh = Math.max(mxy-mny, .0001);
+  const pad = .2, availW = w*(1-pad*2), availH = h*(1-pad*2);
+  const k = Math.min(availW/bw, availH/bh);
+  const offX = (w - bw*k)/2 - mnx*k, offY = (h - bh*k)/2 - mny*k;
+  const pts = raw.map(p=>({x:p.x*k+offX, y:p.y*k+offY}));
+  // constellation lines
+  if (pts.length > 1) {
+    ctx.strokeStyle = gold ? 'rgba(253,230,138,.28)' : 'rgba(196,168,245,.28)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.stroke();
+  }
+  // stars: halo + white-hot core; diffraction spikes on the brightest
+  pts.forEach((p,i)=>{
+    const sz = i===0 ? 5 : 3;
+    const g = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,sz*6);
+    g.addColorStop(0, gold?'rgba(253,230,138,.6)':'rgba(200,170,255,.55)'); g.addColorStop(1,'transparent');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,sz*6,0,Math.PI*2); ctx.fill();
+    const cg = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,sz);
+    cg.addColorStop(0,'#ffffff'); cg.addColorStop(.5, gold?'#fde68a':'#e9d5ff'); cg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=cg; ctx.beginPath(); ctx.arc(p.x,p.y,sz,0,Math.PI*2); ctx.fill();
+    if (i===0) {
+      for (let r=0;r<4;r++){
+        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(r*Math.PI/4);
+        const L = sz*(r%2?3:6);
+        const sg = ctx.createLinearGradient(-L,0,L,0);
+        sg.addColorStop(0,'transparent'); sg.addColorStop(.5,'rgba(255,255,255,.5)'); sg.addColorStop(1,'transparent');
+        ctx.fillStyle=sg; ctx.fillRect(-L,-.6,L*2,1.2); ctx.restore();
+      }
+    }
   });
   openModal('modalNftDetail');
 }
@@ -3818,7 +3941,7 @@ const RU_TEXT = {
   "just vitiligo · just us · just real":"просто витилиго · просто мы · просто настоящие",
   "people counted":"людей посчитано","constellations minted":"созвездий заминчено",
   "Constellations":"Созвездия","of 88":"из 88","Top cities":"Топ городов","See map →":"На карту →","Cities on the map →":"Города на карте →",
-  "Count me in ✦":"Посчитайте меня ✦","Count me in ✦ · 0.1 TON":"Посчитайте меня ✦ · 0.1 TON","Make my constellation ✦":"Создать моё созвездие ✦","Confirm — 0.1 TON":"Подтвердить — 0.1 TON","Your place in the number — one real person, recorded on the TON blockchain forever. A constellation can be minted any time later, whenever you feel like it.":"Твоё место в числе — один настоящий человек, навсегда записанный в блокчейне TON. Созвездие можно заминтить потом, в любой момент, когда захочется.","You're counted ✦ Your constellation awaits":"Ты посчитан ✦ Твоё созвездие ждёт","View my constellation →":"Моё созвездие →",
+  "Count me in ✦":"Посчитайте меня ✦","Count me in ✦ · 0.1 TON":"Посчитайте меня ✦ · 0.1 TON","Make my constellation ✦":"Создать моё созвездие ✦","Confirm — 0.1 TON":"Подтвердить — 0.1 TON","Your place in the number — one real person, recorded on the TON blockchain forever. A constellation can be minted any time later, whenever you feel like it.":"Твоё место в числе — один настоящий человек, навсегда записанный в блокчейне TON. Созвездие можно заминтить потом, в любой момент, когда захочется.","You're counted ✦ Your constellation awaits":"Ты посчитан ✦ Твоё созвездие ждёт","First count yourself in ✦ Constellations come after":"Сначала посчитайся ✦ Созвездия — потом","You're not on this sky yet — count yourself in ✦":"Тебя ещё нет на этом небе — сначала посчитайся ✦","View my constellation →":"Моё созвездие →",
   "Make another constellation ✦":"Сделать ещё созвездие ✦",
   "🎉 Congratulations — you're counted":"🎉 Поздравляем — ты посчитан",
   "Home":"Главная","Constellation":"Созвездие","Map":"Карта","Invite":"Позвать","Profile":"Профиль",
@@ -3852,7 +3975,7 @@ const RU_TEXT = {
   "Update on-chain profile · 0.02 TON":"Обновить профиль в блокчейне · 0.02 TON",
   "Visible to everyone — city, map, and story":"Видно всем — город, карта и история",
   "💬 Write to the team":"💬 Написать команде","💡 How it works":"💡 Как это работает",
-  "How it works":"Как это работает","Got it ✦":"Понятно ✦",
+  "How it works":"Как это работает","Count yourself in":"Посчитай себя","Fill your profile, confirm in your TON wallet — and you are in the number forever. Your star lights up on the shared sky.":"Заполни профиль, подтверди в TON-кошельке — и ты в числе навсегда. Твоя звезда загорается на общем небе.","Turn your vitiligo into a constellation":"Преврати витилиго в созвездие","Upload a photo — the algorithm reads your skin and builds a constellation only you could have. Each mint is also a fresh chance to discover one of the 88 real constellations — each opens once, ever.":"Загрузи фото — алгоритм прочитает кожу и соберёт созвездие, которое могло быть только у тебя. Каждый минт — ещё и шанс открыть одно из 88 настоящих созвездий: каждое открывается лишь однажды.","Find each other":"Находите друг друга","The map shows counted people by city; tap any star on the sky to see whose it is and read its legend.":"Карта показывает посчитанных по городам; нажми на любую звезду на небе — узнаешь, чья она, и прочтёшь её легенду.","The number can never be faked":"Число невозможно подделать","Every unit of the count is a real person recorded on the TON blockchain — permanent, public, verifiable.":"Каждая единица счёта — настоящий человек, записанный в блокчейне TON: навсегда, публично, проверяемо.","Count — 0.1 TON · Constellation — 1 TON · Profile update — 0.02 TON":"Счёт — 0.1 TON · Созвездие — 1 TON · Обновление профиля — 0.02 TON","For now: first count + constellation together — 1 TON · Profile update — 0.02 TON":"Пока что: первый счёт + созвездие вместе — 1 TON · Обновление профиля — 0.02 TON","Got it ✦":"Понятно ✦",
   "Press \"I have vitiligo ✦\"":"Нажми «У меня витилиго ✦»",
   "You'll go to the photo upload screen":"Откроется экран загрузки фото",
   "Upload a photo of your vitiligo":"Загрузи фото своего витилиго",
