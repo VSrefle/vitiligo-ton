@@ -653,6 +653,19 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
   max-width:none;width:100%;max-height:none;
   height:var(--tg-viewport-stable-height,100vh);
   border-radius:0;overflow-y:auto;
+  /* Telegram-webview scroll quirks: momentum scrolling + keep the touch
+     from bubbling to the page/Telegram swipe-to-close. */
+  -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+}
+/* The Got it shelf is STICKY at the bottom of the ceremony (07.07.2026):
+   on a live device the button placed after the legend was unreachable —
+   webview inner-scroll didn't get people there. Sticky keeps it always
+   visible and thumb-reachable while the legend scrolls underneath; the
+   gradient keeps text readable as it slides under. */
+#modalNftDetail .nft-gotit-shelf{
+  position:sticky;bottom:0;z-index:5;margin:0 -22px -24px;
+  padding:26px 22px calc(14px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,transparent 0%,rgba(6,3,15,.92) 34%,#06030f 100%);
 }
 /* 06.07.2026 — every full "window" (language screen, the three welcome
    screens, all modals/sheets) shares the same cosmos-with-stars backdrop
@@ -1126,9 +1139,11 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
     <div class="modal-nft-story" id="modalNftStory">No story added yet.</div>
     <!-- Closing moved from a top-right ✕ to a warm bottom button
          07.07.2026: a cross reads like "dismiss an interruption", a
-         button reads like finishing a ceremony — and it sits in thumb
-         reach, same as every other primary action. -->
-    <button class="btn-main" id="modalNftGotIt" style="margin-top:16px;margin-bottom:0">Got it ✦</button>
+         button reads like finishing a ceremony. Wrapped in a sticky
+         gradient shelf — see #modalNftGotIt CSS for why. -->
+    <div class="nft-gotit-shelf">
+      <button class="btn-main" id="modalNftGotIt" style="margin-bottom:0">Got it ✦</button>
+    </div>
   </div>
 </div>
 
