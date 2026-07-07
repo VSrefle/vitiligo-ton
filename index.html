@@ -646,6 +646,22 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
   max-width:280px;opacity:0;transition:all .35s;z-index:150;pointer-events:none;
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* Sky-canvas control buttons (✕ + − ALL ME). Quiet resting state,
+   alive on press: a quick flash of fill + glow + a small dip, then it
+   settles back via transition. Works from the first frame of the touch
+   (:active), no JS needed. */
+.cosmos-btn{
+  width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+  background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);
+  color:#a78bfa;border-radius:8px;cursor:pointer;user-select:none;
+  transition:background .25s,border-color .25s,box-shadow .25s,transform .15s;
+}
+.cosmos-btn:active{
+  background:rgba(147,51,234,.5);border-color:rgba(196,168,245,.9);
+  color:#fff;box-shadow:0 0 14px rgba(147,51,234,.55);
+  transform:scale(.9);transition-duration:.05s;
+}
+
 /* Constellation detail opens full screen — see the comment at
    #modalNftDetail in the markup. */
 #modalNftDetail{align-items:stretch}
@@ -967,14 +983,17 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
            Absolute anchors them to the wrap itself: always inside the
            sky, whatever the webview insets are. -->
       <div id="cosmosUI" style="position:absolute;top:12px;right:12px;flex-direction:column;gap:6px;z-index:10001;display:none">
-        <div id="cosmosClose" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</div>
-        <div id="cosmosPlus" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">+</div>
-        <div id="cosmosMinus" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">−</div>
-        <!-- Was a ✦ icon — on a star map a star icon explains nothing (even
-             the founder had to ask what it does). "ALL" pairs with "ME"
-             below: the two labels explain each other. 07.07.2026 -->
-        <div id="cosmosReset" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:9px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:flex;align-items:center;justify-content:center">ALL</div>
-        <div id="cosmosMe" style="width:34px;height:34px;background:rgba(124,58,237,.35);border:1px solid rgba(167,139,250,.7);color:#ddd6fe;border-radius:8px;font-size:9px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;letter-spacing:.5px">ME</div>
+        <!-- One .cosmos-btn class for all five (07.07.2026): ME used to
+             carry a permanently brighter "active" look, which read as a
+             stuck-pressed button. Now all five rest in the same quiet
+             state and light up ON PRESS — see .cosmos-btn CSS. "ALL"
+             replaced the old ✦ icon (a star icon on a star map explains
+             nothing); ALL/ME explain each other. -->
+        <div id="cosmosClose" class="cosmos-btn" style="font-size:14px">✕</div>
+        <div id="cosmosPlus" class="cosmos-btn" style="font-size:18px">+</div>
+        <div id="cosmosMinus" class="cosmos-btn" style="font-size:18px">−</div>
+        <div id="cosmosReset" class="cosmos-btn" style="font-size:9px;font-weight:700;letter-spacing:.5px">ALL</div>
+        <div id="cosmosMe" class="cosmos-btn" style="font-size:9px;font-weight:700;letter-spacing:.5px">ME</div>
       </div>
       <div id="cosmosTip" style="position:absolute;bottom:8px;left:8px;background:rgba(4,11,24,.97);border:1px solid rgba(124,58,237,.3);border-radius:8px;padding:8px 12px;font-size:11px;color:#e9d5ff;pointer-events:none;display:none;z-index:10;max-width:180px;line-height:1.5"></div>
     </div>
@@ -1113,7 +1132,24 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
   </button>
 </nav>
 
-<!-- MODAL: COUNT -->
+<!-- MODAL: REGISTER (cheap "count me in", 0.1 TON) — added 07.07.2026.
+     Product decision: the mission is to count EVERYONE, and a 1 TON
+     entry gate filtered out people who just wanted to honestly say
+     "I exist". Counting is now cheap (0.1 TON, contract's legacy
+     Register message); constellations at 1 TON remain the main
+     monetization and an upgrade, not the entry fee. -->
+<div class="modal-backdrop" id="modalRegister">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Join the count forever</div>
+    <div class="ton-amount">0.1 TON</div>
+    <div class="modal-desc">Your place in the number — one real person, recorded on the TON blockchain forever. A constellation can be minted any time later, whenever you feel like it.</div>
+    <div class="tx-status" id="txRegister"></div>
+    <button class="modal-btn" id="modalRegisterConfirm">Confirm — 0.1 TON</button>
+    <button class="modal-btn secondary" id="modalRegisterClose">Cancel</button>
+  </div>
+</div>
+
 <!-- MODAL: JOIN + MINT (single 1 TON payment) -->
 <div class="modal-backdrop" id="modalMint">
   <div class="modal">
@@ -1856,8 +1892,12 @@ async function loadInitialChainData() {
   catch(e) { console.log('Photo counter load failed', e); }
 
   // ── Single atomic reveal — everything below happens in one synchronous
-  // block, so every number on Home appears in the same paint. ──
-  if (mapHex) applyDiscoveredBitmap(mapHex);
+  // block, so every number on Home appears in the same paint. Wrapped in
+  // try/catch 07.07.2026: this block used to be bare, and any throw here
+  // (e.g. a malformed bitmap hex) would reject the whole async function —
+  // silently cancelling the .then() that loads the city list. ──
+  try {
+  if (mapHex) { try { applyDiscoveredBitmap(mapHex); } catch(e) { console.warn('bitmap parse failed', e); } }
   count = newCount;
   photoCount = newPhotoCount;
   numEl.textContent = fmtExact(count); numEl.title = fmtExact(count)+' people';
@@ -1867,6 +1907,7 @@ async function loadInitialChainData() {
   ['cnum','cnumPhotos','milestoneSub','discoveryCountHome','discoveryCount'].forEach(id => {
     document.getElementById(id)?.classList.remove('loading');
   });
+  } catch(e) { console.warn('reveal failed', e); if (typeof updateDebugInfo === 'function') updateDebugInfo('reveal failed: ' + e.message); }
 }
 // loadCitiesFromChain() used to fire independently at the same time as
 // the startup reads — since everything shares one rate-limited queue, its
@@ -1874,7 +1915,10 @@ async function loadInitialChainData() {
 // numbers by many seconds. Chaining it after loadInitialChainData()
 // finishes keeps the startup trio adjacent in the queue and lets the
 // city teaser/list arrive afterwards, when it's ready.
-loadInitialChainData().then(() => { if (typeof loadCitiesFromChain === 'function') loadCitiesFromChain(); });
+// .finally (was .then) 07.07.2026: cities must load even if the startup
+// trio's reveal failed for any reason — the map list vanishing is worse
+// than a briefly imperfect Home.
+loadInitialChainData().finally(() => { if (typeof loadCitiesFromChain === 'function') loadCitiesFromChain(); });
 updateMilestone();
 
 // Same undeclared-variable bug as 'connected' below — tickTimer was read/
@@ -1970,6 +2014,19 @@ initTonConnect();
    Register/MintConstellation остаются в .tact для совместимости, но фронтенд
    их больше не вызывает — весь путь идёт через один JoinAndMint. */
 const JOIN_AND_MINT_OPCODE = 2274933188;
+/* ── Cheap count-in path, 07.07.2026 ──
+   REGISTER_OPCODE MUST be taken from the compiled contract's .abi
+   (loadRegister), exactly the way JOIN_AND_MINT_OPCODE was confirmed on
+   03.07 — never guessed. While it is 0, the whole cheap path stays OFF
+   and the Count button behaves exactly as before (goes to the 1 TON
+   constellation flow), so deploying this build early is safe.
+   The payload layout below mirrors UpdateProfile (same four profile
+   fields, fits one cell) — VERIFY it against loadRegister in the .tact
+   source before enabling; if Register's field order differs, fix
+   buildRegisterPayload first. */
+const REGISTER_OPCODE = 0; // TODO(Виктор): вставить из .abi → включит дешёвый путь
+const REGISTER_AMOUNT = '100000000'; // 0.1 TON in nanotons
+function registerPathReady(){ return REGISTER_OPCODE !== 0; }
 // Opcode for the new UpdateProfile message, confirmed 04.07.2026 directly
 // from the compiled build/VilitigoCounter_VilitigoCounter.ts (loadUpdateProfile),
 // same way JOIN_AND_MINT_OPCODE was confirmed — not guessed.
@@ -2037,6 +2094,19 @@ function buildUpdateProfilePayload(name, country, city, age) {
   if (!beginCell) throw new Error('TonCore.beginCell unavailable — payment SDK failed to load');
   let b = beginCell()
     .storeUint(UPDATE_PROFILE_OPCODE, 32)
+    .storeUint(0, 64); // queryId
+  b = storeRequiredString(b, name);
+  b = storeRequiredString(b, country);
+  b = storeRequiredString(b, city);
+  b = b.storeUint(age || 0, 8);
+  return bytesToBase64(b.endCell().toBoc());
+}
+
+function buildRegisterPayload(name, country, city, age) {
+  const { beginCell } = window.TonCore || {};
+  if (!beginCell) throw new Error('TonCore.beginCell unavailable — payment SDK failed to load');
+  let b = beginCell()
+    .storeUint(REGISTER_OPCODE, 32)
     .storeUint(0, 64); // queryId
   b = storeRequiredString(b, name);
   b = storeRequiredString(b, country);
@@ -2270,6 +2340,12 @@ document.getElementById('countBtn').addEventListener('click',()=>{
     document.querySelector('[data-page="stars"]').click();
     return;
   }
+  // Cheap path (0.1 TON Register) when enabled; otherwise the original
+  // behavior — the 1 TON constellation flow that also counts you in.
+  if (registerPathReady()) {
+    ensureProfile(()=> openModal('modalRegister'));
+    return;
+  }
   ensureProfile(()=>{
     document.querySelector('[data-page="stars"]').click();
     showToast('Upload a photo of your vitiligo to join the count ✦');
@@ -2315,7 +2391,7 @@ function refreshCountedBanner(){
   // from an in-progress upload, not showing the post-mint "✓ Counted!"
   // state) — this just sets the correct default/reset label.
   if (mintBtnEl && !mintBtnEl.classList.contains('done') && mintBtnEl.disabled) {
-    mintBtnEl.textContent = isJoinedLocal() ? 'Make another constellation ✦' : 'Count me in ✦';
+    mintBtnEl.textContent = isJoinedLocal() ? (myNfts.length ? 'Make another constellation ✦' : 'Make my constellation ✦') : 'Count me in ✦';
   }
   if (!banner || !btn) return;
   if (isJoinedLocal()) {
@@ -2327,7 +2403,7 @@ function refreshCountedBanner(){
   } else {
     banner.style.display = 'none';
     btn.style.display = 'block';
-    btn.textContent = 'Count me in ✦';
+    btn.textContent = registerPathReady() ? 'Count me in ✦ · 0.1 TON' : 'Count me in ✦';
   }
 }
 
@@ -2753,6 +2829,42 @@ mintBtn.addEventListener('click',()=>{
 
 let nftCount=0;
 let myNfts = [];
+document.getElementById('modalRegisterClose').addEventListener('click',()=>closeModal('modalRegister'));
+document.getElementById('modalRegisterConfirm').addEventListener('click', async ()=>{
+  updateDebugInfo('CLICKED register confirm');
+  if (!hasProfile()) { closeModal('modalRegister'); ensureProfile(()=> openModal('modalRegister')); return; }
+  if(!tonConnectUI){ await initTonConnect(); }
+  if(!tonConnectUI){ showToast('Wallet connect is unavailable — check your connection and reload the page.'); return; }
+  if(!connected){ closeModal('modalRegister'); tonConnectUI.openModal(); return; }
+  if (!window.TonCore || !window.TonCore.beginCell) { showToast('Payment setup failed to load — please reload the page and try again.'); return; }
+  try {
+    const name = document.getElementById('fieldName')?.value || '';
+    const country = document.getElementById('fieldCountry')?.value || '';
+    const city = document.getElementById('fieldCity')?.value || '';
+    const age = parseInt(document.getElementById('fieldAge')?.value || '0');
+    const payload = buildRegisterPayload(name, country, city, age);
+    sendTon('txRegister', ()=>{
+      closeModal('modalRegister');
+      markJoinedLocal();
+      // Optimistic: the person is counted. No constellation yet — that
+      // is now a separate, optional purchase (the whole point of the
+      // split): the Constellation tab invites them to mint their first.
+      count++;
+      numEl.classList.remove('loading');
+      numEl.textContent = fmtExact(count); numEl.title = fmtExact(count)+' people';
+      numEl.classList.add('flash'); setTimeout(()=>numEl.classList.remove('flash'),700);
+      updateMilestone();
+      document.getElementById('profileBadge').textContent = '⭐';
+      if (typeof refreshCountedBanner === 'function') refreshCountedBanner();
+      if (typeof refreshUpdateProfileButtonVisibility === 'function') refreshUpdateProfileButtonVisibility();
+      showToast("You're counted ✦ Your constellation awaits");
+    }, payload, REGISTER_AMOUNT);
+  } catch(e) {
+    updateDebugInfo('register confirm THREW: ' + (e?.message || e));
+    showToast('Payment setup failed to load — please reload the page and try again.');
+  }
+});
+
 document.getElementById('modalMintConfirm').addEventListener('click', async ()=>{
   updateDebugInfo('CLICKED confirm button');
   if (!hasProfile()) {
@@ -3004,7 +3116,7 @@ document.getElementById('resetBtn').addEventListener('click',()=>{
   constInfo.style.display='none'; storyWrap.style.display='none';
   rarityBanner.style.display='none';
   mintBtn.disabled=true; mintBtn.style.display='none';
-  mintBtn.textContent = isJoinedLocal() ? 'Make another constellation ✦' : 'Count me in ✦'; mintBtn.classList.remove('done');
+  mintBtn.textContent = isJoinedLocal() ? (myNfts.length ? 'Make another constellation ✦' : 'Make my constellation ✦') : 'Count me in ✦'; mintBtn.classList.remove('done');
   resetBtn.style.display='none'; fileInput.value=''; setStep(1);
   currentConst=null; nftPixelColor=null;
   document.getElementById('storyInput').value='';
@@ -3352,6 +3464,9 @@ async function loadCitiesFromChain() {
   try {
     if (window.TonCoreExtrasReady) await window.TonCoreExtrasReady;
     const sizeData = await tonFetch({ address: CONTRACT_ADDRESS, method: 'cityCountsSize', stack: [] });
+    if (!sizeData?.ok || sizeData?.result?.exit_code !== 0) {
+      if (typeof updateDebugInfo === 'function') updateDebugInfo('cityCountsSize BAD: ok=' + sizeData?.ok + ' exit=' + sizeData?.result?.exit_code + ' err=' + (sizeData?.error || '').slice(0,100));
+    }
     const sizeHex = sizeData?.result?.stack?.[0]?.[1];
     const size = sizeHex ? parseInt(sizeHex, 16) : 0;
     if (typeof debugMode !== 'undefined' && debugMode) updateDebugInfo('cityCountsSize = ' + size);
@@ -3690,7 +3805,7 @@ const RU_TEXT = {
   "just vitiligo · just us · just real":"просто витилиго · просто мы · просто настоящие",
   "people counted":"людей посчитано","constellations minted":"созвездий заминчено",
   "Constellations":"Созвездия","of 88":"из 88","Top cities":"Топ городов","See map →":"На карту →","Cities on the map →":"Города на карте →",
-  "Count me in ✦":"Посчитайте меня ✦","View my constellation →":"Моё созвездие →",
+  "Count me in ✦":"Посчитайте меня ✦","Count me in ✦ · 0.1 TON":"Посчитайте меня ✦ · 0.1 TON","Make my constellation ✦":"Создать моё созвездие ✦","Confirm — 0.1 TON":"Подтвердить — 0.1 TON","Your place in the number — one real person, recorded on the TON blockchain forever. A constellation can be minted any time later, whenever you feel like it.":"Твоё место в числе — один настоящий человек, навсегда записанный в блокчейне TON. Созвездие можно заминтить потом, в любой момент, когда захочется.","You're counted ✦ Your constellation awaits":"Ты посчитан ✦ Твоё созвездие ждёт","View my constellation →":"Моё созвездие →",
   "Make another constellation ✦":"Сделать ещё созвездие ✦",
   "🎉 Congratulations — you're counted":"🎉 Поздравляем — ты посчитан",
   "Home":"Главная","Constellation":"Созвездие","Map":"Карта","Invite":"Позвать","Profile":"Профиль",
