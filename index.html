@@ -820,7 +820,7 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
          counters: same alignment, same thin bars, one card total. All
          element ids are unchanged, so the JS that fills them (atomic
          reveal, updateMilestone, updateDiscoveryProgress) didn't move. -->
-    <div style="position:relative;border-radius:20px;overflow:hidden;margin:10px 0 14px;background:#040b18;border:.5px solid rgba(147,51,234,.15)">
+    <div style="position:relative;border-radius:20px;overflow:hidden;margin:6px 0 10px;background:#040b18;border:.5px solid rgba(147,51,234,.15)">
       <canvas id="heroCosmos" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas>
       <!-- Stacked vertically 06.07.2026 (was side-by-side): the count is
            the product — it must always show the EXACT number, and a
@@ -863,7 +863,7 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
           <div id="discoveryBarHome" style="height:100%;background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:2px;width:0%;transition:width .6s ease"></div>
         </div>
       </div>
-      <div class="page-sub" id="cityTeaserLink" style="position:relative;text-align:center;cursor:pointer;color:#a78bfa;font-size:11px;padding:12px 0 12px;margin:0">Cities on the map →</div>
+      <div class="page-sub" id="cityTeaserLink" style="position:relative;text-align:center;cursor:pointer;color:#a78bfa;font-size:11px;padding:6px 0 10px;margin:0">Cities on the map →</div>
     </div>
 
     <!-- Banner + CTA live in one wrapper pinned to the bottom edge of the
@@ -874,7 +874,7 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
       <!-- Added 04.07.2026 — shown instead of the plain tagline once a
            returning visitor is confirmed counted, so the app greets them
            rather than repeating the same first-time pitch forever. -->
-      <div id="countedBanner" style="display:none;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);border-radius:12px;padding:12px 16px;margin-bottom:12px;text-align:center;color:#6ee7b7;font-size:14px">
+      <div id="countedBanner" style="display:none;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);border-radius:12px;padding:10px 16px;margin-bottom:10px;text-align:center;color:#6ee7b7;font-size:13px">
         🎉 Congratulations — you're counted
       </div>
 
@@ -1656,26 +1656,39 @@ if (cosmosCV) {
     if (cosmosBG) cosmosCtx.drawImage(cosmosBG, 0, 0, cW, cH);
     else { cosmosCtx.fillStyle = '#040b18'; cosmosCtx.fillRect(0, 0, cW, cH); }
 
-    // Background stars
+    // Background stars — TILED infinitely (07.07.2026). They used to
+    // live only inside one 2000×2000 world square around the origin; at
+    // 120 sparse dots nobody noticed the boundary, at 320 it read as a
+    // literal square of stars stuck to the Genesis star, with empty
+    // void beyond ("квадрат прилип к моей звезде" — live screenshot).
+    // Wrapping each star's offset modulo the tile and stamping copies
+    // across the visible span makes the field seamless in every
+    // direction at any zoom — there is no edge to find anymore.
+    const TILE = 2000, step = TILE * zoom;
     bgStars.forEach(s => {
-      const [sx, sy] = w2s(s.x, s.y);
-      if (sx < -4 || sx > cW+4 || sy < -4 || sy > cH+4) return;
       const tw = 0.5 + 0.5 * Math.sin(t * s.sp + s.ph);
       const rr = s.r * Math.max(0.3, zoom * 0.3);
-      cosmosCtx.globalAlpha = s.a * tw;
+      const ox = (((s.x - vx) % TILE) + TILE) % TILE * zoom;
+      const oy = (((s.y - vy) % TILE) + TILE) % TILE * zoom;
       cosmosCtx.fillStyle = s.col;
-      cosmosCtx.beginPath();
-      cosmosCtx.arc(sx, sy, rr, 0, Math.PI * 2);
-      cosmosCtx.fill();
-      // hero stars: a whisper of a diffraction cross when they flare
-      if (s.hero && tw > 0.55) {
-        cosmosCtx.globalAlpha = s.a * (tw - 0.55) * 0.9;
-        cosmosCtx.strokeStyle = s.col; cosmosCtx.lineWidth = 0.5;
-        const L = rr * 6;
-        cosmosCtx.beginPath();
-        cosmosCtx.moveTo(sx - L, sy); cosmosCtx.lineTo(sx + L, sy);
-        cosmosCtx.moveTo(sx, sy - L); cosmosCtx.lineTo(sx, sy + L);
-        cosmosCtx.stroke();
+      for (let sx = ox - step; sx < cW + 4; sx += step) {
+        if (sx < -4) continue;
+        for (let sy = oy - step; sy < cH + 4; sy += step) {
+          if (sy < -4) continue;
+          cosmosCtx.globalAlpha = s.a * tw;
+          cosmosCtx.beginPath();
+          cosmosCtx.arc(sx, sy, rr, 0, Math.PI * 2);
+          cosmosCtx.fill();
+          if (s.hero && tw > 0.55) {
+            cosmosCtx.globalAlpha = s.a * (tw - 0.55) * 0.9;
+            cosmosCtx.strokeStyle = s.col; cosmosCtx.lineWidth = 0.5;
+            const L = rr * 6;
+            cosmosCtx.beginPath();
+            cosmosCtx.moveTo(sx - L, sy); cosmosCtx.lineTo(sx + L, sy);
+            cosmosCtx.moveTo(sx, sy - L); cosmosCtx.lineTo(sx, sy + L);
+            cosmosCtx.stroke();
+          }
+        }
       }
     });
 
