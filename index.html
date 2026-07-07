@@ -90,13 +90,27 @@ body{animation:appEnter .8s ease-out}
 }
 .welcome-title span{color:#c084fc}
 .welcome-body{font-size:14px;color:rgba(220,200,255,.45);line-height:1.7;margin-bottom:36px}
+/* Primary purple buttons, softened 06.07.2026 (welcome screens + main
+   CTAs share one recipe): a light-from-above gradient instead of flat
+   fill, a thin glass highlight along the top edge, a whisper of inner
+   depth at the bottom, and a slightly warmer glow. Pressing dims the
+   glow and settles the button — tactile, not flashy. */
 .welcome-btn{
-  width:100%;background:var(--purple);color:#fff;border:none;
+  width:100%;color:#fff;border:none;
+  background:linear-gradient(168deg,#b06bfa 0%,#9a4cf0 48%,#7c3aed 100%);
   border-radius:40px;padding:16px;font-size:15px;font-weight:500;
   cursor:pointer;font-family:'Space Grotesk',sans-serif;
-  box-shadow:0 4px 20px rgba(147,51,234,.35);transition:all .2s;
+  box-shadow:0 6px 26px rgba(147,51,234,.42),
+             inset 0 1px 0 rgba(255,255,255,.22),
+             inset 0 -2px 6px rgba(40,10,90,.35);
+  transition:all .2s;
 }
-.welcome-btn:active{transform:scale(.97)}
+.welcome-btn:active{
+  transform:scale(.97);
+  box-shadow:0 3px 14px rgba(147,51,234,.3),
+             inset 0 1px 0 rgba(255,255,255,.12),
+             inset 0 2px 8px rgba(40,10,90,.35);
+}
 .welcome-skip{margin-top:14px;font-size:12px;color:rgba(255,255,255,.22);cursor:pointer}
 .ob-screen{display:flex;flex-direction:column;align-items:center;text-align:center;width:100%;min-height:520px}
 .ob-screen .welcome-btn{margin-top:auto}
@@ -290,15 +304,24 @@ body{animation:appEnter .8s ease-out}
 .sub{font-size:11px;color:rgba(192,132,252,.32);letter-spacing:.07em;margin-bottom:20px}
 
 .btn-main{
-  width:100%;background:var(--purple);color:#fff;border:none;
+  width:100%;color:#fff;border:none;
+  background:linear-gradient(168deg,#b06bfa 0%,#9a4cf0 48%,#7c3aed 100%);
   border-radius:40px;padding:14px 20px;font-size:14px;font-weight:500;
   cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
   font-family:'Space Grotesk',sans-serif;margin-bottom:10px;
-  box-shadow:0 0 24px rgba(147,51,234,.32);transition:all .2s;
+  box-shadow:0 6px 26px rgba(147,51,234,.4),
+             inset 0 1px 0 rgba(255,255,255,.22),
+             inset 0 -2px 6px rgba(40,10,90,.35);
+  transition:all .2s;
 }
 .btn-main:disabled{opacity:.32;box-shadow:none;cursor:not-allowed}
 .btn-main.done{background:#059669;box-shadow:0 0 20px rgba(5,150,105,.3)}
-.btn-main:not(:disabled):active{transform:scale(.97)}
+.btn-main:not(:disabled):active{
+  transform:scale(.97);
+  box-shadow:0 3px 14px rgba(147,51,234,.3),
+             inset 0 1px 0 rgba(255,255,255,.12),
+             inset 0 2px 8px rgba(40,10,90,.35);
+}
 .btn-ghost{
   width:100%;background:transparent;border:.5px solid rgba(255,255,255,.09);
   color:rgba(255,255,255,.28);border-radius:40px;padding:12px;
@@ -1096,7 +1119,7 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
     <div class="modal-nft-owner" id="modalNftOwner" style="display:none;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#fbbf24;text-align:center;margin-bottom:6px;font-weight:600">✦ Owner: —</div>
     <div id="nftInspireStats" style="text-align:center;font-size:12px;color:#a78bfa;margin:2px 0 12px"></div>
     <div class="modal-nft-desc" id="modalNftDesc" style="font-size:13px;line-height:1.65;color:#c9b8f0;font-style:italic;padding:0 6px;margin-bottom:12px"></div>
-    <div id="nftInspire" style="border:1px solid rgba(147,51,234,.2);background:rgba(147,51,234,.06);border-radius:14px;padding:14px 16px;font-size:13px;line-height:1.7;color:#c9b8f0;margin-bottom:12px">This exact pattern exists once in the universe — drawn not by chance, but by skin. Of the eighty-eight constellations humanity has ever named, this shape now carries a human light. It is written on the blockchain forever: it cannot be repeated, and it cannot be taken away.</div>
+    <div id="nftInspire" style="border:1px solid rgba(147,51,234,.2);background:rgba(147,51,234,.06);border-radius:14px;padding:14px 16px;font-size:13px;line-height:1.7;color:#c9b8f0;margin-bottom:12px"></div>
     <div class="modal-nft-story" id="modalNftStory">No story added yet.</div>
   </div>
 </div>
@@ -2712,6 +2735,94 @@ document.getElementById('modalMintConfirm').addEventListener('click', async ()=>
   }
 });
 
+/* ══ CONSTELLATION LEGEND GENERATOR, 06.07.2026 ══
+   A minted constellation costs 1 TON — a three-line caption undersold it
+   (live feedback: "за 1 TON будет разочарование"). Every constellation
+   now gets its own multi-paragraph legend, assembled from REAL data
+   (star count, actual geometry of the pattern, the brightest star, the
+   template's mythology, rarity) by a generator seeded with the
+   constellation's own identity — so the story is unique per
+   constellation, but ALWAYS the same on every reopen: it belongs to it.
+   Written natively in the active language (the i18n observer never has
+   to touch it), phrase banks give hundreds of combinations. No invented
+   facts: every number and shape reference is computed from the data. */
+function constellationStory(nftData){
+  const ru = (typeof LANG !== 'undefined' && LANG === 'ru');
+  // deterministic RNG from the constellation's identity
+  let seed = 0; const seedStr = (nftData.name||'') + ':' + (nftData.constData?.stars?.length||0);
+  for (let i=0;i<seedStr.length;i++) seed = (seed*31 + seedStr.charCodeAt(i)) >>> 0;
+  const rand = () => { seed = (seed*1103515245 + 12345) >>> 0; return (seed>>>8)/16777216; };
+  const pick = a => a[Math.floor(rand()*a.length)];
+
+  const stars = nftData.constData?.stars || [];
+  const n = stars.length;
+  const isReal = !!(nftData.constData?.isRealDiscovery || nftData.isRealDiscovery || nftData.isLegendary);
+  // real geometry of this exact pattern
+  let minX=1,maxX=0,minY=1,maxY=0;
+  stars.forEach(s=>{minX=Math.min(minX,s.x);maxX=Math.max(maxX,s.x);minY=Math.min(minY,s.y);maxY=Math.max(maxY,s.y);});
+  const ratio = (maxX-minX+0.001)/(maxY-minY+0.001);
+  const shape = ratio>1.6 ? 'wide' : (ratio<0.75 ? 'tall' : 'even');
+  const high = stars[0] && stars[0].y < 0.45; // brightest star in the upper half
+  // a name for the brightest star, latin-like, seeded
+  const A=['Lu','Ve','Al','Se','No','Ra','Ce','Mi','Or','Tha'], B=['men','ria','dis','lior','thar','une','vis','mara','nis','elle'];
+  const starName = pick(A)+pick(B);
+  const num = ru ? ['','одна','две','три','четыре','пять','шесть','семь','восемь','девять','десять'][n<=10?n:0]||String(n) : String(n);
+
+  const P = [];
+  if (ru) {
+    P.push(pick([
+      `Это созвездие не выбирали из каталога — оно проявилось само, когда алгоритм всмотрелся в кожу. Каждая из его ${num==='' ? n : num} звёзд стоит там, где стояло настоящее пятно света.`,
+      `Сначала была просто фотография. Потом алгоритм убрал всё лишнее — и на чёрном осталось ${n} огней, расставленных так, как их расставила сама кожа. Так родилось это созвездие.`,
+      `Никто не рисовал этот узор. Он существовал всегда — на коже, незамеченный, — пока однажды не был прочитан и не поднят в небо. ${n} звёзд, и ни одна не поставлена рукой.`
+    ]));
+    P.push(pick([
+      shape==='wide' ? `Рисунок вытянут, как след через всё небо — от края до края.` : shape==='tall' ? `Рисунок поднимается вертикально, как лестница — звезда за звездой вверх.` : `Звёзды легли ровным, собранным строем — узор держит себя сам.`,
+      shape==='wide' ? `Форма стелется широко, будто дорога, по которой ещё никто не прошёл.` : shape==='tall' ? `Форма растёт снизу вверх, как дерево, тянущееся к свету.` : `Форма компактна и спокойна: все звёзды слышат друг друга.`
+    ]) + ' ' + pick([
+      `Самая яркая из них ${high ? 'горит в верхней части рисунка' : 'держит рисунок снизу'} — в этой легенде у неё есть имя: ${starName}.`,
+      `Ярчайшую звезду — ${high ? 'ту, что выше всех' : 'ту, что в основании'} — здесь зовут ${starName}: она загорелась первой.`
+    ]));
+    // Tier paragraph — added same day after live feedback: the legend
+    // read as if EVERY mint were one of the 88 real constellations.
+    // Now it states plainly which kind this one is.
+    P.push(isReal
+      ? `И это — не просто образ: это одно из восьмидесяти восьми настоящих созвездий земного неба. Каждое из них может быть открыто здесь лишь один раз, одним человеком — и это созвездие открыто. Больше оно не достанется никому.`
+      : `Стоит сказать честно, каким оно родилось: это мифическое созвездие — его нет в земных атласах, оно существует только здесь и только у одного человека. Восемьдесят восемь настоящих созвездий — отдельная, общая охота: каждый новый минт даёт шанс открыть одно из них.`);
+    if (nftData.constData?.desc) P.push(`У его образа есть своя легенда: ${nftData.constData.desc}`);
+    P.push(pick([
+      `Говорят, такие созвездия — маяки: их свет виден тем, кто ещё думает, что он один. Пока оно горит на общем небе, кто-то где-то понимает, что нас можно сосчитать.`,
+      `На общем небе оно — один огонь среди всех остальных. Но счёт устроен просто: без этого огня число было бы меньше ровно на одного человека. На настоящего.`,
+      `Каждое созвездие здесь — не украшение, а голос: «я есть». Этот голос теперь звучит вместе с остальными — и небо становится на один свет честнее.`
+    ]));
+    if (nftData.rare) P.push(`И ещё: это созвездие — золотое. Такие выпадают немногим, и его свет на общем небе всегда будет тёплого оттенка.`);
+    P.push(`Этот узор существует во вселенной в единственном экземпляре. Он записан в блокчейне навсегда: его нельзя повторить и нельзя отнять.`);
+    return '<div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#a78bfa;margin-bottom:8px">✦ Легенда этого созвездия</div>' + P.map(p=>`<p style="margin:0 0 10px">${p}</p>`).join('');
+  }
+  P.push(pick([
+    `This constellation wasn't picked from a catalogue — it surfaced on its own when the algorithm looked closely at skin. Each of its ${n} stars stands exactly where a real patch of light stood.`,
+    `First there was only a photograph. Then the algorithm stripped away everything else — and ${n} lights remained on the black, arranged the way skin itself arranged them. That is how this constellation was born.`,
+    `Nobody drew this pattern. It had always existed — on skin, unnoticed — until one day it was read and lifted into the sky. ${n} stars, and not one placed by hand.`
+  ]));
+  P.push(pick([
+    shape==='wide' ? `The figure stretches wide, like a trail across the whole sky — edge to edge.` : shape==='tall' ? `The figure climbs vertically, like a ladder — star after star, upward.` : `The stars settled into a calm, gathered formation — the pattern holds itself.`,
+    shape==='wide' ? `The shape lies broad, like a road no one has walked yet.` : shape==='tall' ? `The shape grows upward, like a tree reaching for light.` : `The shape is compact and quiet: every star can hear the others.`
+  ]) + ' ' + pick([
+    `The brightest of them ${high ? 'burns in the upper part of the figure' : 'anchors the figure from below'} — and in this legend it has a name: ${starName}.`,
+    `The brightest star — ${high ? 'the one above all others' : 'the one at the base'} — is called ${starName} here: it was the first to ignite.`
+  ]));
+  P.push(isReal
+    ? `And this is more than an image: it is one of the eighty-eight real constellations of Earth's sky. Each of them can be discovered here only once, by one person — and this one has been discovered. It will never belong to anyone else.`
+    : `To say it honestly: this constellation is mythical — it appears in no earthly atlas, it exists only here and only for one person. The eighty-eight real constellations are a separate, shared hunt: every new mint is a fresh chance to discover one of them.`);
+  if (nftData.constData?.desc) P.push(`Its image carries a legend of its own: ${nftData.constData.desc}`);
+  P.push(pick([
+    `They say constellations like this are beacons: their light reaches people who still believe they are alone. While it burns in the shared sky, someone, somewhere, realises we can be counted.`,
+    `In the shared sky it is one light among all the others. But the count is simple: without this light, the number would be smaller by exactly one person. A real one.`,
+    `Every constellation here is not decoration but a voice: "I exist." That voice now sounds together with the rest — and the sky becomes one light more honest.`
+  ]));
+  if (nftData.rare) P.push(`One more thing: this constellation is golden. Few ever receive one, and its light in the shared sky will always carry a warm hue.`);
+  P.push(`This exact pattern exists once in the universe. It is written on the blockchain forever: it cannot be repeated, and it cannot be taken away.`);
+  return '<div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#a78bfa;margin-bottom:8px">✦ The legend of this constellation</div>' + P.map(p=>`<p style="margin:0 0 10px">${p}</p>`).join('');
+}
 function openNftDetail(nftData, showActions){
   document.getElementById('modalNftTitle').textContent = '✦ ' + nftData.name + (nftData.rare ? ' ★ RARE' : '');
   document.getElementById('modalNftTitle').classList.toggle('rare', nftData.rare);
@@ -2728,6 +2839,8 @@ function openNftDetail(nftData, showActions){
   // numbers: it's the template's real star count).
   const statsEl = document.getElementById('nftInspireStats');
   if (statsEl) statsEl.innerHTML = '<span>Stars in this constellation:</span> ' + (nftData.constData?.stars?.length || 0);
+  const inspireEl = document.getElementById('nftInspire');
+  if (inspireEl) inspireEl.innerHTML = constellationStory(nftData);
   const canvas = document.getElementById('modalNftCanvas');
   const w = canvas.parentElement.offsetWidth || 300, h = w/1.2;
   canvas.width=w; canvas.height=h;
@@ -3057,9 +3170,15 @@ async function loadMyConstellationFromChain() {
     if (!hasConstellation) return;
     const constName = getStr(elements[6]);
     const isRare = getBool(elements[7]);
+    // The long-standing handoff bug, fixed 06.07.2026: elements[8] is the
+    // contract's isLegendary bit (a real IAU-constellation discovery), and
+    // the restore path never read it — after a reload a discovered real
+    // constellation demoted itself to a plain mythical one (wrong card
+    // styling, and now also a wrong tier paragraph in its legend).
+    const isLegendary = getBool(elements[8]);
     const story = getStr(elements[10]);
     if (!constName) return;
-    const nftData = { name: constName, story, rare: isRare, constData: { name: constName, stars: seededStars(constName, 5) } };
+    const nftData = { name: constName, story, rare: isRare || isLegendary, isRealDiscovery: isLegendary, constData: { name: constName, isRealDiscovery: isLegendary, stars: seededStars(constName, 5) } };
     myNfts.push(nftData);
     renderRestoredNftCard(nftData);
   } catch(e) { console.warn('getUser load failed', e); dbgUser('EXCEPTION: ' + (e && e.message)); }
@@ -3514,8 +3633,7 @@ const RU_HTML = {
   "#ob1 .ob-body":"Загрузи фото — алгоритм найдёт твои пятна и превратит их в личную звёздную карту. Двух одинаковых не бывает. Твоя минтится один раз и остаётся твоей навсегда, надёжно на блокчейне TON.",
   "#ob2 .ob-title":"Однажды каждый из нас<br>будет посчитан",
   "#ob2 .ob-body":"Это мечта — не оценка, с которой можно спорить, а настоящее число, растущее по одному человеку, пока не станет всеми. Ты можешь стать частью этого уже сегодня.",
-  ".home .headline":"Люди с витилиго<br>— <em>уникальны от природы</em>",
-  "#nftInspire":"Этот узор существует во вселенной в единственном экземпляре — его нарисовал не случай, а кожа. Из восьмидесяти восьми созвездий, которым человечество дало имена, эта форма теперь несёт свет человека. Она записана в блокчейне навсегда: её нельзя повторить и нельзя отнять."
+  ".home .headline":"Люди с витилиго<br>— <em>уникальны от природы</em>"
 };
 
 const RU_RX = [
