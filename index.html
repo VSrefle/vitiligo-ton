@@ -960,11 +960,20 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
     <div class="canvas-wrap" style="position:relative;border-radius:12px;overflow:hidden;background:#040b18;height:220px;margin-bottom:20px">
       <canvas id="cosmosCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;touch-action:none;cursor:grab"></canvas>
       <div id="cosmosExp" style="position:absolute;bottom:8px;right:8px;width:28px;height:28px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.35);color:#a78bfa;border-radius:8px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;user-select:none">⛶</div>
-      <div id="cosmosUI" style="position:fixed;top:12px;right:12px;flex-direction:column;gap:6px;z-index:10001;display:none">
+      <!-- position:absolute (was fixed), 07.07.2026: fixed anchored the
+           buttons to the VIEWPORT, and in Telegram fullscreen the canvas
+           wrap doesn't start at the viewport's very top (native header
+           inset) — so the ✕ column stuck out above the canvas field.
+           Absolute anchors them to the wrap itself: always inside the
+           sky, whatever the webview insets are. -->
+      <div id="cosmosUI" style="position:absolute;top:12px;right:12px;flex-direction:column;gap:6px;z-index:10001;display:none">
         <div id="cosmosClose" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</div>
         <div id="cosmosPlus" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">+</div>
         <div id="cosmosMinus" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">−</div>
-        <div id="cosmosReset" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center">✦</div>
+        <!-- Was a ✦ icon — on a star map a star icon explains nothing (even
+             the founder had to ask what it does). "ALL" pairs with "ME"
+             below: the two labels explain each other. 07.07.2026 -->
+        <div id="cosmosReset" style="width:34px;height:34px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;font-size:9px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:flex;align-items:center;justify-content:center">ALL</div>
         <div id="cosmosMe" style="width:34px;height:34px;background:rgba(124,58,237,.35);border:1px solid rgba(167,139,250,.7);color:#ddd6fe;border-radius:8px;font-size:9px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;letter-spacing:.5px">ME</div>
       </div>
       <div id="cosmosTip" style="position:absolute;bottom:8px;left:8px;background:rgba(4,11,24,.97);border:1px solid rgba(124,58,237,.3);border-radius:8px;padding:8px 12px;font-size:11px;color:#e9d5ff;pointer-events:none;display:none;z-index:10;max-width:180px;line-height:1.5"></div>
