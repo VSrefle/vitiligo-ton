@@ -51,7 +51,7 @@
 html,body{
   background:var(--bg);color:var(--text);
   font-family:'Space Grotesk',sans-serif;
-  min-height:var(--tg-viewport-stable-height,100vh);overflow-x:hidden;
+  min-height:var(--vt-vh,var(--tg-viewport-stable-height,100vh));overflow-x:hidden;
 }
 /* Gentle app entry, 06.07.2026 — the app used to snap onto the screen at
    full brightness in a single frame, which felt abrupt for a product
@@ -155,7 +155,7 @@ body{animation:appEnter .8s ease-out}
    are the same height for every kind of visitor (new / connected /
    counted / minted). stable-height alone under-reported in expanded
    mode and made heights drift between tabs. */
-.page{display:none;min-height:var(--tg-viewport-height,var(--tg-viewport-stable-height,100vh));padding-bottom:72px;position:relative;z-index:1}
+.page{display:none;min-height:var(--vt-vh,var(--tg-viewport-height,var(--tg-viewport-stable-height,100vh)));padding-bottom:72px;position:relative;z-index:1}
 .page.active{display:block}
 /* Applied by closeWelcome() — the page underneath rises softly while the
    onboarding overlay dissolves above it. */
@@ -182,7 +182,7 @@ body{animation:appEnter .8s ease-out}
      height → stable → plain vh. space-between stays: with the compact
      card below, blocks stretch across the window and the CTA block
      lands at the very bottom, thumb reach. */
-  min-height:calc(var(--tg-viewport-height,var(--tg-viewport-stable-height,100vh)) - 88px);
+  min-height:calc(var(--vt-vh,var(--tg-viewport-height,var(--tg-viewport-stable-height,100vh))) - 88px);
   justify-content:space-between;
 }
 /* Stacked counters at 44px outgrew one screen — 34px keeps
@@ -429,7 +429,7 @@ body{animation:appEnter .8s ease-out}
    required — a flex child otherwise refuses to shrink below content. */
 .map-page{
   padding:0 18px;display:flex;flex-direction:column;
-  height:calc(var(--tg-viewport-height,var(--tg-viewport-stable-height,100vh)) - 88px);
+  height:calc(var(--vt-vh,var(--tg-viewport-height,var(--tg-viewport-stable-height,100vh))) - 88px);
   overflow:hidden;
 }
 .city-scroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
@@ -536,7 +536,7 @@ body{animation:appEnter .8s ease-out}
    minimum, and the page never scrolls either way. */
 .profile-page{
   padding:0 18px;display:flex;flex-direction:column;
-  min-height:calc(var(--tg-viewport-height,var(--tg-viewport-stable-height,100vh)) - 88px);
+  min-height:calc(var(--vt-vh,var(--tg-viewport-height,var(--tg-viewport-stable-height,100vh))) - 88px);
 }
 .profile-bottom{margin-top:auto;padding-top:14px}
 /* Compacted 06.07.2026 so Profile fits one screen without scrolling,
@@ -1075,7 +1075,7 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
        same anchored spot as Home's CTA (the audience is mobile-first by
        definition of a Telegram mini app). The tap-to-copy link sits right
        above it. -->
-  <div class="invite-page" style="display:flex;flex-direction:column;min-height:calc(var(--tg-viewport-height,var(--tg-viewport-stable-height,100vh)) - 88px)">
+  <div class="invite-page" style="display:flex;flex-direction:column;min-height:calc(var(--vt-vh,var(--tg-viewport-height,var(--tg-viewport-stable-height,100vh))) - 88px)">
     <div class="page-title">Share vitiligo.ton</div>
     <div class="page-sub">Someone you know might belong here too</div>
 
@@ -1390,12 +1390,34 @@ for (let a = 5; a <= 104; a++) {
 }
 
 /* ── TELEGRAM ── */
+// ── Honest viewport height, 08.07.2026 ───────────────────────────────
+// The third device-height incident in two days (ceremony Got-it below
+// the fold, then the Profile language row sliding UNDER the nav — live
+// screenshots both times): Telegram's --tg-viewport-height /
+// -stable-height can each be BIGGER or SMALLER than the truly visible
+// webview area depending on device/mode. window.innerHeight is the one
+// number that cannot argue with the screen, so it now drives --vt-vh
+// and every page-height chain starts with it (falling back to the
+// Telegram vars, then 100vh). Skips updates while a field is focused —
+// the on-screen keyboard shrinks innerHeight and would otherwise
+// collapse the Profile column mid-typing.
+function vtMeasureViewport(){
+  const ae = document.activeElement;
+  if (ae && /^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName)) return;
+  document.documentElement.style.setProperty('--vt-vh', window.innerHeight + 'px');
+}
+vtMeasureViewport();
+window.addEventListener('resize', vtMeasureViewport);
+
 const tg = window.Telegram?.WebApp;
 let myTelegramId = null;
 if (tg) {
   tg.ready(); tg.expand();
   tg.setHeaderColor('#06030f');
   tg.setBackgroundColor('#06030f');
+  // Telegram animates expansion; re-measure when it settles (see
+  // vtMeasureViewport above) — resize alone doesn't always fire here.
+  if (tg.onEvent) tg.onEvent('viewportChanged', vtMeasureViewport);
   const u = tg.initDataUnsafe?.user;
   if (u) {
     myTelegramId = u.username || u.id;
@@ -1734,7 +1756,7 @@ if (cosmosCV) {
   let isFull = false;
   if (expBtn) expBtn.onclick = () => {
     isFull = true;
-    wrap.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;border-radius:0;z-index:9999;background:#040b18';
+    wrap.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:var(--vt-vh,100vh);border-radius:0;z-index:9999;background:#040b18';
     if (cosmosUI) cosmosUI.style.display = 'flex';
     expBtn.style.display = 'none';
     setTimeout(cosmosResize, 50);
