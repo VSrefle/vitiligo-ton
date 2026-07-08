@@ -150,7 +150,12 @@ body{animation:appEnter .8s ease-out}
    screen and every tab scrolled slightly even when its content fit —
    the "there's still scrolling" bug that no amount of content
    compaction could fix. */
-.page{display:none;min-height:var(--tg-viewport-stable-height,100vh);padding-bottom:72px;position:relative;z-index:1}
+/* 08.07.2026 — same height chain as .home (live height → stable → vh):
+   every tab now measures the viewport the same way, so all five pages
+   are the same height for every kind of visitor (new / connected /
+   counted / minted). stable-height alone under-reported in expanded
+   mode and made heights drift between tabs. */
+.page{display:none;min-height:var(--tg-viewport-height,var(--tg-viewport-stable-height,100vh));padding-bottom:72px;position:relative;z-index:1}
 .page.active{display:block}
 /* Applied by closeWelcome() — the page underneath rises softly while the
    onboarding overlay dissolves above it. */
@@ -302,7 +307,9 @@ body{animation:appEnter .8s ease-out}
 }
 .counter-meta{display:flex;flex-direction:column;gap:4px}
 .clabel{font-size:9px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
-.live-row{display:none;align-items:center;gap:4px;font-size:9px;color:rgba(52,211,153,.55)}
+/* Corner badge of the counters card since 08.07.2026 (was a line under
+   the big number). z-index lifts it above the cosmos canvas backdrop. */
+.live-row{display:none;position:absolute;top:10px;right:12px;z-index:2;align-items:center;gap:4px;font-size:9px;color:rgba(52,211,153,.55)}
 .live-row.show{display:flex}
 @keyframes ld{0%,100%{opacity:1}50%{opacity:.2}}
 
@@ -413,7 +420,19 @@ body{animation:appEnter .8s ease-out}
 .story-hint{font-size:10px;color:rgba(192,132,252,.3);margin-top:6px}
 
 /* MAP */
-.map-page{padding:0 18px}
+/* 08.07.2026 — the Map page itself no longer scrolls: it is clamped to
+   exactly one screen (same height chain as every other tab), and the
+   only thing allowed to scroll is the Top-cities list INSIDE its own
+   area (flex:1 + overflow-y:auto on .city-scroll). With few cities
+   nothing scrolls at all; with many, the page stays put and the list
+   quietly scrolls under your thumb. min-height:0 on the scroll area is
+   required — a flex child otherwise refuses to shrink below content. */
+.map-page{
+  padding:0 18px;display:flex;flex-direction:column;
+  height:calc(var(--tg-viewport-height,var(--tg-viewport-stable-height,100vh)) - 88px);
+  overflow:hidden;
+}
+.city-scroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 #mapCanvas{width:100%;border-radius:16px;display:block;margin-bottom:12px}
 .city-item{
   display:flex;align-items:center;gap:12px;
@@ -505,7 +524,21 @@ body{animation:appEnter .8s ease-out}
 .invite-empty{text-align:center;padding:30px 20px;color:rgba(192,132,252,.3);font-size:12px}
 
 /* PROFILE PAGE */
-.profile-page{padding:0 18px}
+/* Flex column stretched to the viewport (08.07.2026) — the third round of
+   "Profile scrolls again". History: 06.07 compacted the header, 07.07
+   pushed the secondary buttons away from the fields with FIXED margins
+   (34/26px) — and exactly those fixed margins overflowed one screen the
+   moment the counted-user layout (with the Update on-chain button) came
+   back. Lesson written down: never budget free space on this screen with
+   constants. Now the free space itself does the pushing — the bottom
+   block (write/how-it-works/language) is pinned down with margin-top:auto,
+   so on a tall screen the gap grows, on a short one it shrinks to a small
+   minimum, and the page never scrolls either way. */
+.profile-page{
+  padding:0 18px;display:flex;flex-direction:column;
+  min-height:calc(var(--tg-viewport-height,var(--tg-viewport-stable-height,100vh)) - 88px);
+}
+.profile-bottom{margin-top:auto;padding-top:14px}
 /* Compacted 06.07.2026 so Profile fits one screen without scrolling,
    same rule Home already follows: smaller avatar, tighter header
    paddings — the header was eating ~180px for what is essentially
@@ -629,7 +662,12 @@ select.form-input.needs-fill{color:rgba(196,168,245,.55)}
 .tx-status.success{display:block;background:rgba(52,211,153,.07);border:.5px solid rgba(52,211,153,.22);color:var(--green)}
 .tx-status.error{display:block;background:rgba(248,113,113,.07);border:.5px solid rgba(248,113,113,.22);color:#f87171}
 
-.modal-nft-preview{width:100%;aspect-ratio:1.6;background:#020110;border-radius:16px;margin-bottom:14px;position:relative;overflow:hidden;border:.5px solid rgba(147,51,234,.3)}
+/* aspect-ratio 1.1 (was 1.6) 08.07.2026 — the ceremony canvas is drawn at
+   h = w/1.1 (see openNftDetail); the old 1.6 frame silently clipped the
+   bottom third of the sky, which read as "the opened picture is not the
+   one from the card". Frame now matches the drawing exactly. */
+.modal-nft-preview{width:100%;aspect-ratio:1.1;background:#020110;border-radius:16px;margin-bottom:14px;position:relative;overflow:hidden;border:.5px solid rgba(147,51,234,.3)}
+.modal-nft-preview canvas{display:block;width:100%;height:100%}
 .modal-nft-preview.rare{border-color:rgba(251,191,36,.4)}
 .modal-nft-title{font-family:'Outfit',sans-serif;font-size:17px;font-weight:400;color:#c084fc;margin-bottom:4px;display:flex;align-items:center;gap:6px}
 .modal-nft-title.rare{color:#fde68a}
@@ -832,6 +870,11 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
          reveal, updateMilestone, updateDiscoveryProgress) didn't move. -->
     <div style="position:relative;border-radius:20px;overflow:hidden;margin:6px -6px 10px;background:#040b18;border:.5px solid rgba(147,51,234,.15)">
       <canvas id="heroCosmos" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas>
+      <!-- Moved to the card's corner 08.07.2026 (owner request) — it used
+           to sit under the big number, adding a line to the tallest block
+           on Home. As a quiet corner badge it states "this is live data"
+           without costing the layout anything. -->
+      <div class="live-row" id="liveRow"><div class="wdot" style="background:var(--green)"></div>live</div>
       <!-- Stacked vertically 06.07.2026 (was side-by-side): the count is
            the product — it must always show the EXACT number, and a
            half-width column can't fit "12,847,391" without the K/M
@@ -841,7 +884,6 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
         <div class="counter-block">
           <div class="cnum loading" id="cnum">0</div>
           <div class="clabel">people counted</div>
-          <div class="live-row" id="liveRow"><div class="wdot" style="background:var(--green)"></div>live</div>
         </div>
         <div class="counter-divider" style="width:56%;height:.5px;margin:2px 0"></div>
         <div class="counter-block">
@@ -1010,8 +1052,11 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
 
     <div class="page-title" style="font-size:16px;margin-bottom:4px">Top cities</div>
     <div class="page-sub" style="margin-bottom:14px">People with vitiligo who counted themselves in — by city</div>
-    <div class="invite-empty" id="cityListEmpty">No one has marked their city yet — be the first ✦</div>
-    <div id="cityListReal"></div>
+    <!-- Only this area may scroll on Map — see .city-scroll CSS (08.07.2026) -->
+    <div class="city-scroll">
+      <div class="invite-empty" id="cityListEmpty">No one has marked their city yet — be the first ✦</div>
+      <div id="cityListReal"></div>
+    </div>
   </div>
 </div>
 
@@ -1102,21 +1147,27 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
     <div id="updateOnChainHint" style="display:none;font-size:10px;color:#6b7280;text-align:center;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Visible to everyone — city, map, and story</div>
     <div class="tx-status" id="txUpdateProfile" style="margin-bottom:6px"></div>
 
-    <a href="https://t.me/vitiligo_ton" target="_blank" style="display:block;text-align:center;padding:12px;border:1px solid rgba(147,51,234,.3);border-radius:12px;color:#a78bfa;font-size:13px;text-decoration:none;margin-top:34px;margin-bottom:8px">
-      💬 Write to the team
-    </a>
-    <button onclick="openModal('modalHelp')" style="display:block;width:100%;text-align:center;padding:12px;border:1px solid rgba(147,51,234,.2);border-radius:12px;color:#6b7280;font-size:13px;background:none;cursor:pointer;font-family:'Space Grotesk',sans-serif;margin-bottom:10px">
-      💡 How it works
-    </button>
+    <!-- The whole secondary block is pinned to the bottom by flex
+         (margin-top:auto via .profile-bottom, 08.07.2026) — replaces the
+         fixed 34/26px margins that made Profile scroll on shorter
+         screens. See the .profile-page CSS note for the full story. -->
+    <div class="profile-bottom">
+      <a href="https://t.me/vitiligo_ton" target="_blank" style="display:block;text-align:center;padding:12px;border:1px solid rgba(147,51,234,.3);border-radius:12px;color:#a78bfa;font-size:13px;text-decoration:none;margin-bottom:8px">
+        💬 Write to the team
+      </a>
+      <button onclick="openModal('modalHelp')" style="display:block;width:100%;text-align:center;padding:12px;border:1px solid rgba(147,51,234,.2);border-radius:12px;color:#6b7280;font-size:13px;background:none;cursor:pointer;font-family:'Space Grotesk',sans-serif;margin-bottom:6px">
+        💡 How it works
+      </button>
 
-    <!-- Language switcher (06.07.2026, part of the i18n pass). Each name
-         stays in its own language on purpose — the row must be readable
-         to someone who picked the wrong language. -->
-    <div style="display:flex;gap:8px;justify-content:center;align-items:center;margin-top:26px;margin-bottom:16px;font-size:12px;color:#6b7280">
-      <span>🌐</span>
-      <span data-langswitch="en" style="cursor:pointer;color:#a78bfa">English</span>
-      <span style="opacity:.4">·</span>
-      <span data-langswitch="ru" style="cursor:pointer;color:#a78bfa">Русский</span>
+      <!-- Language switcher (06.07.2026, part of the i18n pass). Each name
+           stays in its own language on purpose — the row must be readable
+           to someone who picked the wrong language. -->
+      <div style="display:flex;gap:8px;justify-content:center;align-items:center;margin-top:10px;margin-bottom:4px;font-size:12px;color:#6b7280">
+        <span>🌐</span>
+        <span data-langswitch="en" style="cursor:pointer;color:#a78bfa">English</span>
+        <span style="opacity:.4">·</span>
+        <span data-langswitch="ru" style="cursor:pointer;color:#a78bfa">Русский</span>
+      </div>
     </div>
   </div>
 </div>
@@ -1590,6 +1641,40 @@ if (cosmosCV) {
     });
   };
 
+  // restoreMyStar, 08.07.2026 — the missing half of the ME button. A star
+  // used to exist only in the live session that minted it (addCosmosstar
+  // above); after any reload getUser restored the profile and the gallery
+  // card, but the sky forgot the person — ME honestly answered "you're
+  // not on this sky yet" to someone who was counted AND minted (live
+  // report). Called from loadMyConstellationFromChain once the chain
+  // confirms the record. Position is seeded from the wallet address, so
+  // my star is in the SAME place on every launch — a home, not a dice
+  // roll. Dedupes: if a live-session star already exists (or this gets
+  // retried), it updates that star instead of adding a twin.
+  window.restoreMyStar = function(seedStr, constName, story, constData, type) {
+    let sd = 0; const s = String(seedStr || 'me');
+    for (let i = 0; i < s.length; i++) sd = (sd * 31 + s.charCodeAt(i)) >>> 0;
+    const rnd = () => { sd = (sd * 1103515245 + 12345) >>> 0; return (sd >>> 8) / 16777216; };
+    const angle = rnd() * Math.PI * 2, dist = 60 + rnd() * 380;
+    const existing = cosmosParts.find(p => p.isMe);
+    if (existing) {
+      // keep the position it already has; just make sure the tap card
+      // shows the freshest constellation data
+      if (constName) existing.constName = constName;
+      if (story) existing.story = story;
+      if (constData) existing.constData = constData;
+      if (type) existing.type = type;
+      return;
+    }
+    cosmosParts.push({
+      x: 1000 + Math.cos(angle) * dist,
+      y: 1000 + Math.sin(angle) * dist,
+      type: type || 'normal', constName, story, constData,
+      isMe: true,
+      ph: rnd() * Math.PI * 2, sp: 0.2 + rnd() * 0.4, sz: 12
+    });
+  };
+
   // Expand button
   const expBtn = document.getElementById('cosmosExp');
   const cosmosUI = document.getElementById('cosmosUI');
@@ -1661,45 +1746,68 @@ if (cosmosCV) {
   cosmosCV.addEventListener('mousedown', e => { drag=true; const r=cosmosCV.getBoundingClientRect(); lx=e.clientX-r.left; ly=e.clientY-r.top; downX=lx; downY=ly; moved=0; });
   cosmosCV.addEventListener('mousemove', e => { if(!drag)return; const r=cosmosCV.getBoundingClientRect(); const nx=e.clientX-r.left,ny=e.clientY-r.top; vx-=(nx-lx)/zoom; vy-=(ny-ly)/zoom; moved+=Math.hypot(nx-lx,ny-ly); lx=nx; ly=ny; });
   cosmosCV.addEventListener('mouseup', e => { drag=false; if(moved<6){ const r=cosmosCV.getBoundingClientRect(); hitTestAndReveal(e.clientX-r.left, e.clientY-r.top); } });
-  cosmosCV.addEventListener('touchstart', e => { if(e.touches.length===1){drag=true;const r=cosmosCV.getBoundingClientRect();lx=e.touches[0].clientX-r.left;ly=e.touches[0].clientY-r.top;downX=lx;downY=ly;moved=0;} }, {passive:true});
-  cosmosCV.addEventListener('touchmove', e => { if(!drag||e.touches.length!==1)return;const r=cosmosCV.getBoundingClientRect();const nx=e.touches[0].clientX-r.left,ny=e.touches[0].clientY-r.top;vx-=(nx-lx)/zoom;vy-=(ny-ly)/zoom;moved+=Math.hypot(nx-lx,ny-ly);lx=nx;ly=ny; }, {passive:true});
-  cosmosCV.addEventListener('touchend', e => { drag=false; if(moved<6){ hitTestAndReveal(downX, downY); } });
+  // Pinch-to-zoom, 08.07.2026 (owner request): two fingers zoom the sky
+  // around the point between them AND pan with the midpoint — the world
+  // point under the initial midpoint stays glued to it, which is how a
+  // real map feels. One finger keeps dragging exactly as before. The
+  // canvas already has touch-action:none, so no preventDefault needed.
+  let pinch = null;
+  const tDist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  const tMid = (t, r) => [ (t[0].clientX + t[1].clientX)/2 - r.left, (t[0].clientY + t[1].clientY)/2 - r.top ];
+  cosmosCV.addEventListener('touchstart', e => {
+    const r = cosmosCV.getBoundingClientRect();
+    if (e.touches.length >= 2) {
+      drag = false; moved = 99; // a pinch is never a tap
+      const [mx, my] = tMid(e.touches, r);
+      const [wx, wy] = s2w(mx, my);
+      pinch = { d0: tDist(e.touches), z0: zoom, wx, wy };
+      return;
+    }
+    if (e.touches.length === 1) {
+      drag = true;
+      lx = e.touches[0].clientX - r.left; ly = e.touches[0].clientY - r.top;
+      downX = lx; downY = ly; moved = 0;
+    }
+  }, {passive:true});
+  cosmosCV.addEventListener('touchmove', e => {
+    const r = cosmosCV.getBoundingClientRect();
+    if (pinch && e.touches.length >= 2) {
+      const d = tDist(e.touches);
+      if (d > 0 && pinch.d0 > 0) zoom = Math.max(0.06, Math.min(14, pinch.z0 * d / pinch.d0));
+      const [mx, my] = tMid(e.touches, r);
+      vx = pinch.wx - mx / zoom; vy = pinch.wy - my / zoom;
+      return;
+    }
+    if (!drag || e.touches.length !== 1) return;
+    const nx = e.touches[0].clientX - r.left, ny = e.touches[0].clientY - r.top;
+    vx -= (nx - lx)/zoom; vy -= (ny - ly)/zoom;
+    moved += Math.hypot(nx - lx, ny - ly); lx = nx; ly = ny;
+  }, {passive:true});
+  cosmosCV.addEventListener('touchend', e => {
+    if (e.touches.length < 2) pinch = null;
+    if (e.touches.length === 1) {
+      // one finger lifted mid-pinch — hand over to a clean drag from the
+      // remaining finger, otherwise the sky jumps by the stale delta
+      const r = cosmosCV.getBoundingClientRect();
+      drag = true; lx = e.touches[0].clientX - r.left; ly = e.touches[0].clientY - r.top;
+      return;
+    }
+    drag = false;
+    if (moved < 6) { hitTestAndReveal(downX, downY); }
+  });
   cosmosCV.addEventListener('wheel', e => { e.preventDefault(); const r=cosmosCV.getBoundingClientRect(); zTo(zoom*(e.deltaY>0?.88:1.14),e.clientX-r.left,e.clientY-r.top); }, {passive:false});
 
   function drawCosmosFrame() {
     const t = performance.now() / 1000;
+    // Comets removed 08.07.2026 by owner's call — and they were hiding a
+    // real bug: the flat-colour fallback fill below was attached (via a
+    // misplaced else) to "is a comet alive right now", not to "is the
+    // pre-rendered background ready". Result: every comet-free frame
+    // painted flat #040b18 OVER the nebulas/Milky-Way offscreen, and the
+    // rich purple background only "flashed through" while a comet lived —
+    // the reported "появляется светло-фиолетовый слой". The fallback now
+    // belongs to the background itself, where it always should have been.
     if (cosmosBG) cosmosCtx.drawImage(cosmosBG, 0, 0, cW, cH);
-
-    // ── Comets, 07.07.2026 — a rare streak crossing the sky every
-    // ~8–16 s: bright head, tail dissolving behind. Screen-space (a
-    // meteor doesn't belong to the map), one at a time, cheap: one
-    // gradient line + one dot per frame while alive. ──
-    if (!window.__comet && (!window.__cometNext || performance.now() > window.__cometNext)) {
-      const edge = Math.random() < .5;
-      const a = (Math.random() * .5 + .2) * Math.PI * (Math.random() < .5 ? 1 : -1) / 2 + (edge ? 0 : Math.PI/2);
-      window.__comet = {
-        x: Math.random() * cW * .8 + cW * .1,
-        y: Math.random() * cH * .3,
-        dx: Math.cos(a + Math.PI/4), dy: Math.abs(Math.sin(a + Math.PI/4)),
-        sp: (cW + cH) / 1400, born: performance.now(), life: 1400 + Math.random()*800
-      };
-    }
-    if (window.__comet) {
-      const c = window.__comet, age = performance.now() - c.born, k = age / c.life;
-      if (k >= 1) { window.__comet = null; window.__cometNext = performance.now() + 8000 + Math.random()*8000; }
-      else {
-        const px = c.x + c.dx * c.sp * age * .06, py = c.y + c.dy * c.sp * age * .06;
-        const tail = 90 * (1 - Math.abs(k - .5) * 1.2);
-        const fade = k < .15 ? k/.15 : k > .8 ? (1-k)/.2 : 1;
-        const tg = cosmosCtx.createLinearGradient(px - c.dx*tail, py - c.dy*tail, px, py);
-        tg.addColorStop(0,'transparent');
-        tg.addColorStop(1,'rgba(233,213,255,'+(0.7*fade).toFixed(2)+')');
-        cosmosCtx.globalAlpha = 1; cosmosCtx.strokeStyle = tg; cosmosCtx.lineWidth = 1.4;
-        cosmosCtx.beginPath(); cosmosCtx.moveTo(px - c.dx*tail, py - c.dy*tail); cosmosCtx.lineTo(px, py); cosmosCtx.stroke();
-        cosmosCtx.fillStyle = 'rgba(255,255,255,'+(0.9*fade).toFixed(2)+')';
-        cosmosCtx.beginPath(); cosmosCtx.arc(px, py, 1.6, 0, Math.PI*2); cosmosCtx.fill();
-      }
-    }
     else { cosmosCtx.fillStyle = '#040b18'; cosmosCtx.fillRect(0, 0, cW, cH); }
 
     // Background stars — TILED infinitely (07.07.2026). They used to
@@ -2460,7 +2568,12 @@ function refreshCountedBanner(){
   } else {
     banner.style.display = 'none';
     btn.style.display = 'block';
-    btn.textContent = 'Count me in ✦ · 0.1 TON';
+    // No price on the Home CTA (owner's call 08.07.2026, reversing the
+    // 07.07 "always show · 0.1 TON" label): the invitation is emotional
+    // ("посчитайте меня"), the price belongs where the decision happens —
+    // the register modal shows 0.1 TON before any wallet opens, and the
+    // full price list lives in How it works.
+    btn.textContent = 'Count me in ✦';
   }
 }
 
@@ -2999,20 +3112,13 @@ document.getElementById('modalMintConfirm').addEventListener('click', async ()=>
     const card=document.createElement('div');
     card.className='nft-card' + (gold ? ' rare' : '');
     const media=document.createElement('div'); media.className='nft-media';
-    const mc=document.createElement('canvas'); mc.width=80; mc.height=80;
+    // Same painter as the opened ceremony (08.07.2026) — the thumbnail IS
+    // the ceremony picture, just smaller, so tapping the card never
+    // reveals "a different constellation".
+    const mc=document.createElement('canvas');
     mc.style.cssText='width:100%;height:100%;display:block';
-    const mctx=mc.getContext('2d');
-    mctx.fillStyle='#020110'; mctx.fillRect(0,0,80,80);
-    const ng=mctx.createRadialGradient(40,40,0,40,40,38);
-    ng.addColorStop(0,gold?'rgba(245,158,11,.3)':'rgba(76,29,149,.3)'); ng.addColorStop(1,'transparent');
-    mctx.fillStyle=ng; mctx.beginPath(); mctx.arc(40,40,38,0,Math.PI*2); mctx.fill();
-    currentConst.stars.forEach((s,i)=>{
-      const sx=s.x*80, sy=s.y*80, sz=i===0?3:1.5;
-      const g=mctx.createRadialGradient(sx,sy,0,sx,sy,sz*4);
-      g.addColorStop(0,gold?'rgba(253,230,138,.5)':'rgba(200,170,255,.5)'); g.addColorStop(1,'transparent');
-      mctx.fillStyle=g; mctx.beginPath(); mctx.arc(sx,sy,sz*4,0,Math.PI*2); mctx.fill();
-      mctx.fillStyle='rgba(255,252,255,.95)'; mctx.beginPath(); mctx.arc(sx,sy,sz,0,Math.PI*2); mctx.fill();
-    });
+    const thumbPx = cardThumbSize();
+    paintConstellationScene(mc, thumbPx, thumbPx, {name: currentConst.name.split('·')[0].trim(), rare: gold, constData: currentConst});
     media.appendChild(mc);
     if(gold){
       const badge=document.createElement('div'); badge.className='nft-rare-badge'; badge.textContent='★ RARE';
@@ -3161,20 +3267,42 @@ function openNftDetail(nftData, showActions){
   if (statsEl) statsEl.innerHTML = '<span>Stars in this constellation:</span> ' + (nftData.constData?.stars?.length || 0);
   const inspireEl = document.getElementById('nftInspire');
   if (inspireEl) inspireEl.innerHTML = constellationStory(nftData);
-  /* Ceremony canvas, rebuilt 07.07.2026. Two live complaints fixed:
-     (1) restored constellations drew as "5 dots squeezed against one
-     edge" — raw seeded coordinates were mapped straight to the canvas
-     with no fitting; now the pattern's bounding box is normalized into
-     a padded frame, centered, aspect preserved;
-     (2) the backdrop was one flat glow — now the same cosmos language
-     as the Map: depth gradient, nebulas, deterministic star dust (seeded
-     by the constellation's name, so ITS sky is always the same), plus
-     connecting lines between the stars and a diffraction sparkle on the
-     brightest one. */
-  const canvas = document.getElementById('modalNftCanvas');
-  const w = canvas.parentElement.offsetWidth || 300, h = Math.round(w/1.1);
-  canvas.width=w; canvas.height=h;
+  /* Ceremony canvas — rebuilt 08.07.2026 again, after a live "размыто,
+     размазано" report. Three real causes, all fixed:
+     (1) it painted BEFORE openModal, when the hidden modal's width was 0,
+         fell back to 300px and got stretched — now the modal opens first
+         and the canvas is measured on the next frame, at its real size;
+     (2) no devicePixelRatio: on a phone (DPR 2–3) a 1× backing store is
+         upscaled 3× by the screen — the painter now renders at DPR;
+     (3) the .modal-nft-preview frame was aspect 1.6 while the drawing is
+         1.1 — the bottom third was clipped (see the CSS note there).
+     The painting itself lives in paintConstellationScene (shared with the
+     gallery card previews, so the card thumbnail and the opened ceremony
+     are literally the same picture at different sizes). */
+  openModal('modalNftDetail');
+  requestAnimationFrame(()=>{
+    const canvas = document.getElementById('modalNftCanvas');
+    const box = canvas.parentElement;
+    const w = box.clientWidth || 300, h = box.clientHeight || Math.round(w/1.1);
+    paintConstellationScene(canvas, w, h, nftData);
+  });
+}
+
+/* One painter for every constellation picture (08.07.2026): the ceremony
+   canvas and both gallery-card thumbnails (mint-time + chain-restored)
+   used to be three diverging hand-drawn versions — the 80×80 card one had
+   no bbox fitting and no background, so "превью не совпадает с открытым".
+   Now: same cosmos language everywhere (depth gradient, nebulas, dust
+   seeded by the constellation's identity — its sky is always the same),
+   same bbox→padded-frame fitting, and a DPR-scaled backing store so it is
+   pixel-crisp on phones. cssW/cssH are CSS pixels of the box it fills. */
+function paintConstellationScene(canvas, cssW, cssH, nftData){
+  const DPR = Math.min(3, window.devicePixelRatio || 1);
+  canvas.width = Math.max(1, Math.round(cssW * DPR));
+  canvas.height = Math.max(1, Math.round(cssH * DPR));
   const ctx = canvas.getContext('2d');
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const w = cssW, h = cssH;
   const gold = nftData.rare;
   // deterministic rand from the constellation identity
   let sd = 0; const idStr = (nftData.name||'') + (nftData.constData?.stars?.length||0);
@@ -3191,8 +3319,10 @@ function openNftDetail(nftData, showActions){
     g.addColorStop(1,'transparent');
     ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
   });
-  // star dust — its own, always the same
-  for (let i=0;i<140;i++){
+  // star dust — its own, always the same; count scales with area so a
+  // small card thumbnail isn't drowned in grains
+  const dustN = Math.max(40, Math.round(140 * (w*h) / (320*290)));
+  for (let i=0;i<dustN;i++){
     ctx.globalAlpha = .04 + rnd()*.16;
     ctx.fillStyle = rnd() < .85 ? '#cfc4ef' : '#ffe9c4';
     ctx.fillRect(rnd()*w, rnd()*h, rnd()<.8?1:1.5, 1);
@@ -3207,6 +3337,8 @@ function openNftDetail(nftData, showActions){
   const k = Math.min(availW/bw, availH/bh);
   const offX = (w - bw*k)/2 - mnx*k, offY = (h - bh*k)/2 - mny*k;
   const pts = raw.map(p=>({x:p.x*k+offX, y:p.y*k+offY}));
+  // star size follows the box so the thumbnail keeps the ceremony's look
+  const S = Math.max(2, Math.min(5, w/64));
   // constellation lines
   if (pts.length > 1) {
     ctx.strokeStyle = gold ? 'rgba(253,230,138,.28)' : 'rgba(196,168,245,.28)';
@@ -3217,7 +3349,7 @@ function openNftDetail(nftData, showActions){
   }
   // stars: halo + white-hot core; diffraction spikes on the brightest
   pts.forEach((p,i)=>{
-    const sz = i===0 ? 5 : 3;
+    const sz = i===0 ? S : S*.6;
     const g = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,sz*6);
     g.addColorStop(0, gold?'rgba(253,230,138,.6)':'rgba(200,170,255,.55)'); g.addColorStop(1,'transparent');
     ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,sz*6,0,Math.PI*2); ctx.fill();
@@ -3234,7 +3366,13 @@ function openNftDetail(nftData, showActions){
       }
     }
   });
-  openModal('modalNftDetail');
+}
+// Card thumbnails are square and live in a 2-column grid; when they are
+// painted the grid can be on a hidden tab (offsetWidth 0), so the size is
+// derived from the window instead of measured: (page width − paddings −
+// grid gap) / 2. Close enough — the DPR backing store keeps it crisp.
+function cardThumbSize(){
+  return Math.max(120, Math.round((Math.min(window.innerWidth, 480) - 36 - 10) / 2));
 }
 document.getElementById('modalNftGotIt').addEventListener('click',()=>closeModal('modalNftDetail'));
 
@@ -3542,9 +3680,23 @@ async function loadMyConstellationFromChain() {
     if (typeof refreshFieldHighlights === 'function') refreshFieldHighlights();
     if (typeof refreshOnChainProfileNote === 'function') refreshOnChainProfileNote();
 
+    // The chain says this wallet IS in the count — make the local state
+    // agree (08.07.2026). Before this, "counted" lived only in the
+    // localStorage flag written at payment time; a cleared webview cache
+    // silently demoted a real counted person to a newcomer in the UI.
+    // The chain record is the source of truth, so it now re-marks the
+    // flag and refreshes the greeting banner/button.
+    markJoinedLocal();
+    if (typeof refreshCountedBanner === 'function') refreshCountedBanner();
+
     const hasConstellation = getBool(elements[5]);
     dbgUser('parsed OK, hasConstellation=' + hasConstellation);
-    if (!hasConstellation) return;
+    if (!hasConstellation) {
+      // Counted but no constellation yet — still a person, still a star
+      // on the shared sky (звезда = человек). ME now has somewhere to fly.
+      if (window.restoreMyStar) window.restoreMyStar(addr, onChainProfile.name || null, '', null, 'normal');
+      return;
+    }
     const constName = getStr(elements[6]);
     const isRare = getBool(elements[7]);
     // The long-standing handoff bug, fixed 06.07.2026: elements[8] is the
@@ -3558,6 +3710,8 @@ async function loadMyConstellationFromChain() {
     const nftData = { name: constName, story, rare: isRare || isLegendary, isRealDiscovery: isLegendary, constData: { name: constName, isRealDiscovery: isLegendary, stars: seededStars(constName, 5) } };
     myNfts.push(nftData);
     renderRestoredNftCard(nftData);
+    // ...and back onto the shared sky (08.07.2026) — see restoreMyStar.
+    if (window.restoreMyStar) window.restoreMyStar(addr, constName, story, nftData.constData, isLegendary ? 'legendary' : (isRare ? 'rare' : 'normal'));
   } catch(e) { console.warn('getUser load failed', e); dbgUser('EXCEPTION: ' + (e && e.message)); }
 }
 function beginCellSafe(){ try { return !!(window.TonCore && window.TonCore.beginCell); } catch(e){ return false; } }
@@ -3574,20 +3728,12 @@ function renderRestoredNftCard(nftData) {
   const card = document.createElement('div');
   card.className = 'nft-card' + (gold ? ' rare' : '');
   const media = document.createElement('div'); media.className = 'nft-media';
-  const mc = document.createElement('canvas'); mc.width = 80; mc.height = 80;
+  // Same painter as the opened ceremony (08.07.2026) — see the mint-time
+  // card above; the restored card no longer draws its own diverging 80×80.
+  const mc = document.createElement('canvas');
   mc.style.cssText = 'width:100%;height:100%;display:block';
-  const mctx = mc.getContext('2d');
-  mctx.fillStyle = '#020110'; mctx.fillRect(0, 0, 80, 80);
-  const ng = mctx.createRadialGradient(40, 40, 0, 40, 40, 38);
-  ng.addColorStop(0, gold ? 'rgba(245,158,11,.3)' : 'rgba(76,29,149,.3)'); ng.addColorStop(1, 'transparent');
-  mctx.fillStyle = ng; mctx.beginPath(); mctx.arc(40, 40, 38, 0, Math.PI * 2); mctx.fill();
-  nftData.constData.stars.forEach((s, i) => {
-    const sx = s.x * 80, sy = s.y * 80, sz = i === 0 ? 3 : 1.5;
-    const g = mctx.createRadialGradient(sx, sy, 0, sx, sy, sz * 4);
-    g.addColorStop(0, gold ? 'rgba(253,230,138,.5)' : 'rgba(200,170,255,.5)'); g.addColorStop(1, 'transparent');
-    mctx.fillStyle = g; mctx.beginPath(); mctx.arc(sx, sy, sz * 4, 0, Math.PI * 2); mctx.fill();
-    mctx.fillStyle = 'rgba(255,252,255,.95)'; mctx.beginPath(); mctx.arc(sx, sy, sz, 0, Math.PI * 2); mctx.fill();
-  });
+  const thumbPx = cardThumbSize();
+  paintConstellationScene(mc, thumbPx, thumbPx, nftData);
   media.appendChild(mc);
   if (gold) {
     const badge = document.createElement('div'); badge.className = 'nft-rare-badge'; badge.textContent = '★ RARE';
@@ -3947,7 +4093,7 @@ const RU_TEXT = {
   "just vitiligo · just us · just real":"просто витилиго · просто мы · просто настоящие",
   "people counted":"людей посчитано","constellations minted":"созвездий заминчено",
   "Constellations":"Созвездия","of 88":"из 88","Top cities":"Топ городов","See map →":"На карту →","Cities on the map →":"Города на карте →",
-  "Count me in ✦":"Посчитайте меня ✦","Count me in ✦ · 0.1 TON":"Посчитайте меня ✦ · 0.1 TON","Make my constellation ✦":"Создать моё созвездие ✦","Confirm — 0.1 TON":"Подтвердить — 0.1 TON","Your place in the number — one real person, recorded on the TON blockchain forever. A constellation can be minted any time later, whenever you feel like it.":"Твоё место в числе — один настоящий человек, навсегда записанный в блокчейне TON. Созвездие можно заминтить потом, в любой момент, когда захочется.","You're counted ✦ Your constellation awaits":"Ты посчитан ✦ Твоё созвездие ждёт","First count yourself in ✦ Constellations come after":"Сначала посчитайся ✦ Созвездия — потом","Count-in payments open in the next update ✦":"Оплата счёта откроется в ближайшем обновлении ✦","You're not on this sky yet — count yourself in ✦":"Тебя ещё нет на этом небе — сначала посчитайся ✦","View my constellation →":"Моё созвездие →",
+  "Count me in ✦":"Посчитайте меня ✦","Make my constellation ✦":"Создать моё созвездие ✦","Confirm — 0.1 TON":"Подтвердить — 0.1 TON","Your place in the number — one real person, recorded on the TON blockchain forever. A constellation can be minted any time later, whenever you feel like it.":"Твоё место в числе — один настоящий человек, навсегда записанный в блокчейне TON. Созвездие можно заминтить потом, в любой момент, когда захочется.","You're counted ✦ Your constellation awaits":"Ты посчитан ✦ Твоё созвездие ждёт","First count yourself in ✦ Constellations come after":"Сначала посчитайся ✦ Созвездия — потом","Count-in payments open in the next update ✦":"Оплата счёта откроется в ближайшем обновлении ✦","You're not on this sky yet — count yourself in ✦":"Тебя ещё нет на этом небе — сначала посчитайся ✦","View my constellation →":"Моё созвездие →",
   "Make another constellation ✦":"Сделать ещё созвездие ✦",
   "🎉 Congratulations — you're counted":"🎉 Поздравляем — ты посчитан",
   "Home":"Главная","Constellation":"Созвездие","Map":"Карта","Invite":"Позвать","Profile":"Профиль",
