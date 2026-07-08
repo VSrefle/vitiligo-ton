@@ -3708,6 +3708,17 @@ async function loadMyConstellationFromChain() {
     const entry = data?.result?.stack?.[0];
     dbgUser('RAW: ' + JSON.stringify(entry).slice(0, 400));
     if (!entry || entry[0] === 'null') { dbgUser('not registered on-chain'); return; }
+    // 08.07.2026, live debug panel from the second (never-registered)
+    // test wallet finally showed what "no record" REALLY looks like:
+    // ["list",{"@type":"tvm.list","elements":[]}] — an EMPTY tvm.list,
+    // not the 'null' entry this check always expected. It used to fall
+    // through to the tuple parser and get logged as "unexpected stack
+    // shape, elements=0" — noisy for a newcomer, and the same wrong
+    // assumption may be involved in handoff open question #3 (getUser
+    // silently not restoring). An empty list is now the honest
+    // "not registered" answer.
+    const rawElements = entry[1]?.elements || entry[1];
+    if (Array.isArray(rawElements) && rawElements.length === 0) { dbgUser('not registered on-chain (empty list)'); return; }
     const elements = entry[1]?.elements || entry[1];
     if (!elements || elements.length < 13) {
       console.warn('getUser: unexpected stack shape', entry);
@@ -3846,6 +3857,10 @@ async function loadCitiesFromChain() {
         if (!entry || entry[0] === 'null') continue;
         // Expect a tuple: [cityNameCell, countNum] — city first, count second (struct field order in .tact)
         const elements = entry[1]?.elements || entry[1];
+        // Same discovery as in getUser (08.07.2026): "no record" can come
+        // back as an EMPTY tvm.list rather than 'null' — skip quietly
+        // instead of warning about an "unexpected shape".
+        if (Array.isArray(elements) && elements.length === 0) continue;
         if (!elements || elements.length < 2) {
           console.warn('getCityCount: unexpected stack shape', entry);
           if (typeof debugMode !== 'undefined' && debugMode) updateDebugInfo('getCityCount(' + i + ') unexpected shape: ' + JSON.stringify(entry).slice(0, 300));
