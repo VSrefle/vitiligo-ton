@@ -182,7 +182,7 @@ body{animation:appEnter .8s ease-out}
 }
 /* Stacked counters at 44px outgrew one screen — 34px keeps
    "12,847,391" exact and Home scroll-free. Scoped to .home. */
-.home .cnum{font-size:34px}
+.home .cnum{font-size:38px}
 .topbar{
   display:flex;align-items:center;justify-content:space-between;
   padding:16px 0 0;padding-top:max(16px,env(safe-area-inset-top));
@@ -830,14 +830,14 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
          counters: same alignment, same thin bars, one card total. All
          element ids are unchanged, so the JS that fills them (atomic
          reveal, updateMilestone, updateDiscoveryProgress) didn't move. -->
-    <div style="position:relative;border-radius:20px;overflow:hidden;margin:6px 0 10px;background:#040b18;border:.5px solid rgba(147,51,234,.15)">
+    <div style="position:relative;border-radius:20px;overflow:hidden;margin:6px -6px 10px;background:#040b18;border:.5px solid rgba(147,51,234,.15)">
       <canvas id="heroCosmos" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas>
       <!-- Stacked vertically 06.07.2026 (was side-by-side): the count is
            the product — it must always show the EXACT number, and a
            half-width column can't fit "12,847,391" without the K/M
            rounding that fmt() does. Full-width rows can. Numbers are
            written with fmtExact() everywhere for the same reason. -->
-      <div class="dual-counter" style="position:relative;background:transparent;border:none;margin-bottom:0;flex-direction:column;gap:6px;padding:10px 10px 8px">
+      <div class="dual-counter" style="position:relative;background:transparent;border:none;margin-bottom:0;flex-direction:column;gap:8px;padding:16px 10px 12px">
         <div class="counter-block">
           <div class="cnum loading" id="cnum">0</div>
           <div class="clabel">people counted</div>
@@ -2399,12 +2399,10 @@ document.getElementById('countBtn').addEventListener('click',()=>{
     document.querySelector('[data-page="stars"]').click();
     return;
   }
-  // Cheap path (0.1 TON Register) when enabled; otherwise the original
-  // behavior — the 1 TON constellation flow that also counts you in.
-  if (registerPathReady()) {
-    ensureProfile(()=> openModal('modalRegister'));
-    return;
-  }
+  // Count-in is THE entry now, unconditionally (see the gate comment at
+  // uploadArea). The old fall-through to the 1 TON combined flow is gone.
+  ensureProfile(()=> openModal('modalRegister'));
+  return;
   ensureProfile(()=>{
     document.querySelector('[data-page="stars"]').click();
     showToast('Upload a photo of your vitiligo to join the count ✦');
@@ -2462,7 +2460,7 @@ function refreshCountedBanner(){
   } else {
     banner.style.display = 'none';
     btn.style.display = 'block';
-    btn.textContent = registerPathReady() ? 'Count me in ✦ · 0.1 TON' : 'Count me in ✦';
+    btn.textContent = 'Count me in ✦ · 0.1 TON';
   }
 }
 
@@ -2682,12 +2680,14 @@ let lastStoryText='';
 function setStep(n){for(let i=1;i<=4;i++) document.getElementById('ps'+i).classList.toggle('active',i<=n);}
 
 uploadArea.addEventListener('click',()=>{
-  // Order of the split model (07.07): first you COUNT yourself in, then
-  // constellations are an optional collection on top. Gated by
-  // registerPathReady(): until the contract batch enables the cheap
-  // path, the combined 1 TON flow stays open for everyone — otherwise a
-  // not-yet-counted person would have no way in at all.
-  if (registerPathReady() && !isJoinedLocal()) {
+  // UNCONDITIONAL gate — explicit product decision 07.07.2026 (owner's
+  // call, second pass): constellations are available ONLY after count-in,
+  // full stop. Until REGISTER_OPCODE is inserted the register payment
+  // itself is stubbed with an honest toast (see modalRegisterConfirm),
+  // so a brand-new user temporarily cannot pay at all — accepted
+  // consciously; inserting the opcode (5-minute job, see handoff)
+  // makes the whole split live.
+  if (!isJoinedLocal()) {
     showToast('First count yourself in ✦ Constellations come after');
     document.querySelector('[data-page="home"]')?.click();
     return;
@@ -2903,14 +2903,20 @@ let myNfts = [];
 // The help sheet's price line reflects what the app actually charges
 // TODAY (see comment in #modalHelp).
 (function(){
+  // Canonical pricing only (07.07, owner's call): the split IS the
+  // model. No "for now" wording anywhere.
   const pn = document.getElementById('helpPriceNote');
-  if (pn) pn.textContent = registerPathReady()
-    ? 'Count — 0.1 TON · Constellation — 1 TON · Profile update — 0.02 TON'
-    : 'For now: first count + constellation together — 1 TON · Profile update — 0.02 TON';
+  if (pn) pn.textContent = 'Count — 0.1 TON · Constellation — 1 TON · Profile update — 0.02 TON';
 })();
 document.getElementById('modalRegisterClose').addEventListener('click',()=>closeModal('modalRegister'));
 document.getElementById('modalRegisterConfirm').addEventListener('click', async ()=>{
   updateDebugInfo('CLICKED register confirm');
+  if (!registerPathReady()) {
+    // Honest stub until REGISTER_OPCODE arrives from the compiled .abi —
+    // sending opcode 0 would just bounce the person's 0.1 TON.
+    showToast('Count-in payments open in the next update ✦');
+    return;
+  }
   if (!hasProfile()) { closeModal('modalRegister'); ensureProfile(()=> openModal('modalRegister')); return; }
   if(!tonConnectUI){ await initTonConnect(); }
   if(!tonConnectUI){ showToast('Wallet connect is unavailable — check your connection and reload the page.'); return; }
@@ -3941,7 +3947,7 @@ const RU_TEXT = {
   "just vitiligo · just us · just real":"просто витилиго · просто мы · просто настоящие",
   "people counted":"людей посчитано","constellations minted":"созвездий заминчено",
   "Constellations":"Созвездия","of 88":"из 88","Top cities":"Топ городов","See map →":"На карту →","Cities on the map →":"Города на карте →",
-  "Count me in ✦":"Посчитайте меня ✦","Count me in ✦ · 0.1 TON":"Посчитайте меня ✦ · 0.1 TON","Make my constellation ✦":"Создать моё созвездие ✦","Confirm — 0.1 TON":"Подтвердить — 0.1 TON","Your place in the number — one real person, recorded on the TON blockchain forever. A constellation can be minted any time later, whenever you feel like it.":"Твоё место в числе — один настоящий человек, навсегда записанный в блокчейне TON. Созвездие можно заминтить потом, в любой момент, когда захочется.","You're counted ✦ Your constellation awaits":"Ты посчитан ✦ Твоё созвездие ждёт","First count yourself in ✦ Constellations come after":"Сначала посчитайся ✦ Созвездия — потом","You're not on this sky yet — count yourself in ✦":"Тебя ещё нет на этом небе — сначала посчитайся ✦","View my constellation →":"Моё созвездие →",
+  "Count me in ✦":"Посчитайте меня ✦","Count me in ✦ · 0.1 TON":"Посчитайте меня ✦ · 0.1 TON","Make my constellation ✦":"Создать моё созвездие ✦","Confirm — 0.1 TON":"Подтвердить — 0.1 TON","Your place in the number — one real person, recorded on the TON blockchain forever. A constellation can be minted any time later, whenever you feel like it.":"Твоё место в числе — один настоящий человек, навсегда записанный в блокчейне TON. Созвездие можно заминтить потом, в любой момент, когда захочется.","You're counted ✦ Your constellation awaits":"Ты посчитан ✦ Твоё созвездие ждёт","First count yourself in ✦ Constellations come after":"Сначала посчитайся ✦ Созвездия — потом","Count-in payments open in the next update ✦":"Оплата счёта откроется в ближайшем обновлении ✦","You're not on this sky yet — count yourself in ✦":"Тебя ещё нет на этом небе — сначала посчитайся ✦","View my constellation →":"Моё созвездие →",
   "Make another constellation ✦":"Сделать ещё созвездие ✦",
   "🎉 Congratulations — you're counted":"🎉 Поздравляем — ты посчитан",
   "Home":"Главная","Constellation":"Созвездие","Map":"Карта","Invite":"Позвать","Profile":"Профиль",
@@ -3975,7 +3981,7 @@ const RU_TEXT = {
   "Update on-chain profile · 0.02 TON":"Обновить профиль в блокчейне · 0.02 TON",
   "Visible to everyone — city, map, and story":"Видно всем — город, карта и история",
   "💬 Write to the team":"💬 Написать команде","💡 How it works":"💡 Как это работает",
-  "How it works":"Как это работает","Count yourself in":"Посчитай себя","Fill your profile, confirm in your TON wallet — and you are in the number forever. Your star lights up on the shared sky.":"Заполни профиль, подтверди в TON-кошельке — и ты в числе навсегда. Твоя звезда загорается на общем небе.","Turn your vitiligo into a constellation":"Преврати витилиго в созвездие","Upload a photo — the algorithm reads your skin and builds a constellation only you could have. Each mint is also a fresh chance to discover one of the 88 real constellations — each opens once, ever.":"Загрузи фото — алгоритм прочитает кожу и соберёт созвездие, которое могло быть только у тебя. Каждый минт — ещё и шанс открыть одно из 88 настоящих созвездий: каждое открывается лишь однажды.","Find each other":"Находите друг друга","The map shows counted people by city; tap any star on the sky to see whose it is and read its legend.":"Карта показывает посчитанных по городам; нажми на любую звезду на небе — узнаешь, чья она, и прочтёшь её легенду.","The number can never be faked":"Число невозможно подделать","Every unit of the count is a real person recorded on the TON blockchain — permanent, public, verifiable.":"Каждая единица счёта — настоящий человек, записанный в блокчейне TON: навсегда, публично, проверяемо.","Count — 0.1 TON · Constellation — 1 TON · Profile update — 0.02 TON":"Счёт — 0.1 TON · Созвездие — 1 TON · Обновление профиля — 0.02 TON","For now: first count + constellation together — 1 TON · Profile update — 0.02 TON":"Пока что: первый счёт + созвездие вместе — 1 TON · Обновление профиля — 0.02 TON","Got it ✦":"Понятно ✦",
+  "How it works":"Как это работает","Count yourself in":"Посчитай себя","Fill your profile, confirm in your TON wallet — and you are in the number forever. Your star lights up on the shared sky.":"Заполни профиль, подтверди в TON-кошельке — и ты в числе навсегда. Твоя звезда загорается на общем небе.","Turn your vitiligo into a constellation":"Преврати витилиго в созвездие","Upload a photo — the algorithm reads your skin and builds a constellation only you could have. Each mint is also a fresh chance to discover one of the 88 real constellations — each opens once, ever.":"Загрузи фото — алгоритм прочитает кожу и соберёт созвездие, которое могло быть только у тебя. Каждый минт — ещё и шанс открыть одно из 88 настоящих созвездий: каждое открывается лишь однажды.","Find each other":"Находите друг друга","The map shows counted people by city; tap any star on the sky to see whose it is and read its legend.":"Карта показывает посчитанных по городам; нажми на любую звезду на небе — узнаешь, чья она, и прочтёшь её легенду.","The number can never be faked":"Число невозможно подделать","Every unit of the count is a real person recorded on the TON blockchain — permanent, public, verifiable.":"Каждая единица счёта — настоящий человек, записанный в блокчейне TON: навсегда, публично, проверяемо.","Count — 0.1 TON · Constellation — 1 TON · Profile update — 0.02 TON":"Счёт — 0.1 TON · Созвездие — 1 TON · Обновление профиля — 0.02 TON","Got it ✦":"Понятно ✦",
   "Press \"I have vitiligo ✦\"":"Нажми «У меня витилиго ✦»",
   "You'll go to the photo upload screen":"Откроется экран загрузки фото",
   "Upload a photo of your vitiligo":"Загрузи фото своего витилиго",
