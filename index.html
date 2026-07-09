@@ -1010,7 +1010,7 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
     <div class="const-info" id="constInfo">
       <div class="const-name" id="constName"></div>
       <div class="const-desc" id="constDesc"></div>
-      <div style="font-size:12px;color:#6b7280;text-align:center;margin-top:8px">Confirm 1 TON to mint this constellation permanently on-chain ✦</div>
+      <div style="font-size:12px;color:#6b7280;text-align:center;margin-top:8px">Confirm 1 GRAM to mint this constellation permanently on-chain ✦</div>
     </div>
 
     <div class="story-wrap" id="storyWrap">
@@ -1153,7 +1153,7 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
     <!-- Restyled 06.07.2026: was a btn-main pill with its own outline look —
          a third button family on one screen. It is a secondary action, so
          it now matches "Write to the team" / "How it works" exactly. -->
-    <button id="updateOnChainBtn" style="display:none;width:100%;text-align:center;margin-top:12px;margin-bottom:5px;padding:12px;border:1px solid rgba(147,51,234,.3);border-radius:12px;color:#a78bfa;font-size:13px;background:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Update on-chain profile · 0.02 TON</button>
+    <button id="updateOnChainBtn" style="display:none;width:100%;text-align:center;margin-top:12px;margin-bottom:5px;padding:12px;border:1px solid rgba(147,51,234,.3);border-radius:12px;color:#a78bfa;font-size:13px;background:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Update on-chain profile · 0.02 GRAM</button>
     <div id="updateOnChainHint" style="display:none;font-size:10px;color:#6b7280;text-align:center;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Visible to everyone — name, city and age</div>
     <div class="tx-status" id="txUpdateProfile" style="margin-bottom:6px"></div>
 
@@ -1219,10 +1219,10 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title">Join the count forever</div>
-    <div class="ton-amount">0.1 TON</div>
+    <div class="ton-amount">0.1 GRAM</div>
     <div class="modal-desc">Your place in the number — one real person, recorded on the TON blockchain forever. A constellation can be minted any time later, whenever you feel like it.</div>
     <div class="tx-status" id="txRegister"></div>
-    <button class="modal-btn" id="modalRegisterConfirm">Confirm — 0.1 TON</button>
+    <button class="modal-btn" id="modalRegisterConfirm">Confirm — 0.1 GRAM</button>
     <button class="modal-btn secondary" id="modalRegisterClose">Cancel</button>
   </div>
 </div>
@@ -1232,11 +1232,11 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title">Join the count forever</div>
-    <div class="ton-amount">1 TON</div>
+    <div class="ton-amount">1 GRAM</div>
     <div class="modal-desc">Your vitiligo becomes a unique constellation — forever on the TON blockchain. Your star lights up on the shared canvas of everyone who has vitiligo.</div>
     <div class="tx-status" id="txMint"></div>
     <div id="debugInfo" style="font-size:10px;font-family:monospace;color:#666;text-align:left;background:rgba(255,255,255,.04);border-radius:8px;padding:8px;margin-bottom:10px;line-height:1.5;word-break:break-all"></div>
-    <button class="modal-btn" id="modalMintConfirm">Confirm — 1 TON</button>
+    <button class="modal-btn" id="modalMintConfirm">Confirm — 1 GRAM</button>
     <button class="modal-btn secondary" id="modalMintClose">Cancel</button>
   </div>
 </div>
@@ -1295,7 +1295,7 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
         <div style="min-width:32px;height:32px;border-radius:50%;background:rgba(147,51,234,.2);border:1px solid rgba(147,51,234,.4);display:flex;align-items:center;justify-content:center;color:#a78bfa;font-size:14px;font-weight:600">1</div>
         <div>
           <div style="color:white;font-size:14px;font-weight:500;margin-bottom:2px">Count yourself in</div>
-          <div style="color:#6b7280;font-size:13px">Fill your profile, confirm in your TON wallet — and you are in the number forever. Your star lights up on the shared sky.</div>
+          <div style="color:#6b7280;font-size:13px">Fill your profile, confirm in your wallet — and your star lights up on the shared sky. The count grows by one: you.</div>
         </div>
       </div>
 
@@ -1330,8 +1330,8 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
          shows the Update on-chain button) past one screen. It is trivia,
          not a daily-use control; the "How it works" sheet is exactly
          where a curious person goes. -->
-    <div style="border:1px solid rgba(147,51,234,.18);background:rgba(147,51,234,.05);border-radius:12px;padding:10px 14px;margin-top:16px;font-size:11px;line-height:1.55;color:#9c93b8;text-align:left">
-      <b style="color:#c4a8f5">Fun fact:</b> vitiligo.ton isn't just a name — it's a real TON domain, pointing straight at this contract. You can send TON there directly from any wallet, no app needed, and it lands here.
+    <div id="funFactBox" style="border:1px solid rgba(147,51,234,.18);background:rgba(147,51,234,.05);border-radius:12px;padding:10px 14px;margin-top:16px;font-size:11px;line-height:1.55;color:#9c93b8;text-align:left">
+      <b style="color:#c4a8f5">Fun fact:</b> vitiligo.ton isn't just a name — it's a real TON domain, pointing straight at this contract. You can send GRAM there directly from any wallet, no app needed, and it lands here.
     </div>
 
     <button onclick="closeModal('modalHelp')" class="btn-main" style="margin-top:20px">Got it ✦</button>
@@ -1952,45 +1952,84 @@ if (cosmosCV) {
       // the white genesis beacon, not turn into a purple "me" dot.
       const col = p.isGenesis ? '#ffffff' : p.isMe ? '#c084fc' : p.type === 'legendary' ? '#f0ead8' : p.type === 'rare' ? '#e8c050' : '#a78bfa';
 
-      // Glow
-      cosmosCtx.globalAlpha = 0.1 * pulse;
-      const g = cosmosCtx.createRadialGradient(sx, sy, 0, sx, sy, sz * 3);
-      g.addColorStop(0, col); g.addColorStop(1, 'transparent');
-      cosmosCtx.fillStyle = g;
-      cosmosCtx.beginPath(); cosmosCtx.arc(sx, sy, sz * 3, 0, Math.PI * 2); cosmosCtx.fill();
+      // ── Star sprite v3, 09.07.2026 (owner: «8 палочек и кружок — не под
+      // стать проекту», with an astrophoto as the reference). The v2 rays
+      // were uniform-width fillRect bars — bars, not light. Now the
+      // language of a long-exposure photograph:
+      //   1) two-layer bloom — a wide colour "atmosphere" plus a tighter
+      //      white-hot inner glow;
+      //   2) needle rays that taper in WIDTH to zero (each is a thin
+      //      triangle pair with a white→colour→nothing gradient along it),
+      //      long cardinals + shorter, fainter diagonals;
+      //   3) the core: white point melting through the star's colour into
+      //      the dark, with a tiny specular centre.
+      // Only hero stars pay for this (genesis/me/legendary/rare) — the
+      // 320 background stars stay cheap dots.
+      const hex2rgba = (h, a) => {
+        const v = parseInt(h.slice(1), 16);
+        return `rgba(${(v>>16)&255},${(v>>8)&255},${v&255},${a})`;
+      };
 
-      // Diffraction spikes, 07.07.2026 — the old genesis rays were four
-      // blocky fillRect bars ("топорная звезда"). Now: four long + four
-      // short soft rays, needle-thin gradients that taper to nothing,
-      // like a real bright star in a photograph. Legendary/rare/own
-      // stars get a smaller version of the same sparkle.
+      // Bloom: wide colour atmosphere
+      cosmosCtx.globalAlpha = 0.13 * pulse;
+      const g = cosmosCtx.createRadialGradient(sx, sy, 0, sx, sy, sz * 5);
+      g.addColorStop(0, col); g.addColorStop(0.4, hex2rgba(col, 0.35)); g.addColorStop(1, 'transparent');
+      cosmosCtx.fillStyle = g;
+      cosmosCtx.beginPath(); cosmosCtx.arc(sx, sy, sz * 5, 0, Math.PI * 2); cosmosCtx.fill();
+      // Bloom: tight white-hot inner glow
+      cosmosCtx.globalAlpha = 0.32 * pulse;
+      const g2 = cosmosCtx.createRadialGradient(sx, sy, 0, sx, sy, sz * 1.9);
+      g2.addColorStop(0, '#ffffff'); g2.addColorStop(0.5, hex2rgba(col, 0.5)); g2.addColorStop(1, 'transparent');
+      cosmosCtx.fillStyle = g2;
+      cosmosCtx.beginPath(); cosmosCtx.arc(sx, sy, sz * 1.9, 0, Math.PI * 2); cosmosCtx.fill();
+
       const spiky = p.isGenesis || p.isMe || p.type === 'legendary' || p.type === 'rare';
       if (spiky && sz > 2) {
-        for (let i = 0; i < (p.isGenesis ? 8 : 4); i++) {
+        // one tapered needle along +x: triangle pair, base at the core,
+        // width shrinking to nothing at the tip
+        const needle = (len, baseW, a) => {
+          const sg = cosmosCtx.createLinearGradient(0, 0, len, 0);
+          sg.addColorStop(0, `rgba(255,255,255,${a.toFixed(2)})`);
+          sg.addColorStop(0.3, hex2rgba(col === '#ffffff' ? '#e9d5ff' : col, a * 0.65));
+          sg.addColorStop(1, 'rgba(255,255,255,0)');
+          cosmosCtx.fillStyle = sg;
+          cosmosCtx.beginPath();
+          cosmosCtx.moveTo(0, -baseW / 2);
+          cosmosCtx.lineTo(len, 0);
+          cosmosCtx.lineTo(0, baseW / 2);
+          cosmosCtx.closePath(); cosmosCtx.fill();
+        };
+        cosmosCtx.globalAlpha = 1;
+        const baseW = Math.max(0.8, sz * 0.16);
+        for (let i = 0; i < 8; i++) {
+          const cardinal = (i % 2 === 0);
+          // heroes get faint short diagonals too — but only once they're
+          // big enough on screen for the detail to read
+          if (!cardinal && !p.isGenesis && sz < 6) continue;
+          const len = sz * (p.isGenesis ? (cardinal ? 6 : 2.8) : (cardinal ? 3.6 : 1.6));
+          const a = (p.isGenesis ? (cardinal ? 0.55 : 0.3) : (cardinal ? 0.42 : 0.18)) * pulse;
           cosmosCtx.save(); cosmosCtx.translate(sx, sy); cosmosCtx.rotate(i * Math.PI / 4);
-          const long = (i % 2 === 0);
-          const sl = sz * (p.isGenesis ? (long ? 5 : 2.4) : 2.8);
-          const sg = cosmosCtx.createLinearGradient(-sl, 0, sl, 0);
-          const ra = (p.isGenesis ? 0.4 : 0.25) * pulse;
-          sg.addColorStop(0, 'transparent');
-          sg.addColorStop(0.5, `rgba(255,255,255,${ra.toFixed(2)})`);
-          sg.addColorStop(1, 'transparent');
-          cosmosCtx.globalAlpha = 1; cosmosCtx.fillStyle = sg;
-          const th = Math.max(0.4, sz * 0.035);
-          cosmosCtx.fillRect(-sl, -th/2, sl*2, th); cosmosCtx.restore();
+          needle(len, cardinal ? baseW : baseW * 0.6, a);
+          cosmosCtx.rotate(Math.PI);
+          needle(len, cardinal ? baseW : baseW * 0.6, a);
+          cosmosCtx.restore();
         }
       }
 
-      // Core: white-hot centre melting into the star's colour — a glowing
-      // point of light instead of the old flat disc.
-      const coreR = Math.max(1, sz * 0.4);
+      // Core: white point melting through the star's colour into the dark
+      const coreR = Math.max(1.2, sz * 0.55);
       const cg = cosmosCtx.createRadialGradient(sx, sy, 0, sx, sy, coreR);
       cg.addColorStop(0, '#ffffff');
-      cg.addColorStop(0.45, col);
+      cg.addColorStop(0.4, '#ffffff');
+      cg.addColorStop(0.62, col);
       cg.addColorStop(1, 'rgba(0,0,0,0)');
-      cosmosCtx.globalAlpha = pulse;
+      cosmosCtx.globalAlpha = Math.min(1, 0.75 + 0.25 * pulse);
       cosmosCtx.fillStyle = cg;
       cosmosCtx.beginPath(); cosmosCtx.arc(sx, sy, coreR, 0, Math.PI * 2); cosmosCtx.fill();
+      // specular centre — the pinprick that makes it read as LIGHT
+      cosmosCtx.globalAlpha = 0.95;
+      cosmosCtx.fillStyle = '#ffffff';
+      cosmosCtx.beginPath(); cosmosCtx.arc(sx, sy, Math.max(0.5, sz * 0.12), 0, Math.PI * 2); cosmosCtx.fill();
 
       // Label
       if (p.isMe && sz > 8) {
@@ -2673,8 +2712,8 @@ function refreshOnChainProfileNote(){
   if (!check || !chain) return;
   const local = {
     name: document.getElementById('fieldName')?.value.trim(),
-    country: document.getElementById('fieldCountry')?.value.trim(),
-    city: document.getElementById('fieldCity')?.value.trim(),
+    country: canonCountry(document.getElementById('fieldCountry')?.value),
+    city: canonCity(document.getElementById('fieldCity')?.value),
     age: document.getElementById('fieldAge')?.value
   };
   const matches = (!chain.name || chain.name === local.name)
@@ -3162,7 +3201,7 @@ let myNfts = [];
   // Canonical pricing only (07.07, owner's call): the split IS the
   // model. No "for now" wording anywhere.
   const pn = document.getElementById('helpPriceNote');
-  if (pn) pn.textContent = 'Count — 0.1 TON · Constellation — 1 TON · Profile update — 0.02 TON';
+  if (pn) pn.textContent = 'Count — 0.1 GRAM · Constellation — 1 GRAM · Profile update — 0.02 GRAM';
 })();
 document.getElementById('modalRegisterClose').addEventListener('click',()=>closeModal('modalRegister'));
 document.getElementById('modalRegisterConfirm').addEventListener('click', async ()=>{
@@ -3180,8 +3219,8 @@ document.getElementById('modalRegisterConfirm').addEventListener('click', async 
   if (!window.TonCore || !window.TonCore.beginCell) { showToast('Payment setup failed to load — please reload the page and try again.'); return; }
   try {
     const name = document.getElementById('fieldName')?.value || '';
-    const country = document.getElementById('fieldCountry')?.value || '';
-    const city = document.getElementById('fieldCity')?.value || '';
+    const country = canonCountry(document.getElementById('fieldCountry')?.value || '');
+    const city = canonCity(document.getElementById('fieldCity')?.value || '');
     const age = parseInt(document.getElementById('fieldAge')?.value || '0');
     const payload = buildRegisterPayload(name, country, city, age);
     sendTon('txRegister', ()=>{
@@ -3221,8 +3260,8 @@ document.getElementById('modalMintConfirm').addEventListener('click', async ()=>
     if (!currentConst) { updateDebugInfo('STOPPED: currentConst is null'); showToast('Something went wrong with your constellation — try uploading the photo again.'); return; }
     updateDebugInfo('building payload...');
     const name = document.getElementById('fieldName')?.value || '';
-    const country = document.getElementById('fieldCountry')?.value || '';
-    const city = document.getElementById('fieldCity')?.value || '';
+    const country = canonCountry(document.getElementById('fieldCountry')?.value || '');
+    const city = canonCity(document.getElementById('fieldCity')?.value || '');
     const age = parseInt(document.getElementById('fieldAge')?.value || '0');
     const constName = currentConst.name.split('·')[0].trim();
     const isRare = currentConst.rare || false;
@@ -3633,8 +3672,8 @@ document.getElementById('updateOnChainBtn').addEventListener('click', async () =
   try {
     payload = buildUpdateProfilePayload(
       document.getElementById('fieldName').value.trim(),
-      document.getElementById('fieldCountry').value.trim(),
-      document.getElementById('fieldCity').value.trim(),
+      canonCountry(document.getElementById('fieldCountry').value),
+      canonCity(document.getElementById('fieldCity').value),
       parseInt(document.getElementById('fieldAge').value) || 0
     );
   } catch(e) {
@@ -3645,8 +3684,8 @@ document.getElementById('updateOnChainBtn').addEventListener('click', async () =
     showToast('On-chain profile updated ✦');
     window.onChainProfile = {
       name: document.getElementById('fieldName').value.trim(),
-      country: document.getElementById('fieldCountry').value.trim(),
-      city: document.getElementById('fieldCity').value.trim(),
+      country: canonCountry(document.getElementById('fieldCountry').value),
+      city: canonCity(document.getElementById('fieldCity').value),
       age: parseInt(document.getElementById('fieldAge').value) || 0
     };
     if (typeof refreshOnChainProfileNote === 'function') refreshOnChainProfileNote();
@@ -3844,8 +3883,8 @@ async function loadMyConstellationFromChain() {
     if (!window.__chainProfileApplied) {
       window.__chainProfileApplied = true;
       if (onChainProfile.name) document.getElementById('fieldName').value = onChainProfile.name;
-      if (onChainProfile.country) document.getElementById('fieldCountry').value = onChainProfile.country;
-      if (onChainProfile.city) document.getElementById('fieldCity').value = onChainProfile.city;
+      if (onChainProfile.country) document.getElementById('fieldCountry').value = locCountry(onChainProfile.country);
+      if (onChainProfile.city) document.getElementById('fieldCity').value = locCity(onChainProfile.city);
       if (onChainProfile.age) document.getElementById('fieldAge').value = onChainProfile.age;
     }
     if (onChainProfile.name) document.getElementById('profileName').textContent = onChainProfile.name;
@@ -3982,7 +4021,7 @@ async function loadCitiesFromChain() {
     const remainder = cities.length - visibleCities.length;
     listEl.innerHTML = visibleCities.map(c => `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.15);border-radius:10px;margin-bottom:6px">
-        <span style="color:#e9d5ff;font-size:13px">${c.city}</span>
+        <span style="color:#e9d5ff;font-size:13px">${locCity(c.city)}</span>
         <span style="color:#a78bfa;font-size:12px;font-weight:600">${c.count}</span>
       </div>`).join('')
       + (remainder > 0 ? `<div style="text-align:center;padding:10px;color:#6b7280;font-size:12px">+ ${remainder} more ${remainder === 1 ? 'city' : 'cities'}</div>` : '');
@@ -4010,13 +4049,14 @@ function filterCountries(val) {
   const dd = document.getElementById('countryDropdown');
   if (!val || val.length < 1) { dd.style.display='none'; return; }
   if (!COUNTRIES.length) COUNTRIES = [...new Set([...Object.keys(CITIES_BY_COUNTRY), ...EXTRA_COUNTRIES])].sort();
-  const filtered = COUNTRIES.filter(c => c.toLowerCase().startsWith(val.toLowerCase())).slice(0, 8);
+  const cv = val.toLowerCase();
+  const filtered = COUNTRIES.filter(c => c.toLowerCase().startsWith(cv) || (COUNTRY_RU[c] || '').toLowerCase().startsWith(cv)).slice(0, 8);
   if (!filtered.length) { dd.style.display='none'; return; }
   // data attribute + delegated listener instead of inline onclick — same
   // apostrophe fix as the city dropdown (Côte d'Ivoire broke the old
   // inline-quoted call).
   dd.innerHTML = filtered.map(c =>
-    `<div data-country="${c}" style="padding:10px 14px;cursor:pointer;font-size:14px;color:#e9d5ff;border-bottom:1px solid rgba(147,51,234,.1)" onmouseover="this.style.background='rgba(147,51,234,.15)'" onmouseout="this.style.background=''">${c}</div>`
+    `<div data-country="${c}" style="padding:10px 14px;cursor:pointer;font-size:14px;color:#e9d5ff;border-bottom:1px solid rgba(147,51,234,.1)" onmouseover="this.style.background='rgba(147,51,234,.15)'" onmouseout="this.style.background=''">${locCountry(c)}</div>`
   ).join('');
   dd.style.display = 'block';
 }
@@ -4028,7 +4068,7 @@ document.getElementById('countryDropdown').addEventListener('click', e => {
 });
 
 function selectCountry(country) {
-  document.getElementById('fieldCountry').value = country;
+  document.getElementById('fieldCountry').value = locCountry(country);
   document.getElementById('countryDropdown').style.display = 'none';
   if (typeof refreshFieldHighlights === 'function') refreshFieldHighlights();
 }
@@ -4171,6 +4211,134 @@ const CITIES_BY_COUNTRY = {
   "Turkmenistan":["Ashgabat"],
   "Russia":["Moscow","Saint Petersburg","Norilsk","Yekaterinburg","Novosibirsk","Omsk","Samara","Ufa","Chelyabinsk","Rostov-on-Don","Kazan","Voronezh","Perm","Krasnodar","Saratov","Tyumen","Irkutsk","Krasnoyarsk","Khabarovsk","Vladivostok","Nizhny Novgorod","Volgograd","Barnaul","Tomsk","Kemerovo","Naberezhnye Chelny","Kaliningrad","Tula","Sochi","Stavropol","Makhachkala","Yaroslavl","Izhevsk","Ulyanovsk","Nizhny Tagil","Ulan-Ude","Orenburg","Novokuznetsk","Ryazan","Astrakhan","Penza","Lipetsk","Kirov","Cheboksary","Balashikha","Bryansk","Ivanovo","Magnitogorsk","Tver","Belgorod","Vladikavkaz","Chita","Kaluga","Surgut","Smolensk","Volzhsky","Cherepovets","Vologda","Saransk","Yakutsk","Grozny","Podolsk","Kursk","Tambov","Petrozavodsk","Sterlitamak","Kostroma","Nizhnevartovsk","Orel","Novorossiysk","Angarsk","Blagoveshchensk","Syktyvkar","Murmansk","Tolyatti"]
 };
+/* ── Localized place names, 09.07.2026 (owner request №5) ──
+   The chain speaks English — every city/country is WRITTEN to the
+   contract in its canonical English form, always (getCityCount keys,
+   getUser profile). But the UI speaks the person's language: on RU the
+   suggestion dropdowns, the profile fields and the Top-cities list all
+   show Russian names. Two dictionaries (100% coverage of the 421-city /
+   132-country dataset, verified) + two directions:
+   loc*(en)   → display name for the active language;
+   canon*(any)→ canonical English from EITHER language (what gets sent
+                on-chain and compared against chain data).
+   Chain data can contain cities outside the dataset (people may type
+   anything) — loc* falls back to the string as-is, never invents. */
+const COUNTRY_RU = {
+"Japan":"Япония","China":"Китай","South Korea":"Южная Корея","Taiwan":"Тайвань","Mongolia":"Монголия","North Korea":"Северная Корея",
+"Philippines":"Филиппины","Indonesia":"Индонезия","Thailand":"Таиланд","Vietnam":"Вьетнам","Malaysia":"Малайзия","Myanmar":"Мьянма",
+"Singapore":"Сингапур","Cambodia":"Камбоджа","Laos":"Лаос","India":"Индия","Pakistan":"Пакистан","Bangladesh":"Бангладеш",
+"Afghanistan":"Афганистан","Sri Lanka":"Шри-Ланка","Nepal":"Непал","Turkey":"Турция","Iran":"Иран","Iraq":"Ирак",
+"Saudi Arabia":"Саудовская Аравия","United Arab Emirates":"ОАЭ","Qatar":"Катар","Kuwait":"Кувейт","Jordan":"Иордания","Lebanon":"Ливан",
+"Syria":"Сирия","Oman":"Оман","Bahrain":"Бахрейн","Israel":"Израиль","DR Congo":"ДР Конго","Nigeria":"Нигерия",
+"Angola":"Ангола","Sudan":"Судан","Kenya":"Кения","South Africa":"ЮАР","Tanzania":"Танзания","Morocco":"Марокко",
+"Côte d'Ivoire":"Кот-д’Ивуар","Ghana":"Гана","Egypt":"Египет","Ethiopia":"Эфиопия","Uganda":"Уганда","Senegal":"Сенегал",
+"Algeria":"Алжир","Tunisia":"Тунис","Mozambique":"Мозамбик","Zambia":"Замбия","Zimbabwe":"Зимбабве","Rwanda":"Руанда",
+"Cameroon":"Камерун","Mali":"Мали","Burkina Faso":"Буркина-Фасо","Sierra Leone":"Сьерра-Леоне","Liberia":"Либерия","Libya":"Ливия",
+"Somalia":"Сомали","Madagascar":"Мадагаскар","Burundi":"Бурунди","Chad":"Чад","Niger":"Нигер","Guinea":"Гвинея",
+"France":"Франция","United Kingdom":"Великобритания","Spain":"Испания","Germany":"Германия","Italy":"Италия","Austria":"Австрия",
+"Poland":"Польша","Ukraine":"Украина","Belarus":"Беларусь","Netherlands":"Нидерланды","Belgium":"Бельгия","Portugal":"Португалия",
+"Ireland":"Ирландия","Sweden":"Швеция","Denmark":"Дания","Norway":"Норвегия","Finland":"Финляндия","Greece":"Греция",
+"Hungary":"Венгрия","Czech Republic":"Чехия","Romania":"Румыния","Bulgaria":"Болгария","Croatia":"Хорватия","Serbia":"Сербия",
+"Switzerland":"Швейцария","Slovakia":"Словакия","Slovenia":"Словения","Lithuania":"Литва","Latvia":"Латвия","Estonia":"Эстония",
+"Brazil":"Бразилия","Mexico":"Мексика","Argentina":"Аргентина","Colombia":"Колумбия","Peru":"Перу","Chile":"Чили",
+"Venezuela":"Венесуэла","Ecuador":"Эквадор","Uruguay":"Уругвай","Paraguay":"Парагвай","Bolivia":"Боливия","Cuba":"Куба",
+"Dominican Republic":"Доминиканская Республика","Puerto Rico":"Пуэрто-Рико","Panama":"Панама","Costa Rica":"Коста-Рика","United States":"США","Canada":"Канада",
+"Australia":"Австралия","New Zealand":"Новая Зеландия","Fiji":"Фиджи","Kazakhstan":"Казахстан","Uzbekistan":"Узбекистан","Azerbaijan":"Азербайджан",
+"Georgia":"Грузия","Armenia":"Армения","Kyrgyzstan":"Кыргызстан","Tajikistan":"Таджикистан","Turkmenistan":"Туркменистан","Russia":"Россия",
+"Albania":"Албания","Bosnia and Herzegovina":"Босния и Герцеговина","Guatemala":"Гватемала","Honduras":"Гондурас","Moldova":"Молдова","Yemen":"Йемен"
+};
+const CITY_RU = {
+"Tokyo":"Токио","Osaka":"Осака","Nagoya":"Нагоя","Sapporo":"Саппоро","Yokohama":"Иокогама","Fukuoka":"Фукуока",
+"Shanghai":"Шанхай","Beijing":"Пекин","Chongqing":"Чунцин","Guangzhou":"Гуанчжоу","Shenzhen":"Шэньчжэнь","Chengdu":"Чэнду",
+"Nanjing":"Нанкин","Wuhan":"Ухань","Xian":"Сиань","Hong Kong":"Гонконг","Harbin":"Харбин","Shenyang":"Шэньян",
+"Suzhou":"Сучжоу","Tianjin":"Тяньцзинь","Qingdao":"Циндао","Dalian":"Далянь","Seoul":"Сеул","Busan":"Пусан",
+"Incheon":"Инчхон","Taipei":"Тайбэй","Kaohsiung":"Гаосюн","Ulaanbaatar":"Улан-Батор","Pyongyang":"Пхеньян","Manila":"Манила",
+"Cebu City":"Себу","Davao City":"Давао","Jakarta":"Джакарта","Surabaya":"Сурабая","Bandung":"Бандунг","Medan":"Медан",
+"Bangkok":"Бангкок","Chiang Mai":"Чиангмай","Ho Chi Minh City":"Хошимин","Hanoi":"Ханой","Da Nang":"Дананг","Kuala Lumpur":"Куала-Лумпур",
+"Yangon":"Янгон","Singapore":"Сингапур","Phnom Penh":"Пномпень","Vientiane":"Вьентьян","Delhi":"Дели","Mumbai":"Мумбаи",
+"Kolkata":"Калькутта","Bangalore":"Бангалор","Chennai":"Ченнаи","Hyderabad":"Хайдарабад","Ahmedabad":"Ахмадабад","Surat":"Сурат",
+"Pune":"Пуна","Kanpur":"Канпур","Jaipur":"Джайпур","Nagpur":"Нагпур","Lucknow":"Лакхнау","Patna":"Патна",
+"Bhopal":"Бхопал","Indore":"Индаур","Karachi":"Карачи","Lahore":"Лахор","Islamabad":"Исламабад","Multan":"Мултан",
+"Faisalabad":"Фейсалабад","Peshawar":"Пешавар","Dhaka":"Дакка","Chittagong":"Читтагонг","Kabul":"Кабул","Colombo":"Коломбо",
+"Kathmandu":"Катманду","Istanbul":"Стамбул","Ankara":"Анкара","Tehran":"Тегеран","Baghdad":"Багдад","Riyadh":"Эр-Рияд",
+"Jeddah":"Джидда","Dubai":"Дубай","Abu Dhabi":"Абу-Даби","Doha":"Доха","Kuwait City":"Эль-Кувейт","Amman":"Амман",
+"Beirut":"Бейрут","Damascus":"Дамаск","Muscat":"Маскат","Manama":"Манама","Jerusalem":"Иерусалим","Tel Aviv":"Тель-Авив",
+"Kinshasa":"Киншаса","Lubumbashi":"Лубумбаши","Lagos":"Лагос","Ibadan":"Ибадан","Kano":"Кано","Abuja":"Абуджа",
+"Luanda":"Луанда","Khartoum":"Хартум","Nairobi":"Найроби","Johannesburg":"Йоханнесбург","Cape Town":"Кейптаун","Pretoria":"Претория",
+"Durban":"Дурбан","Dar es Salaam":"Дар-эс-Салам","Casablanca":"Касабланка","Rabat":"Рабат","Abidjan":"Абиджан","Accra":"Аккра",
+"Alexandria":"Александрия","Cairo":"Каир","Addis Ababa":"Аддис-Абеба","Kampala":"Кампала","Dakar":"Дакар","Algiers":"Алжир",
+"Tunis":"Тунис","Maputo":"Мапуту","Lusaka":"Лусака","Harare":"Хараре","Kigali":"Кигали","Yaoundé":"Яунде",
+"Douala":"Дуала","Bamako":"Бамако","Ouagadougou":"Уагадугу","Freetown":"Фритаун","Monrovia":"Монровия","Tripoli":"Триполи",
+"Mogadishu":"Могадишо","Antananarivo":"Антананариву","Bujumbura":"Бужумбура","N'Djamena":"Нджамена","Niamey":"Ниамей","Conakry":"Конакри",
+"Paris":"Париж","Marseille":"Марсель","Lyon":"Лион","Toulouse":"Тулуза","Nice":"Ницца","Nantes":"Нант",
+"Strasbourg":"Страсбург","Bordeaux":"Бордо","Lille":"Лилль","London":"Лондон","Manchester":"Манчестер","Birmingham":"Бирмингем",
+"Glasgow":"Глазго","Liverpool":"Ливерпуль","Leeds":"Лидс","Edinburgh":"Эдинбург","Bristol":"Бристоль","Sheffield":"Шеффилд",
+"Newcastle":"Ньюкасл","Madrid":"Мадрид","Barcelona":"Барселона","Valencia":"Валенсия","Seville":"Севилья","Zaragoza":"Сарагоса",
+"Málaga":"Малага","Bilbao":"Бильбао","Berlin":"Берлин","Munich":"Мюнхен","Hamburg":"Гамбург","Frankfurt":"Франкфурт",
+"Cologne":"Кёльн","Stuttgart":"Штутгарт","Düsseldorf":"Дюссельдорф","Dortmund":"Дортмунд","Essen":"Эссен","Leipzig":"Лейпциг",
+"Bremen":"Бремен","Dresden":"Дрезден","Hanover":"Ганновер","Nuremberg":"Нюрнберг","Rome":"Рим","Milan":"Милан",
+"Naples":"Неаполь","Turin":"Турин","Palermo":"Палермо","Genoa":"Генуя","Bologna":"Болонья","Florence":"Флоренция",
+"Bari":"Бари","Catania":"Катания","Venice":"Венеция","Vienna":"Вена","Graz":"Грац","Salzburg":"Зальцбург",
+"Warsaw":"Варшава","Kraków":"Краков","Łódź":"Лодзь","Wrocław":"Вроцлав","Poznań":"Познань","Gdańsk":"Гданьск",
+"Kyiv":"Киев","Kharkiv":"Харьков","Odesa":"Одесса","Dnipro":"Днепр","Lviv":"Львов","Minsk":"Минск",
+"Amsterdam":"Амстердам","Rotterdam":"Роттердам","The Hague":"Гаага","Utrecht":"Утрехт","Brussels":"Брюссель","Antwerp":"Антверпен",
+"Ghent":"Гент","Lisbon":"Лиссабон","Porto":"Порту","Dublin":"Дублин","Cork":"Корк","Stockholm":"Стокгольм",
+"Gothenburg":"Гётеборг","Malmö":"Мальмё","Copenhagen":"Копенгаген","Aarhus":"Орхус","Oslo":"Осло","Bergen":"Берген",
+"Helsinki":"Хельсинки","Espoo":"Эспоо","Athens":"Афины","Thessaloniki":"Салоники","Budapest":"Будапешт","Prague":"Прага",
+"Brno":"Брно","Bucharest":"Бухарест","Cluj-Napoca":"Клуж-Напока","Timișoara":"Тимишоара","Sofia":"София","Plovdiv":"Пловдив",
+"Zagreb":"Загреб","Split":"Сплит","Belgrade":"Белград","Novi Sad":"Нови-Сад","Zurich":"Цюрих","Geneva":"Женева",
+"Basel":"Базель","Bern":"Берн","Lausanne":"Лозанна","Bratislava":"Братислава","Ljubljana":"Любляна","Vilnius":"Вильнюс",
+"Riga":"Рига","Tallinn":"Таллин","São Paulo":"Сан-Паулу","Rio de Janeiro":"Рио-де-Жанейро","Belo Horizonte":"Белу-Оризонти","Brasília":"Бразилиа",
+"Fortaleza":"Форталеза","Salvador":"Салвадор","Recife":"Ресифи","Porto Alegre":"Порту-Алегри","Curitiba":"Куритиба","Mexico City":"Мехико",
+"Guadalajara":"Гвадалахара","Monterrey":"Монтеррей","Buenos Aires":"Буэнос-Айрес","Bogotá":"Богота","Medellín":"Медельин","Lima":"Лима",
+"Santiago":"Сантьяго","Caracas":"Каракас","Quito":"Кито","Guayaquil":"Гуаякиль","Montevideo":"Монтевидео","Asunción":"Асунсьон",
+"La Paz":"Ла-Пас","Santa Cruz de la Sierra":"Санта-Крус-де-ла-Сьерра","Havana":"Гавана","Santo Domingo":"Санто-Доминго","San Juan":"Сан-Хуан","Panama City":"Панама",
+"San José":"Сан-Хосе","New York":"Нью-Йорк","Los Angeles":"Лос-Анджелес","Chicago":"Чикаго","Miami":"Майами","Houston":"Хьюстон",
+"Dallas":"Даллас","Philadelphia":"Филадельфия","Phoenix":"Финикс","San Antonio":"Сан-Антонио","San Diego":"Сан-Диего","San Jose":"Сан-Хосе (США)",
+"Austin":"Остин","Jacksonville":"Джэксонвилл","Fort Worth":"Форт-Уэрт","Columbus":"Коламбус","Charlotte":"Шарлотт","San Francisco":"Сан-Франциско",
+"Indianapolis":"Индианаполис","Seattle":"Сиэтл","Denver":"Денвер","Washington":"Вашингтон","Boston":"Бостон","El Paso":"Эль-Пасо",
+"Nashville":"Нашвилл","Detroit":"Детройт","Oklahoma City":"Оклахома-Сити","Portland":"Портленд","Las Vegas":"Лас-Вегас","Memphis":"Мемфис",
+"Louisville":"Луисвилл","Baltimore":"Балтимор","Milwaukee":"Милуоки","Albuquerque":"Альбукерке","Tucson":"Тусон","Fresno":"Фресно",
+"Sacramento":"Сакраменто","Kansas City":"Канзас-Сити","Mesa":"Меса","Atlanta":"Атланта","Omaha":"Омаха","Colorado Springs":"Колорадо-Спрингс",
+"Raleigh":"Роли","Long Beach":"Лонг-Бич","Virginia Beach":"Вирджиния-Бич","Oakland":"Окленд (США)","Minneapolis":"Миннеаполис","Tulsa":"Талса",
+"Bakersfield":"Бейкерсфилд","Tampa":"Тампа","Wichita":"Уичито","Arlington":"Арлингтон","New Orleans":"Новый Орлеан","Cleveland":"Кливленд",
+"Honolulu":"Гонолулу","Anaheim":"Анахайм","Pittsburgh":"Питтсбург","St. Louis":"Сент-Луис","Cincinnati":"Цинциннати","Orlando":"Орландо",
+"Toronto":"Торонто","Sydney":"Сидней","Melbourne":"Мельбурн","Brisbane":"Брисбен","Perth":"Перт","Auckland":"Окленд",
+"Wellington":"Веллингтон","Suva":"Сува","Almaty":"Алматы","Tashkent":"Ташкент","Baku":"Баку","Tbilisi":"Тбилиси",
+"Yerevan":"Ереван","Bishkek":"Бишкек","Dushanbe":"Душанбе","Ashgabat":"Ашхабад","Moscow":"Москва","Saint Petersburg":"Санкт-Петербург",
+"Norilsk":"Норильск","Yekaterinburg":"Екатеринбург","Novosibirsk":"Новосибирск","Omsk":"Омск","Samara":"Самара","Ufa":"Уфа",
+"Chelyabinsk":"Челябинск","Rostov-on-Don":"Ростов-на-Дону","Kazan":"Казань","Voronezh":"Воронеж","Perm":"Пермь","Krasnodar":"Краснодар",
+"Saratov":"Саратов","Tyumen":"Тюмень","Irkutsk":"Иркутск","Krasnoyarsk":"Красноярск","Khabarovsk":"Хабаровск","Vladivostok":"Владивосток",
+"Nizhny Novgorod":"Нижний Новгород","Volgograd":"Волгоград","Barnaul":"Барнаул","Tomsk":"Томск","Kemerovo":"Кемерово","Naberezhnye Chelny":"Набережные Челны",
+"Kaliningrad":"Калининград","Tula":"Тула","Sochi":"Сочи","Stavropol":"Ставрополь","Makhachkala":"Махачкала","Yaroslavl":"Ярославль",
+"Izhevsk":"Ижевск","Ulyanovsk":"Ульяновск","Nizhny Tagil":"Нижний Тагил","Ulan-Ude":"Улан-Удэ","Orenburg":"Оренбург","Novokuznetsk":"Новокузнецк",
+"Ryazan":"Рязань","Astrakhan":"Астрахань","Penza":"Пенза","Lipetsk":"Липецк","Kirov":"Киров","Cheboksary":"Чебоксары",
+"Balashikha":"Балашиха","Bryansk":"Брянск","Ivanovo":"Иваново","Magnitogorsk":"Магнитогорск","Tver":"Тверь","Belgorod":"Белгород",
+"Vladikavkaz":"Владикавказ","Chita":"Чита","Kaluga":"Калуга","Surgut":"Сургут","Smolensk":"Смоленск","Volzhsky":"Волжский",
+"Cherepovets":"Череповец","Vologda":"Вологда","Saransk":"Саранск","Yakutsk":"Якутск","Grozny":"Грозный","Podolsk":"Подольск",
+"Kursk":"Курск","Tambov":"Тамбов","Petrozavodsk":"Петрозаводск","Sterlitamak":"Стерлитамак","Kostroma":"Кострома","Nizhnevartovsk":"Нижневартовск",
+"Orel":"Орёл","Novorossiysk":"Новороссийск","Angarsk":"Ангарск","Blagoveshchensk":"Благовещенск","Syktyvkar":"Сыктывкар","Murmansk":"Мурманск",
+"Tolyatti":"Тольятти"
+};
+const CITY_EN = {}; const COUNTRY_EN = {};
+for (const en in CITY_RU) CITY_EN[CITY_RU[en].toLowerCase()] = en;
+for (const en in COUNTRY_RU) COUNTRY_EN[COUNTRY_RU[en].toLowerCase()] = en;
+function locCity(en){ return (LANG === 'ru' && CITY_RU[en]) || en; }
+function locCountry(en){ return (LANG === 'ru' && COUNTRY_RU[en]) || en; }
+function canonCity(v){
+  v = (v || '').trim(); if (!v) return v;
+  const hit = CITY_EN[v.toLowerCase()]; if (hit) return hit;
+  const m = CITIES.find(c => c.toLowerCase() === v.toLowerCase());
+  return m || v;
+}
+function canonCountry(v){
+  v = (v || '').trim(); if (!v) return v;
+  const hit = COUNTRY_EN[v.toLowerCase()]; if (hit) return hit;
+  const list = COUNTRIES.length ? COUNTRIES : [...Object.keys(CITIES_BY_COUNTRY), ...EXTRA_COUNTRIES];
+  const m = list.find(c => c.toLowerCase() === v.toLowerCase());
+  return m || v;
+}
+
 const CITY_COUNTRY = {};
 const CITIES = [];
 for (const country in CITIES_BY_COUNTRY) {
@@ -4187,8 +4355,8 @@ function autofillCountryFromCity(city) {
   const country = CITY_COUNTRY[city];
   if (!country) return;
   const el = document.getElementById('fieldCountry');
-  if (!el || el.value.trim() === country) return;
-  el.value = country;
+  if (!el || canonCountry(el.value) === country) return;
+  el.value = locCountry(country);
   el.style.transition = 'background .25s';
   el.style.background = 'rgba(147,51,234,.22)';
   setTimeout(() => { el.style.background = ''; }, 450);
@@ -4199,7 +4367,10 @@ function autofillCountryFromCity(city) {
 function filterCities(val) {
   const dd = document.getElementById('cityDropdown');
   if (!val || val.length < 1) { dd.style.display='none'; return; }
-  const filtered = CITIES.filter(c => c.toLowerCase().startsWith(val.toLowerCase())).slice(0, 8);
+  const v = val.toLowerCase();
+  // match against BOTH names — a person on RU types «Пар», a person who
+  // knows the English name types «Par»; either finds Paris
+  const filtered = CITIES.filter(c => c.toLowerCase().startsWith(v) || (CITY_RU[c] || '').toLowerCase().startsWith(v)).slice(0, 8);
   if (!filtered.length) { dd.style.display='none'; return; }
   // Items carry the city in a data attribute + one delegated listener (see
   // below) instead of the old inline onclick="selectCity('...')" — which
@@ -4207,7 +4378,7 @@ function filterCities(val) {
   // quote ended the JS string). The muted suffix shows which country will
   // be auto-filled, so the pick is informed.
   dd.innerHTML = filtered.map(c =>
-    `<div data-city="${c}" style="padding:10px 14px;cursor:pointer;font-size:14px;color:#e9d5ff;border-bottom:1px solid rgba(147,51,234,.1)" onmouseover="this.style.background='rgba(147,51,234,.15)'" onmouseout="this.style.background=''">${c} <span style="font-size:11px;color:#7d6f9e">· ${CITY_COUNTRY[c] || ''}</span></div>`
+    `<div data-city="${c}" style="padding:10px 14px;cursor:pointer;font-size:14px;color:#e9d5ff;border-bottom:1px solid rgba(147,51,234,.1)" onmouseover="this.style.background='rgba(147,51,234,.15)'" onmouseout="this.style.background=''">${locCity(c)} <span style="font-size:11px;color:#7d6f9e">· ${locCountry(CITY_COUNTRY[c] || '')}</span></div>`
   ).join('');
   dd.style.display = 'block';
 }
@@ -4219,7 +4390,7 @@ document.getElementById('cityDropdown').addEventListener('click', e => {
 });
 
 function selectCity(city) {
-  document.getElementById('fieldCity').value = city;
+  document.getElementById('fieldCity').value = locCity(city);
   document.getElementById('cityDropdown').style.display = 'none';
   autofillCountryFromCity(city);
   if (typeof refreshFieldHighlights === 'function') refreshFieldHighlights();
@@ -4229,10 +4400,10 @@ function selectCity(city) {
 // the field, an exact case-insensitive match against the known list
 // normalizes the spelling and fills the country the same way.
 document.getElementById('fieldCity').addEventListener('change', function(){
-  const typed = this.value.trim().toLowerCase();
+  const typed = this.value.trim();
   if (!typed) return;
-  const match = CITIES.find(c => c.toLowerCase() === typed);
-  if (match) { this.value = match; autofillCountryFromCity(match); }
+  const en = canonCity(typed);
+  if (CITY_COUNTRY[en]) { this.value = locCity(en); autofillCountryFromCity(en); }
 });
 
 document.addEventListener('click', e => {
@@ -4270,7 +4441,7 @@ const RU_TEXT = {
   "just vitiligo · just us · just real":"просто витилиго · просто мы · просто настоящие",
   "people counted":"людей посчитано","constellations minted":"созвездий заминчено",
   "Constellations":"Созвездия","of 88":"из 88","Top cities":"Топ городов","Look how many of us →":"Смотри, сколько нас →",
-  "Count me in ✦":"Посчитайте меня ✦","Make my constellation ✦":"Создать моё созвездие ✦","Confirm — 0.1 TON":"Подтвердить — 0.1 TON","Your place in the number — one real person, recorded on the TON blockchain forever. A constellation can be minted any time later, whenever you feel like it.":"Твоё место в числе — один настоящий человек, навсегда записанный в блокчейне TON. Созвездие можно заминтить потом, в любой момент, когда захочется.","You're counted ✦ Your constellation awaits":"Ты посчитан ✦ Твоё созвездие ждёт","First count yourself in ✦ Constellations come after":"Сначала посчитайся ✦ Созвездия — потом","Count-in payments open in the next update ✦":"Оплата счёта откроется в ближайшем обновлении ✦","You're not on this sky yet — count yourself in ✦":"Тебя ещё нет на этом небе — сначала посчитайся ✦","View my constellation →":"Моё созвездие →",
+  "Count me in ✦":"Посчитайте меня ✦","Make my constellation ✦":"Создать моё созвездие ✦","Confirm — 0.1 GRAM":"Подтвердить — 0.1 GRAM","Your place in the number — one real person, recorded on the TON blockchain forever. A constellation can be minted any time later, whenever you feel like it.":"Твоё место в числе — один настоящий человек, навсегда записанный в блокчейне TON. Созвездие можно заминтить потом, в любой момент, когда захочется.","You're counted ✦ Your constellation awaits":"Ты посчитан ✦ Твоё созвездие ждёт","First count yourself in ✦ Constellations come after":"Сначала посчитайся ✦ Созвездия — потом","Count-in payments open in the next update ✦":"Оплата счёта откроется в ближайшем обновлении ✦","You're not on this sky yet — count yourself in ✦":"Тебя ещё нет на этом небе — сначала посчитайся ✦","View my constellation →":"Моё созвездие →",
   "Transform my constellation ✦":"Преобразить созвездие ✦",
   "🎉 Congratulations — you're counted":"🎉 Поздравляем — ты посчитан",
   "Home":"Главная","Constellation":"Созвездие","We":"Мы","Invite":"Позвать","Profile":"Профиль",
@@ -4284,7 +4455,7 @@ const RU_TEXT = {
   "Try another photo":"Другое фото","My constellation":"Моё созвездие",
   "Tell your story (optional)":"Расскажи свою историю (по желанию)",
   "This becomes part of your constellation — visible to you and whoever you gift it to":"Это станет частью твоего созвездия — увидишь ты и тот, кому ты его подаришь",
-  "Confirm 1 TON to mint this constellation permanently on-chain ✦":"Подтверди 1 TON, чтобы заминтить созвездие навсегда в блокчейне ✦",
+  "Confirm 1 GRAM to mint this constellation permanently on-chain ✦":"Подтверди 1 GRAM, чтобы заминтить созвездие навсегда в блокчейне ✦",
   "Rare constellation":"Редкое созвездие","Only 4% of people get this one":"Такое выпадает лишь 4% людей",
   "★ RARE":"★ РЕДКОЕ","A new constellation is being born...":"Рождается новое созвездие...",
   "✦ Generating your constellation...":"✦ Создаём твоё созвездие...",
@@ -4301,21 +4472,20 @@ const RU_TEXT = {
   "Name":"Имя","Country":"Страна","City":"Город","Age":"Возраст",
   "Your name":"Твоё имя","Country — start typing...":"Страна — начни печатать...",
   "City — start typing...":"Город — начни печатать...","Select your age":"Выбери возраст",
-  "Update on-chain profile · 0.02 TON":"Обновить профиль в блокчейне · 0.02 TON",
+  "Update on-chain profile · 0.02 GRAM":"Обновить профиль в блокчейне · 0.02 GRAM",
   "Visible to everyone — name, city and age":"Видно всем — имя, город и возраст","Profile sync opens with the next contract update ✦":"Синхронизация профиля откроется с обновлением контракта ✦",
   "💬 Write to the team":"💬 Написать команде","💡 How it works":"💡 Как это работает",
-  "How it works":"Как это работает","Count yourself in":"Посчитай себя","Fill your profile, confirm in your TON wallet — and you are in the number forever. Your star lights up on the shared sky.":"Заполни профиль, подтверди в TON-кошельке — и ты в числе навсегда. Твоя звезда загорается на общем небе.","Turn your vitiligo into a constellation":"Преврати витилиго в созвездие","Upload a photo — the algorithm reads your skin and builds a constellation only you could have. Each mint is also a fresh chance to discover one of the 88 real constellations — each opens once, ever.":"Загрузи фото — алгоритм прочитает кожу и соберёт созвездие, которое могло быть только у тебя. Каждый минт — ещё и шанс открыть одно из 88 настоящих созвездий: каждое открывается лишь однажды.","Find each other":"Находите друг друга","The map shows counted people by city; tap any star on the sky to see whose it is and read its legend.":"Карта показывает посчитанных по городам; нажми на любую звезду на небе — узнаешь, чья она, и прочтёшь её легенду.","The number can never be faked":"Число невозможно подделать","Every unit of the count is a real person recorded on the TON blockchain — permanent, public, verifiable.":"Каждая единица счёта — настоящий человек, записанный в блокчейне TON: навсегда, публично, проверяемо.","Count — 0.1 TON · Constellation — 1 TON · Profile update — 0.02 TON":"Счёт — 0.1 TON · Созвездие — 1 TON · Обновление профиля — 0.02 TON","Got it ✦":"Понятно ✦",
+  "How it works":"Как это работает","Count yourself in":"Посчитай себя","Fill your profile, confirm in your wallet — and your star lights up on the shared sky. The count grows by one: you.":"Заполни профиль, подтверди в кошельке — и твоя звезда загорается на общем небе. Нас становится на одного больше.","Turn your vitiligo into a constellation":"Преврати витилиго в созвездие","Upload a photo — the algorithm reads your skin and builds a constellation only you could have. Each mint is also a fresh chance to discover one of the 88 real constellations — each opens once, ever.":"Загрузи фото — алгоритм прочитает кожу и соберёт созвездие, которое могло быть только у тебя. Каждый минт — ещё и шанс открыть одно из 88 настоящих созвездий: каждое открывается лишь однажды.","Find each other":"Находите друг друга","The map shows counted people by city; tap any star on the sky to see whose it is and read its legend.":"Карта показывает посчитанных по городам; нажми на любую звезду на небе — узнаешь, чья она, и прочтёшь её легенду.","The number can never be faked":"Число невозможно подделать","Every unit of the count is a real person recorded on the TON blockchain — permanent, public, verifiable.":"Каждая единица счёта — настоящий человек, записанный в блокчейне TON: навсегда, публично, проверяемо.","Count — 0.1 GRAM · Constellation — 1 GRAM · Profile update — 0.02 GRAM":"Счёт — 0.1 GRAM · Созвездие — 1 GRAM · Обновление профиля — 0.02 GRAM","Got it ✦":"Понятно ✦",
   "Press \"I have vitiligo ✦\"":"Нажми «У меня витилиго ✦»",
   "You'll go to the photo upload screen":"Откроется экран загрузки фото",
   "Upload a photo of your vitiligo":"Загрузи фото своего витилиго",
   "The algorithm finds the patches and builds your personal constellation":"Алгоритм найдёт пятна и соберёт твоё личное созвездие",
   "Press \"Count me in ✦\"":"Нажми «Посчитайте меня ✦»",
-  "Connect your TON wallet (Tonkeeper) and confirm 1 TON":"Подключи TON-кошелёк (Tonkeeper) и подтверди 1 TON",
-  "Your star appears on the canvas":"Твоя звезда появится на холсте",
+    "Your star appears on the canvas":"Твоя звезда появится на холсте",
   "On the shared canvas you're a single star among everyone else. Tap it any time to reveal your full constellation — its shape, its name, its story.":"На общем холсте ты — одна звезда среди всех. Нажми на неё в любой момент, чтобы раскрыть своё созвездие — его форму, имя и историю.",
-  "Join the count forever":"Присоединись к счёту навсегда","Don't have a TON wallet?":"Нет TON-кошелька?",
-  "Download":"Скачай","from App Store or Google Play — it's free. Top up with 1–2 TON to get started.":"из App Store или Google Play — это бесплатно. Пополни на 1–2 TON, чтобы начать.",
-  "Confirm — 1 TON":"Подтвердить — 1 TON","Cancel":"Отмена",
+  "Join the count forever":"Присоединись к счёту навсегда",
+  "Download":"Скачай",
+  "Confirm — 1 GRAM":"Подтвердить — 1 GRAM","Cancel":"Отмена",
   "⏳ Waiting for confirmation…":"⏳ Ждём подтверждения…","✓ Transaction confirmed!":"✓ Транзакция подтверждена!",
   "✓ Counted!":"✓ Посчитан!","Link copied ✦":"Ссылка скопирована ✦",
   "Connect your wallet first ✦":"Сначала подключи кошелёк ✦","Connecting wallet service, one moment…":"Подключаем кошелёк, секунду…",
@@ -4336,11 +4506,13 @@ const RU_HTML = {
   "#ob1 .ob-body":"Загрузи фото — алгоритм найдёт твои пятна и превратит их в личную звёздную карту. Двух одинаковых не бывает. Твоя минтится один раз и остаётся твоей навсегда, надёжно на блокчейне TON.",
   "#ob2 .ob-title":"Однажды каждый из нас<br>будет посчитан",
   "#ob2 .ob-body":"Это мечта — не оценка, с которой можно спорить, а настоящее число, растущее по одному человеку, пока не станет всеми. Ты можешь стать частью этого уже сегодня.",
-  ".home .headline":"Люди с витилиго<br>— <em>уникальны от природы</em>"
+  ".home .headline":"Люди с витилиго<br>— <em>уникальны от природы</em>",
+  "#funFactBox":"<b style=\"color:#c4a8f5\">Забавный факт:</b> vitiligo.ton — не просто имя, это настоящий TON-домен, указывающий прямо на этот контракт. Можно отправить GRAM на него из любого кошелька, вообще без приложения — и они окажутся здесь."
 };
 
 const RU_RX = [
-  [/^Goal: (.+) people$/, "Цель: $1 человек"]
+  [/^Goal: (.+) people$/, "Цель: $1 человек"],
+  [/^\+ (\d+) more (?:city|cities)$/, "+ ещё $1"]
 ];
 
 function _ruTr(raw){
