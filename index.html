@@ -923,7 +923,7 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
           <div id="discoveryBarHome" style="height:100%;background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:2px;width:0%;transition:width .6s ease"></div>
         </div>
       </div>
-      <div class="page-sub" id="cityTeaserLink" style="position:relative;text-align:center;cursor:pointer;color:#a78bfa;font-size:11px;padding:6px 0 10px;margin:0">Cities on the map →</div>
+      <div class="page-sub" id="cityTeaserLink" style="position:relative;text-align:center;cursor:pointer;color:#a78bfa;font-size:11px;padding:6px 0 10px;margin:0">People on the map →</div>
     </div>
 
     <!-- Banner + CTA live in one wrapper pinned to the bottom edge of the
@@ -1152,7 +1152,7 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
          a third button family on one screen. It is a secondary action, so
          it now matches "Write to the team" / "How it works" exactly. -->
     <button id="updateOnChainBtn" style="display:none;width:100%;text-align:center;margin-top:12px;margin-bottom:5px;padding:12px;border:1px solid rgba(147,51,234,.3);border-radius:12px;color:#a78bfa;font-size:13px;background:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Update on-chain profile · 0.02 TON</button>
-    <div id="updateOnChainHint" style="display:none;font-size:10px;color:#6b7280;text-align:center;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Visible to everyone — city, map, and story</div>
+    <div id="updateOnChainHint" style="display:none;font-size:10px;color:#6b7280;text-align:center;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Visible to everyone — name, city and age</div>
     <div class="tx-status" id="txUpdateProfile" style="margin-bottom:6px"></div>
 
     <!-- The whole secondary block is pinned to the bottom by flex
@@ -1710,6 +1710,19 @@ if (cosmosCV) {
   // my star is in the SAME place on every launch — a home, not a dice
   // roll. Dedupes: if a live-session star already exists (or this gets
   // retried), it updates that star instead of adding a twin.
+  // clearMyStar, 08.07.2026 — the sky's part of the wallet-disconnect
+  // cleanup (see resetPersonState): my star leaves with me. The Genesis
+  // star is the one exception — it belongs to the sky itself, so it only
+  // stops being "me" (its merged founder data is public anyway).
+  window.clearMyStar = function() {
+    for (let i = cosmosParts.length - 1; i >= 0; i--) {
+      const p = cosmosParts[i];
+      if (!p.isMe) continue;
+      if (p.isGenesis) p.isMe = false;
+      else cosmosParts.splice(i, 1);
+    }
+  };
+
   window.restoreMyStar = function(seedStr, constName, story, constData, type, isFounder) {
     // Founder path (08.07.2026): the Genesis star at the centre already
     // IS this person — his chain record moves into it (isMe + the real
@@ -2239,6 +2252,11 @@ async function initTonConnect() {
         chip.classList.remove('show'); tcBtn.style.display='';
         connected=false;
         stopTick();
+        // Wallet disconnected → the PERSON left (08.07.2026, live report:
+        // "данные в профиле обнуляются только после перезагрузки").
+        // Everything personal now resets immediately instead of haunting
+        // the UI until a reload — see resetPersonState.
+        if (typeof resetPersonState === 'function') resetPersonState();
         if (typeof refreshUpdateProfileButtonVisibility === 'function') refreshUpdateProfileButtonVisibility();
         if (typeof refreshCountedBanner === 'function') refreshCountedBanner();
       }
@@ -2258,17 +2276,21 @@ initTonConnect();
    Register/MintConstellation остаются в .tact для совместимости, но фронтенд
    их больше не вызывает — весь путь идёт через один JoinAndMint. */
 const JOIN_AND_MINT_OPCODE = 2274933188;
-/* ── Cheap count-in path, 07.07.2026 ──
-   REGISTER_OPCODE MUST be taken from the compiled contract's .abi
-   (loadRegister), exactly the way JOIN_AND_MINT_OPCODE was confirmed on
-   03.07 — never guessed. While it is 0, the whole cheap path stays OFF
-   and the Count button behaves exactly as before (goes to the 1 TON
-   constellation flow), so deploying this build early is safe.
-   The payload layout below mirrors UpdateProfile (same four profile
-   fields, fits one cell) — VERIFY it against loadRegister in the .tact
-   source before enabling; if Register's field order differs, fix
-   buildRegisterPayload first. */
-const REGISTER_OPCODE = 0; // TODO(Виктор): вставить из .abi → включит дешёвый путь
+/* ── Cheap count-in path, 07.07.2026 — PLAN CHANGED 08.07.2026 ──
+   ⚠️ DO NOT enable this path by inserting the opcode alone. The contract
+   source (VilitigoCounterFinal.tact, received 08.07) revealed that
+   receive(Register) requires context().value >= ton("1") — the deployed
+   contract demands 1 TON, and the price check lives in the CONTRACT, not
+   here. With the opcode in and REGISTER_AMOUNT still 0.1, every
+   newcomer's payment would hit the require and bounce: fees lost, person
+   not counted. The 0.1 TON count-in therefore needs the contract batch
+   (new Register with a 0.1 min) and a redeploy FIRST; only then insert
+   the fresh opcode from that build's .abi (loadRegister) — never guessed,
+   same way JOIN_AND_MINT_OPCODE was confirmed on 03.07.
+   Payload layout below was verified against the received .tact
+   (queryId u64, then name/country/city as required-String refs, age u8) —
+   it matches; the amount is the only blocker. */
+const REGISTER_OPCODE = 0; // stays 0 until the NEW contract is deployed (see above)
 const REGISTER_AMOUNT = '100000000'; // 0.1 TON in nanotons
 function registerPathReady(){ return REGISTER_OPCODE !== 0; }
 // Opcode for the new UpdateProfile message, confirmed 04.07.2026 directly
@@ -2601,6 +2623,44 @@ document.getElementById('countBtn').addEventListener('click',()=>{
 // by loadMyConstellationFromChain's getUser call) and shows an honest note
 // listing exactly which fields differ, so a locally-saved-but-not-yet-
 // pushed edit is never mistaken for what's actually on the blockchain.
+// resetPersonState, 08.07.2026 — the full "person left" cleanup, called
+// from onStatusChange on wallet disconnect. Profile identity is per-wallet
+// (fields are driven by the chain via getUser), so when the wallet goes,
+// every trace of that person must go with it, immediately: before this,
+// the previous wallet's name/city/age, gallery and even the star on the
+// sky stayed on screen until the app was reloaded — connecting a second
+// wallet showed the first person's profile (live report). Reconnecting a
+// wallet re-fills everything from the chain (myNfts is emptied here,
+// which is exactly the condition onStatusChange uses to re-run
+// tryLoadConstellationWithRetry).
+function resetPersonState(){
+  ['fieldName','fieldCountry','fieldCity','fieldAge'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  window.onChainProfile = null;
+  const check = document.getElementById('profileVerifiedCheck');
+  if (check) check.style.display = 'none';
+  // header back to the Telegram identity (what a fresh launch shows)
+  const u = tg?.initDataUnsafe?.user;
+  const tgName = u ? [u.first_name, u.last_name].filter(Boolean).join(' ') : '';
+  const nameEl = document.getElementById('profileName');
+  if (nameEl) nameEl.textContent = tgName || 'Your name';
+  const badge = document.getElementById('profileBadge');
+  if (badge) badge.textContent = '⭐';
+  // constellation gallery
+  if (typeof myNfts !== 'undefined') myNfts.length = 0;
+  const grid = document.getElementById('nftGrid');
+  if (grid) grid.innerHTML = '';
+  const sect = document.getElementById('myConstSection');
+  if (sect) sect.style.display = 'none';
+  const cc = document.getElementById('constCount');
+  if (cc) cc.textContent = '';
+  // the sky: my star leaves with me (Genesis just stops being "me")
+  if (window.clearMyStar) window.clearMyStar();
+  if (typeof refreshFieldHighlights === 'function') refreshFieldHighlights();
+}
+
 function refreshOnChainProfileNote(){
   const check = document.getElementById('profileVerifiedCheck');
   const chain = window.onChainProfile;
@@ -4184,7 +4244,7 @@ const RU_TEXT = {
   "I have vitiligo ✦":"У меня витилиго ✦",
   "just vitiligo · just us · just real":"просто витилиго · просто мы · просто настоящие",
   "people counted":"людей посчитано","constellations minted":"созвездий заминчено",
-  "Constellations":"Созвездия","of 88":"из 88","Top cities":"Топ городов","See map →":"На карту →","Cities on the map →":"Города на карте →",
+  "Constellations":"Созвездия","of 88":"из 88","Top cities":"Топ городов","See map →":"На карту →","People on the map →":"Люди на карте →",
   "Count me in ✦":"Посчитайте меня ✦","Make my constellation ✦":"Создать моё созвездие ✦","Confirm — 0.1 TON":"Подтвердить — 0.1 TON","Your place in the number — one real person, recorded on the TON blockchain forever. A constellation can be minted any time later, whenever you feel like it.":"Твоё место в числе — один настоящий человек, навсегда записанный в блокчейне TON. Созвездие можно заминтить потом, в любой момент, когда захочется.","You're counted ✦ Your constellation awaits":"Ты посчитан ✦ Твоё созвездие ждёт","First count yourself in ✦ Constellations come after":"Сначала посчитайся ✦ Созвездия — потом","Count-in payments open in the next update ✦":"Оплата счёта откроется в ближайшем обновлении ✦","You're not on this sky yet — count yourself in ✦":"Тебя ещё нет на этом небе — сначала посчитайся ✦","View my constellation →":"Моё созвездие →",
   "Make another constellation ✦":"Сделать ещё созвездие ✦",
   "🎉 Congratulations — you're counted":"🎉 Поздравляем — ты посчитан",
@@ -4217,7 +4277,7 @@ const RU_TEXT = {
   "Your name":"Твоё имя","Country — start typing...":"Страна — начни печатать...",
   "City — start typing...":"Город — начни печатать...","Select your age":"Выбери возраст",
   "Update on-chain profile · 0.02 TON":"Обновить профиль в блокчейне · 0.02 TON",
-  "Visible to everyone — city, map, and story":"Видно всем — город, карта и история",
+  "Visible to everyone — name, city and age":"Видно всем — имя, город и возраст",
   "💬 Write to the team":"💬 Написать команде","💡 How it works":"💡 Как это работает",
   "How it works":"Как это работает","Count yourself in":"Посчитай себя","Fill your profile, confirm in your TON wallet — and you are in the number forever. Your star lights up on the shared sky.":"Заполни профиль, подтверди в TON-кошельке — и ты в числе навсегда. Твоя звезда загорается на общем небе.","Turn your vitiligo into a constellation":"Преврати витилиго в созвездие","Upload a photo — the algorithm reads your skin and builds a constellation only you could have. Each mint is also a fresh chance to discover one of the 88 real constellations — each opens once, ever.":"Загрузи фото — алгоритм прочитает кожу и соберёт созвездие, которое могло быть только у тебя. Каждый минт — ещё и шанс открыть одно из 88 настоящих созвездий: каждое открывается лишь однажды.","Find each other":"Находите друг друга","The map shows counted people by city; tap any star on the sky to see whose it is and read its legend.":"Карта показывает посчитанных по городам; нажми на любую звезду на небе — узнаешь, чья она, и прочтёшь её легенду.","The number can never be faked":"Число невозможно подделать","Every unit of the count is a real person recorded on the TON blockchain — permanent, public, verifiable.":"Каждая единица счёта — настоящий человек, записанный в блокчейне TON: навсегда, публично, проверяемо.","Count — 0.1 TON · Constellation — 1 TON · Profile update — 0.02 TON":"Счёт — 0.1 TON · Созвездие — 1 TON · Обновление профиля — 0.02 TON","Got it ✦":"Понятно ✦",
   "Press \"I have vitiligo ✦\"":"Нажми «У меня витилиго ✦»",
