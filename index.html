@@ -923,7 +923,7 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
           <div id="discoveryBarHome" style="height:100%;background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:2px;width:0%;transition:width .6s ease"></div>
         </div>
       </div>
-      <div class="page-sub" id="cityTeaserLink" style="position:relative;text-align:center;cursor:pointer;color:#a78bfa;font-size:11px;padding:6px 0 10px;margin:0">People on the map →</div>
+      <div class="page-sub" id="cityTeaserLink" style="position:relative;text-align:center;cursor:pointer;color:#a78bfa;font-size:11px;padding:6px 0 10px;margin:0">Look how many of us →</div>
     </div>
 
     <!-- Banner + CTA live in one wrapper pinned to the bottom edge of the
@@ -1190,8 +1190,14 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
   <button class="nav-item" data-page="stars">
     <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Constellation
   </button>
+  <!-- «Мы» since 09.07.2026 (was Map): the tab opens the shared cosmos,
+       and "map" promised geography — a live-tester stumble ("переходим на
+       карту, а там космос"). The icon is a tiny constellation of three
+       linked stars: people, connected. Cities/geography live INSIDE the
+       page, below the sky. data-page="map" is untouched — it's an
+       internal id wired through clicks and deep links. -->
   <button class="nav-item" data-page="map">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.4 7.4 12.5 7.7 12.8a.5.5 0 0 0 .6 0C12.6 22.5 20 15.4 20 10a8 8 0 0 0-8-8z"/></svg>Map
+    <svg viewBox="0 0 24 24"><circle cx="6" cy="16" r="2"/><circle cx="12" cy="6" r="2.5"/><circle cx="18" cy="15" r="1.6"/><line x1="7.4" y1="14.4" x2="10.6" y2="8.1"/><line x1="13.9" y1="7.6" x2="16.9" y2="13.7"/></svg>We
   </button>
   <button class="nav-item" data-page="invite">
     <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Invite
@@ -3594,7 +3600,25 @@ function refreshUpdateProfileButtonVisibility(){
 }
 refreshUpdateProfileButtonVisibility();
 
+/* ── On-chain profile update fuse, 09.07.2026 ──
+   PROVEN BROKEN against the deployed contract: owner's live tonviewer +
+   wallet history (09.07, 07:33) shows the UpdateProfile message — opcode
+   0x65b652e0 = 1706447584, exactly UPDATE_PROFILE_OPCODE — bouncing with
+   an error and refunding 0.0197 of the 0.02 sent. The contract deployed
+   on 03.07 predates UpdateProfile (it exists only in the newer local
+   .tact, received 08.07); the on-chain code simply does not know this
+   message. Until the contract batch is deployed, every attempt burns
+   ~0.003 TON of fees and changes nothing — so the send is fused off the
+   same honest way as Register. Flip to true ONLY after the redeploy
+   (and re-confirm the opcode from that build's .abi, loadUpdateProfile). */
+const UPDATE_PROFILE_ONCHAIN_READY = false;
+
 document.getElementById('updateOnChainBtn').addEventListener('click', async () => {
+  if (!UPDATE_PROFILE_ONCHAIN_READY) {
+    if (typeof updateDebugInfo === 'function') updateDebugInfo('CLICKED update profile — fused off (contract predates UpdateProfile)');
+    showToast('Profile sync opens with the next contract update ✦');
+    return;
+  }
   if(!hasProfile()){
     showToast('Please fill in name, country, city and age ✦');
     return;
@@ -4244,11 +4268,11 @@ const RU_TEXT = {
   "I have vitiligo ✦":"У меня витилиго ✦",
   "just vitiligo · just us · just real":"просто витилиго · просто мы · просто настоящие",
   "people counted":"людей посчитано","constellations minted":"созвездий заминчено",
-  "Constellations":"Созвездия","of 88":"из 88","Top cities":"Топ городов","See map →":"На карту →","People on the map →":"Люди на карте →",
+  "Constellations":"Созвездия","of 88":"из 88","Top cities":"Топ городов","Look how many of us →":"Смотри, сколько нас →",
   "Count me in ✦":"Посчитайте меня ✦","Make my constellation ✦":"Создать моё созвездие ✦","Confirm — 0.1 TON":"Подтвердить — 0.1 TON","Your place in the number — one real person, recorded on the TON blockchain forever. A constellation can be minted any time later, whenever you feel like it.":"Твоё место в числе — один настоящий человек, навсегда записанный в блокчейне TON. Созвездие можно заминтить потом, в любой момент, когда захочется.","You're counted ✦ Your constellation awaits":"Ты посчитан ✦ Твоё созвездие ждёт","First count yourself in ✦ Constellations come after":"Сначала посчитайся ✦ Созвездия — потом","Count-in payments open in the next update ✦":"Оплата счёта откроется в ближайшем обновлении ✦","You're not on this sky yet — count yourself in ✦":"Тебя ещё нет на этом небе — сначала посчитайся ✦","View my constellation →":"Моё созвездие →",
   "Make another constellation ✦":"Сделать ещё созвездие ✦",
   "🎉 Congratulations — you're counted":"🎉 Поздравляем — ты посчитан",
-  "Home":"Главная","Constellation":"Созвездие","Map":"Карта","Invite":"Позвать","Profile":"Профиль",
+  "Home":"Главная","Constellation":"Созвездие","We":"Мы","Invite":"Позвать","Profile":"Профиль",
   "Your constellation":"Твоё созвездие","Your vitiligo becomes real stars":"Твоё витилиго становится настоящими звёздами",
   "Real constellations discovered":"Настоящих созвездий открыто",
   "Each real constellation appears only once across all participants":"Каждое настоящее созвездие появляется лишь один раз на всех участников",
@@ -4277,7 +4301,7 @@ const RU_TEXT = {
   "Your name":"Твоё имя","Country — start typing...":"Страна — начни печатать...",
   "City — start typing...":"Город — начни печатать...","Select your age":"Выбери возраст",
   "Update on-chain profile · 0.02 TON":"Обновить профиль в блокчейне · 0.02 TON",
-  "Visible to everyone — name, city and age":"Видно всем — имя, город и возраст",
+  "Visible to everyone — name, city and age":"Видно всем — имя, город и возраст","Profile sync opens with the next contract update ✦":"Синхронизация профиля откроется с обновлением контракта ✦",
   "💬 Write to the team":"💬 Написать команде","💡 How it works":"💡 Как это работает",
   "How it works":"Как это работает","Count yourself in":"Посчитай себя","Fill your profile, confirm in your TON wallet — and you are in the number forever. Your star lights up on the shared sky.":"Заполни профиль, подтверди в TON-кошельке — и ты в числе навсегда. Твоя звезда загорается на общем небе.","Turn your vitiligo into a constellation":"Преврати витилиго в созвездие","Upload a photo — the algorithm reads your skin and builds a constellation only you could have. Each mint is also a fresh chance to discover one of the 88 real constellations — each opens once, ever.":"Загрузи фото — алгоритм прочитает кожу и соберёт созвездие, которое могло быть только у тебя. Каждый минт — ещё и шанс открыть одно из 88 настоящих созвездий: каждое открывается лишь однажды.","Find each other":"Находите друг друга","The map shows counted people by city; tap any star on the sky to see whose it is and read its legend.":"Карта показывает посчитанных по городам; нажми на любую звезду на небе — узнаешь, чья она, и прочтёшь её легенду.","The number can never be faked":"Число невозможно подделать","Every unit of the count is a real person recorded on the TON blockchain — permanent, public, verifiable.":"Каждая единица счёта — настоящий человек, записанный в блокчейне TON: навсегда, публично, проверяемо.","Count — 0.1 TON · Constellation — 1 TON · Profile update — 0.02 TON":"Счёт — 0.1 TON · Созвездие — 1 TON · Обновление профиля — 0.02 TON","Got it ✦":"Понятно ✦",
   "Press \"I have vitiligo ✦\"":"Нажми «У меня витилиго ✦»",
