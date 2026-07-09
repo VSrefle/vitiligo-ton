@@ -949,6 +949,22 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
     <div class="page-title">Your constellation</div>
     <div class="page-sub">Your vitiligo becomes real stars</div>
 
+    <!-- Model A hero, 09.07.2026 (owner's call): a person has ONE
+         constellation — repeat mints don't add to a collection, they
+         TRANSFORM it (new pattern, new name, rarity only ever grows;
+         the chain stores only the current form). So the tab leads with
+         that one constellation as a full-width card — its today's face,
+         tap opens the ceremony — and the upload flow below reads as
+         "transform", not "add another". The 2-column "My constellations"
+         gallery that used to sit at the bottom died with Model B; the
+         grid ALWAYS holds exactly one card now (painters clear it before
+         adding). History of this block: grid moved from Profile 04.07,
+         de-duplicated 06.07, promoted to hero and made singular today. -->
+    <div id="myConstSection" style="display:none">
+      <label class="form-label" style="display:block">My constellation</label>
+      <div class="nft-grid" id="nftGrid" style="grid-template-columns:1fr"></div>
+    </div>
+
     <div id="discoveryProgress" style="background:rgba(147,51,234,.12);border:1px solid rgba(147,51,234,.25);border-radius:12px;padding:12px 16px;margin-bottom:16px;text-align:center">
       <div style="font-size:11px;color:#a78bfa;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Real constellations discovered</div>
       <div class="skl loading" style="font-size:22px;font-weight:700;color:white" id="discoveryCount">0 <span style="font-size:14px;color:#a78bfa;font-weight:400">of 88</span></div>
@@ -970,7 +986,7 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
          clear this is for trying again (a fresh roll at a rarer
          constellation, another 1 TON), not a sign they aren't counted yet. -->
     <div id="alreadyCountedNote" style="display:none;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#6ee7b7;text-align:center">
-      ✦ You're counted — this mints another constellation, a fresh roll at something rarer
+      ✦ A new photo can transform your constellation — new pattern, new name. Rarity only grows
     </div>
 
     <div class="upload-area" id="uploadArea">
@@ -1005,20 +1021,6 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
 
     <button class="btn-main" id="mintBtn" disabled style="display:none">Count me in ✦</button>
     <button class="btn-ghost" id="resetBtn" style="display:none;margin-top:0">Try another photo</button>
-
-    <!-- Moved here from Profile 04.07.2026; reworked 06.07.2026: the grid
-         used to contain a dashed "Add photo · 1 TON" tile — a leftover
-         from when the grid lived on Profile and the tile navigated here.
-         With both on one tab it duplicated the upload area above (two
-         identical dashed "add a photo" fields on one screen). Now the
-         upload flow is the single entry point, the grid is purely a
-         gallery, and the whole section stays hidden until there's at
-         least one constellation to show (an empty gallery says nothing
-         the flow above doesn't). -->
-    <div id="myConstSection" style="display:none">
-      <label class="form-label" style="margin-top:24px;display:block">My constellations <span id="constCount" style="color:#a78bfa;font-weight:400"></span></label>
-      <div class="nft-grid" id="nftGrid"></div>
-    </div>
 
   </div>
 </div>
@@ -2660,8 +2662,6 @@ function resetPersonState(){
   if (grid) grid.innerHTML = '';
   const sect = document.getElementById('myConstSection');
   if (sect) sect.style.display = 'none';
-  const cc = document.getElementById('constCount');
-  if (cc) cc.textContent = '';
   // the sky: my star leaves with me (Genesis just stops being "me")
   if (window.clearMyStar) window.clearMyStar();
   if (typeof refreshFieldHighlights === 'function') refreshFieldHighlights();
@@ -2699,7 +2699,7 @@ function refreshCountedBanner(){
   // from an in-progress upload, not showing the post-mint "✓ Counted!"
   // state) — this just sets the correct default/reset label.
   if (mintBtnEl && !mintBtnEl.classList.contains('done') && mintBtnEl.disabled) {
-    mintBtnEl.textContent = isJoinedLocal() ? (myNfts.length ? 'Make another constellation ✦' : 'Make my constellation ✦') : 'Count me in ✦';
+    mintBtnEl.textContent = isJoinedLocal() ? (myNfts.length ? 'Transform my constellation ✦' : 'Make my constellation ✦') : 'Count me in ✦';
   }
   if (!banner || !btn) return;
   if (isJoinedLocal()) {
@@ -3254,6 +3254,7 @@ document.getElementById('modalMintConfirm').addEventListener('click', async ()=>
     const grid=document.getElementById('nftGrid');
     const card=document.createElement('div');
     card.className='nft-card' + (gold ? ' rare' : '');
+    grid.innerHTML=''; myNfts.length=0; // Model A: one constellation, transformed — never a collection
     const media=document.createElement('div'); media.className='nft-media';
     // Same painter as the opened ceremony (08.07.2026) — the thumbnail IS
     // the ceremony picture, just smaller, so tapping the card never
@@ -3510,12 +3511,13 @@ function paintConstellationScene(canvas, cssW, cssH, nftData){
     }
   });
 }
-// Card thumbnails are square and live in a 2-column grid; when they are
-// painted the grid can be on a hidden tab (offsetWidth 0), so the size is
-// derived from the window instead of measured: (page width − paddings −
-// grid gap) / 2. Close enough — the DPR backing store keeps it crisp.
+// The constellation card is FULL-WIDTH since Model A (09.07.2026) — one
+// hero card, not a 2-column grid cell. Painted while its tab can be
+// hidden (offsetWidth 0), so the size is derived from the window instead
+// of measured: page width minus the page paddings. The DPR backing store
+// keeps it crisp.
 function cardThumbSize(){
-  return Math.max(120, Math.round((Math.min(window.innerWidth, 480) - 36 - 10) / 2));
+  return Math.max(200, Math.min(window.innerWidth, 480) - 36);
 }
 document.getElementById('modalNftGotIt').addEventListener('click',()=>closeModal('modalNftDetail'));
 
@@ -3523,12 +3525,10 @@ document.getElementById('modalNftGotIt').addEventListener('click',()=>closeModal
 // (removed 04.07.2026 — it duplicated the card grid above in a buggier
 // way and its count never updated after a getUser-restored constellation
 // was added, always showing "0 constellations" even with a real one).
-// Just keeps a simple count next to the "My constellations" label instead.
+// Under Model A (09.07.2026) there is nothing to count — a person has one
+// constellation that transforms. This now only toggles the hero card
+// section: hidden until the constellation exists.
 function refreshConstCount(){
-  const el = document.getElementById('constCount');
-  if (el) el.textContent = myNfts.length ? `(${myNfts.length})` : '';
-  // The gallery section only exists on screen once there's something in
-  // it — see the comment at #myConstSection.
   const sec = document.getElementById('myConstSection');
   if (sec) sec.style.display = myNfts.length ? 'block' : 'none';
 }
@@ -3539,7 +3539,7 @@ document.getElementById('resetBtn').addEventListener('click',()=>{
   constInfo.style.display='none'; storyWrap.style.display='none';
   rarityBanner.style.display='none';
   mintBtn.disabled=true; mintBtn.style.display='none';
-  mintBtn.textContent = isJoinedLocal() ? (myNfts.length ? 'Make another constellation ✦' : 'Make my constellation ✦') : 'Count me in ✦'; mintBtn.classList.remove('done');
+  mintBtn.textContent = isJoinedLocal() ? (myNfts.length ? 'Transform my constellation ✦' : 'Make my constellation ✦') : 'Count me in ✦'; mintBtn.classList.remove('done');
   resetBtn.style.display='none'; fileInput.value=''; setStep(1);
   currentConst=null; nftPixelColor=null;
   document.getElementById('storyInput').value='';
@@ -3899,6 +3899,7 @@ function renderRestoredNftCard(nftData) {
   const gold = nftData.rare;
   const card = document.createElement('div');
   card.className = 'nft-card' + (gold ? ' rare' : '');
+  grid.innerHTML = ''; // Model A: the chain holds only the current form — so does the card
   const media = document.createElement('div'); media.className = 'nft-media';
   // Same painter as the opened ceremony (08.07.2026) — see the mint-time
   // card above; the restored card no longer draws its own diverging 80×80.
@@ -4270,17 +4271,17 @@ const RU_TEXT = {
   "people counted":"людей посчитано","constellations minted":"созвездий заминчено",
   "Constellations":"Созвездия","of 88":"из 88","Top cities":"Топ городов","Look how many of us →":"Смотри, сколько нас →",
   "Count me in ✦":"Посчитайте меня ✦","Make my constellation ✦":"Создать моё созвездие ✦","Confirm — 0.1 TON":"Подтвердить — 0.1 TON","Your place in the number — one real person, recorded on the TON blockchain forever. A constellation can be minted any time later, whenever you feel like it.":"Твоё место в числе — один настоящий человек, навсегда записанный в блокчейне TON. Созвездие можно заминтить потом, в любой момент, когда захочется.","You're counted ✦ Your constellation awaits":"Ты посчитан ✦ Твоё созвездие ждёт","First count yourself in ✦ Constellations come after":"Сначала посчитайся ✦ Созвездия — потом","Count-in payments open in the next update ✦":"Оплата счёта откроется в ближайшем обновлении ✦","You're not on this sky yet — count yourself in ✦":"Тебя ещё нет на этом небе — сначала посчитайся ✦","View my constellation →":"Моё созвездие →",
-  "Make another constellation ✦":"Сделать ещё созвездие ✦",
+  "Transform my constellation ✦":"Преобразить созвездие ✦",
   "🎉 Congratulations — you're counted":"🎉 Поздравляем — ты посчитан",
   "Home":"Главная","Constellation":"Созвездие","We":"Мы","Invite":"Позвать","Profile":"Профиль",
   "Your constellation":"Твоё созвездие","Your vitiligo becomes real stars":"Твоё витилиго становится настоящими звёздами",
   "Real constellations discovered":"Настоящих созвездий открыто",
   "Each real constellation appears only once across all participants":"Каждое настоящее созвездие появляется лишь один раз на всех участников",
   "Upload":"Фото","Detect":"Поиск","Map stars":"Звёзды","Save":"Минт",
-  "✦ You're counted — this mints another constellation, a fresh roll at something rarer":"✦ Ты уже посчитан — это минт ещё одного созвездия, новый шанс на что-то более редкое",
+  "✦ A new photo can transform your constellation — new pattern, new name. Rarity only grows":"✦ Новая фотография может преобразить твоё созвездие — новый узор, новое имя. Редкость только растёт",
   "Tap to upload a photo":"Нажми, чтобы загрузить фото","with your vitiligo":"с твоим витилиго",
   "Your body disappears. Only stars remain.":"Тело исчезает. Остаются только звёзды.",
-  "Try another photo":"Другое фото","My constellations":"Мои созвездия",
+  "Try another photo":"Другое фото","My constellation":"Моё созвездие",
   "Tell your story (optional)":"Расскажи свою историю (по желанию)",
   "This becomes part of your constellation — visible to you and whoever you gift it to":"Это станет частью твоего созвездия — увидишь ты и тот, кому ты его подаришь",
   "Confirm 1 TON to mint this constellation permanently on-chain ✦":"Подтверди 1 TON, чтобы заминтить созвездие навсегда в блокчейне ✦",
