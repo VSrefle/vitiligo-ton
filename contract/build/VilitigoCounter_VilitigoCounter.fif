@@ -1,0 +1,1881 @@
+// automatically generated from `@stdlib/std/stdlib.fc` `/workspaces/vitiligo-ton/contract/build/VilitigoCounter_VilitigoCounter.fc` 
+PROGRAM{
+  DECLPROC __tact_context_get
+  DECLPROC __tact_context_get_sender
+  DECLPROC __tact_slice_eq
+  DECLPROC __tact_slice_neq
+  DECLPROC __tact_dict_get_slice_cell
+  DECLPROC __tact_dict_set_slice_cell
+  DECLPROC __tact_dict_get_int_cell
+  DECLPROC __tact_dict_set_int_cell
+  DECLPROC $DeployOk$_store
+  DECLPROC $DeployOk$_store_cell
+  DECLPROC $UserData$_store
+  DECLPROC $UserData$_store_cell
+  DECLPROC $UserData$_load
+  DECLPROC $UserData$_as_optional
+  DECLPROC $UserData$_load_opt
+  DECLPROC $CityCount$_store
+  DECLPROC $CityCount$_store_cell
+  DECLPROC $CityCount$_load
+  DECLPROC $CityCount$_as_optional
+  DECLPROC $CityCount$_load_opt
+  DECLPROC $VilitigoCounter$_store
+  DECLPROC $VilitigoCounter$_load
+  DECLPROC $Context$_get_value
+  DECLPROC $UserData$_get_hasConstellation
+  DECLPROC $UserData$_get_isRare
+  DECLPROC $UserData$_get_isLegendary
+  DECLPROC $UserData$_not_null
+  DECLPROC $UserData$_to_tuple
+  DECLPROC $UserData$_to_opt_tuple
+  DECLPROC $UserData$_to_opt_external
+  DECLPROC $CityCount$_get_city
+  DECLPROC $CityCount$_get_count
+  DECLPROC $CityCount$_not_null
+  DECLPROC $CityCount$_to_tuple
+  DECLPROC $CityCount$_to_opt_tuple
+  DECLPROC $CityCount$_to_opt_external
+  DECLPROC $VilitigoCounter$init$_load
+  DECLPROC $VilitigoCounter$_contract_init
+  DECLPROC $VilitigoCounter$_contract_load
+  DECLPROC $VilitigoCounter$_contract_store
+  DECLPROC $CityCount$_constructor_city_count
+  DECLPROC $VilitigoCounter$_fun_untrackCity
+  DECLPROC $VilitigoCounter$_fun_trackCity
+  DECLPROC $VilitigoCounter$_fun_totalCount
+  DECLPROC $VilitigoCounter$_fun_photoCount
+  DECLPROC $VilitigoCounter$_fun_getUser
+  DECLPROC $VilitigoCounter$_fun_isRegistered
+  DECLPROC $VilitigoCounter$_fun_hasConstellation
+  DECLPROC $VilitigoCounter$_fun_realConstellationsFound
+  DECLPROC $VilitigoCounter$_fun_realConstellationsMap
+  DECLPROC $VilitigoCounter$_fun_isConstellationDiscovered
+  DECLPROC $VilitigoCounter$_fun_getCityCount
+  DECLPROC $VilitigoCounter$_fun_cityCountsSize
+  DECLPROC $VilitigoCounter$_fun_starLevel
+  DECLPROC $VilitigoCounter$_fun_balance
+  DECLPROC $MessageParameters$_constructor_bounce_to_value_mode_body
+  DECLPROC $VilitigoCounter$_fun_notify
+  DECLPROC $VilitigoCounter$_fun_requireOwner
+  DECLPROC $VilitigoCounter$_fun_owner
+  DECLPROC $UserData$_constructor_wallet_name_country_city_age_hasConstellation_constName_isRare_isLegendary_discoveryNumber_story_pixelColor_mintedAt
+  DECLPROC $SendParameters$_constructor_to_value_mode_bounce_body
+  DECLPROC $DeployOk$_constructor_queryId
+  107884 DECLMETHOD %totalCount
+  119509 DECLMETHOD %photoCount
+  114923 DECLMETHOD %getUser
+  104754 DECLMETHOD %isRegistered
+  79526 DECLMETHOD %hasConstellation
+  80195 DECLMETHOD %realConstellationsFound
+  84699 DECLMETHOD %realConstellationsMap
+  120445 DECLMETHOD %isConstellationDiscovered
+  71427 DECLMETHOD %getCityCount
+  69634 DECLMETHOD %cityCountsSize
+  110800 DECLMETHOD %starLevel
+  104128 DECLMETHOD %balance
+  83229 DECLMETHOD %owner
+  DECLPROC recv_internal
+  65535 DECLMETHOD __tact_selector_hack
+  DECLGLOBVAR __tact_context
+  DECLGLOBVAR __tact_context_sender
+  DECLGLOBVAR __tact_child_contract_codes
+  DECLGLOBVAR __tact_randomized
+  __tact_context_get PROCINLINE:<{
+    __tact_context GETGLOB
+    4 UNTUPLE
+  }>
+  __tact_context_get_sender PROCINLINE:<{
+    __tact_context_sender GETGLOB
+  }>
+  __tact_slice_eq PROCINLINE:<{
+    SWAP
+    HASHSU
+    SWAP
+    HASHSU
+    EQUAL
+  }>
+  __tact_slice_neq PROCINLINE:<{
+    SWAP
+    HASHSU
+    SWAP
+    HASHSU
+    NEQ
+  }>
+  __tact_dict_get_slice_cell PROCINLINE:<{
+    -ROT
+        DICTGETREF NULLSWAPIFNOT
+    IF:<{
+    }>ELSE<{
+      DROP
+      PUSHNULL
+    }>
+  }>
+  __tact_dict_set_slice_cell PROCINLINE:<{
+    DUP
+    ISNULL
+    IF:<{
+      DROP
+      -ROT
+          DICTDEL
+      DROP
+    }>ELSE<{
+      s1 s3 s3 XCHG3
+          DICTSETREF
+    }>
+  }>
+  __tact_dict_get_int_cell PROCINLINE:<{
+    -ROT
+    DICTIGETREF
+    NULLSWAPIFNOT
+    IF:<{
+    }>ELSE<{
+      DROP
+      PUSHNULL
+    }>
+  }>
+  __tact_dict_set_int_cell PROCINLINE:<{
+    DUP
+    ISNULL
+    IF:<{
+      DROP
+      -ROT
+      DICTIDEL
+      DROP
+    }>ELSE<{
+      s1 s3 s3 XCHG3
+      DICTISETREF
+    }>
+  }>
+  $DeployOk$_store PROCINLINE:<{
+    2952335191 PUSHINT
+    ROT
+    32 STU
+    64 STU
+  }>
+  $DeployOk$_store_cell PROCINLINE:<{
+    SWAP
+    $DeployOk$_store INLINECALLDICT
+    ENDC
+  }>
+  $UserData$_store PROCREF:<{
+    s12 s13 XCHG2
+    STSLICE
+    s0 s10 XCHG
+    NEWC
+    STSLICE
+    s1 s10 XCHG
+    STBREFR
+    s0 s8 XCHG
+    NEWC
+    STSLICE
+    s1 s8 XCHG
+    STBREFR
+    NEWC
+    s0 s7 XCHG
+    NEWC
+    STSLICE
+    s1 s7 XCHG
+    STBREFR
+    s1 s5 XCHG
+    8 STU
+    s1 s3 XCHG
+    1 STI
+    SWAP
+    NEWC
+    STSLICE
+    STBREFR
+    1 STI
+    1 STI
+    s1 s2 XCHG
+    8 STU
+    s0 s2 XCHG
+    NEWC
+    STSLICE
+    s1 s2 XCHG
+    STBREFR
+    s0 s2 XCHG
+    NEWC
+    STSLICE
+    s1 s2 XCHG
+    STBREFR
+    s1 s2 XCHG
+    32 STU
+    STBREFR
+  }>
+  $UserData$_store_cell PROCINLINE:<{
+    13 -ROLL
+    $UserData$_store INLINECALLDICT
+    ENDC
+  }>
+  $UserData$_load PROCREF:<{
+    LDMSGADDR
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    LDREF
+    SWAP
+    CTOS
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    8 LDU
+    1 LDI
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    1 LDI
+    1 LDI
+    8 LDU
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    32 LDU
+    DROP
+    s10 s13 XCHG
+    s10 s12 XCHG
+    s10 s11 XCHG
+  }>
+  $UserData$_as_optional PROCINLINE:<{
+        13 TUPLE
+  }>
+  $UserData$_load_opt PROCINLINE:<{
+    DUP
+    ISNULL
+    IF:<{
+      DROP
+      PUSHNULL
+    }>ELSE<{
+      CTOS
+      $UserData$_load INLINECALLDICT
+      1 13 BLKDROP2
+      $UserData$_as_optional INLINECALLDICT
+    }>
+  }>
+  $CityCount$_store PROCINLINE:<{
+    SWAP
+    NEWC
+    STSLICE
+    s1 s2 XCHG
+    STBREFR
+    32 STU
+  }>
+  $CityCount$_store_cell PROCINLINE:<{
+    -ROT
+    $CityCount$_store INLINECALLDICT
+    ENDC
+  }>
+  $CityCount$_load PROCINLINE:<{
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    32 LDU
+    -ROT
+  }>
+  $CityCount$_as_optional PROCINLINE:<{
+        2 TUPLE
+  }>
+  $CityCount$_load_opt PROCINLINE:<{
+    DUP
+    ISNULL
+    IF:<{
+      DROP
+      PUSHNULL
+    }>ELSE<{
+      CTOS
+      $CityCount$_load INLINECALLDICT
+      1 2 BLKDROP2
+      $CityCount$_as_optional INLINECALLDICT
+    }>
+  }>
+  $VilitigoCounter$_store PROCINLINE:<{
+    s7 s8 XCHG2
+    STSLICE
+    s1 s5 XCHG
+    32 STU
+    s1 s3 XCHG
+    32 STU
+    256 STU
+    8 STU
+    STDICT
+    STDICT
+    32 STU
+  }>
+  $VilitigoCounter$_load PROCINLINE:<{
+    LDMSGADDR
+    32 LDU
+    32 LDU
+    256 LDU
+    8 LDU
+    LDDICT
+    LDDICT
+    32 LDU
+    8 -ROLL
+  }>
+  $Context$_get_value PROCINLINE:<{
+    s1 s3 XCHG
+    3 BLKDROP
+  }>
+  $UserData$_get_hasConstellation PROCINLINE:<{
+    s7 s12 XCHG
+    12 BLKDROP
+  }>
+  $UserData$_get_isRare PROCINLINE:<{
+    s5 s12 XCHG
+    12 BLKDROP
+  }>
+  $UserData$_get_isLegendary PROCINLINE:<{
+    s4 s12 XCHG
+    12 BLKDROP
+  }>
+  $UserData$_not_null PROCINLINE:<{
+    DUP
+    ISNULL
+    128 THROWIF
+        13 UNTUPLE
+  }>
+  $UserData$_to_tuple PROCINLINE:<{
+        13 TUPLE
+  }>
+  $UserData$_to_opt_tuple PROCINLINE:<{
+    DUP
+    ISNULL
+    IF:<{
+      DROP
+      PUSHNULL
+    }>ELSE<{
+      $UserData$_not_null INLINECALLDICT
+      $UserData$_to_tuple INLINECALLDICT
+    }>
+  }>
+  $UserData$_to_opt_external PROCINLINE:<{
+    $UserData$_to_opt_tuple INLINECALLDICT
+    DUP
+    ISNULL
+    IF:<{
+      DROP
+      PUSHNULL
+    }>ELSE<{
+    }>
+  }>
+  $CityCount$_get_city PROCINLINE:<{
+    DROP
+  }>
+  $CityCount$_get_count PROCINLINE:<{
+    NIP
+  }>
+  $CityCount$_not_null PROCINLINE:<{
+    DUP
+    ISNULL
+    128 THROWIF
+        2 UNTUPLE
+  }>
+  $CityCount$_to_tuple PROCINLINE:<{
+        2 TUPLE
+  }>
+  $CityCount$_to_opt_tuple PROCINLINE:<{
+    DUP
+    ISNULL
+    IF:<{
+      DROP
+      PUSHNULL
+    }>ELSE<{
+      $CityCount$_not_null INLINECALLDICT
+      $CityCount$_to_tuple INLINECALLDICT
+    }>
+  }>
+  $CityCount$_to_opt_external PROCINLINE:<{
+    $CityCount$_to_opt_tuple INLINECALLDICT
+    DUP
+    ISNULL
+    IF:<{
+      DROP
+      PUSHNULL
+    }>ELSE<{
+    }>
+  }>
+  $VilitigoCounter$init$_load PROCINLINE:<{
+    LDMSGADDR
+    SWAP
+  }>
+  $VilitigoCounter$_contract_init PROCINLINE:<{
+    0 PUSHINT
+    s0 s0 s0 PUSH3
+    PUSHNULL
+    PUSHNULL
+    s2 PUSH
+  }>
+  $VilitigoCounter$_contract_load PROCINLINE:<{
+    c4 PUSH
+    CTOS
+    1 LDI
+    SWAP
+    IF:<{
+      $VilitigoCounter$_load INLINECALLDICT
+      1 8 BLKDROP2
+    }>ELSE<{
+      $VilitigoCounter$init$_load INLINECALLDICT
+      SWAP
+      ENDS
+      $VilitigoCounter$_contract_init INLINECALLDICT
+    }>
+  }>
+  $VilitigoCounter$_contract_store PROCINLINE:<{
+    NEWC
+    TRUE
+    SWAP
+    1 STI
+    8 -ROLL
+    $VilitigoCounter$_store INLINECALLDICT
+    ENDC
+    c4 POP
+  }>
+  $CityCount$_constructor_city_count PROCINLINE:<{
+  }>
+  $VilitigoCounter$_fun_untrackCity PROCREF:<{
+    c2 SAVE
+    SAMEALTSAVE
+        B{b5ee9c724101010100020000004cacb9cd} B>boc <s PUSHSLICE
+    s1 s(-1) PUXC
+    __tact_slice_eq INLINECALLDICT
+    IFJMP:<{
+      DROP
+    }>
+    0 PUSHINT
+    WHILE:<{
+      s0 s2 PUSH2
+      LESS
+    }>DO<{
+      s3 PUSH
+      257 PUSHINT
+      s2 PUSH
+      __tact_dict_get_int_cell INLINECALLDICT
+      $CityCount$_load_opt INLINECALLDICT
+      DUP
+      ISNULL
+      NOT
+      IF:<{
+        DUP
+        $CityCount$_not_null INLINECALLDICT
+        $CityCount$_get_city INLINECALLDICT
+        s3 PUSH
+        __tact_slice_eq INLINECALLDICT
+      }>ELSE<{
+        FALSE
+      }>
+      IFJMP:<{
+        $CityCount$_not_null INLINECALLDICT
+        $CityCount$_get_count INLINECALLDICT
+        DEC
+        DUP
+        0 LESSINT
+        IF:<{
+          DROP
+          0 PUSHINT
+        }>
+        s0 s2 XCHG
+        257 PUSHINT
+        s0 s3 XCHG
+        $CityCount$_constructor_city_count INLINECALLDICT
+        NEWC
+        $CityCount$_store_cell INLINECALLDICT
+        s3 s4 XCHG
+        __tact_dict_set_int_cell INLINECALLDICT
+        SWAP
+        RETALT
+      }>
+      DROP
+      INC
+    }>
+    2DROP
+  }>
+  $VilitigoCounter$_fun_trackCity PROCREF:<{
+    c2 SAVE
+    SAMEALTSAVE
+        B{b5ee9c724101010100020000004cacb9cd} B>boc <s PUSHSLICE
+    s1 s(-1) PUXC
+    __tact_slice_eq INLINECALLDICT
+    IFJMP:<{
+      DROP
+    }>
+    0 PUSHINT
+    WHILE:<{
+      s0 s2 PUSH2
+      LESS
+    }>DO<{
+      s3 PUSH
+      257 PUSHINT
+      s2 PUSH
+      __tact_dict_get_int_cell INLINECALLDICT
+      $CityCount$_load_opt INLINECALLDICT
+      DUP
+      ISNULL
+      NOT
+      IF:<{
+        DUP
+        $CityCount$_not_null INLINECALLDICT
+        $CityCount$_get_city INLINECALLDICT
+        s3 PUSH
+        __tact_slice_eq INLINECALLDICT
+      }>ELSE<{
+        FALSE
+      }>
+      IFJMP:<{
+        $CityCount$_not_null INLINECALLDICT
+        $CityCount$_get_count INLINECALLDICT
+        INC
+        s1 s2 XCHG
+        $CityCount$_constructor_city_count INLINECALLDICT
+        257 PUSHINT
+        -ROT
+        NEWC
+        $CityCount$_store_cell INLINECALLDICT
+        s3 s4 XCHG
+        s1 s2 XCHG
+        __tact_dict_set_int_cell INLINECALLDICT
+        SWAP
+        RETALT
+      }>
+      DROP
+      INC
+    }>
+    DROP
+    257 PUSHINT
+    SWAP
+    1 PUSHINT
+    $CityCount$_constructor_city_count INLINECALLDICT
+    NEWC
+    $CityCount$_store_cell INLINECALLDICT
+    s2 PUSH
+    s3 s4 XCHG
+    SWAP
+    __tact_dict_set_int_cell INLINECALLDICT
+    SWAP
+    INC
+  }>
+  $VilitigoCounter$_fun_totalCount PROCREF:<{
+    s6 PUSH
+  }>
+  $VilitigoCounter$_fun_photoCount PROCREF:<{
+    s5 PUSH
+  }>
+  $VilitigoCounter$_fun_getUser PROCREF:<{
+    267 PUSHINT
+    s4 PUSH
+    s0 s2 XCHG
+    __tact_dict_get_slice_cell INLINECALLDICT
+    $UserData$_load_opt INLINECALLDICT
+  }>
+  $VilitigoCounter$_fun_isRegistered PROCREF:<{
+    267 PUSHINT
+    s4 PUSH
+    s0 s2 XCHG
+    __tact_dict_get_slice_cell INLINECALLDICT
+    $UserData$_load_opt INLINECALLDICT
+    ISNULL
+    NOT
+  }>
+  $VilitigoCounter$_fun_hasConstellation PROCREF:<{
+    267 PUSHINT
+    s4 PUSH
+    s0 s2 XCHG
+    __tact_dict_get_slice_cell INLINECALLDICT
+    $UserData$_load_opt INLINECALLDICT
+    DUP
+    ISNULL
+    IFJMP:<{
+      DROP
+      FALSE
+    }>
+    $UserData$_not_null INLINECALLDICT
+    $UserData$_get_hasConstellation INLINECALLDICT
+  }>
+  $VilitigoCounter$_fun_realConstellationsFound PROCREF:<{
+    s3 PUSH
+  }>
+  $VilitigoCounter$_fun_realConstellationsMap PROCREF:<{
+    s4 PUSH
+  }>
+  $VilitigoCounter$_fun_isConstellationDiscovered PROCREF:<{
+    16104 PUSHINT
+    OVER
+    0 GTINT
+    IF:<{
+      OVER
+      89 LESSINT
+    }>ELSE<{
+      FALSE
+    }>
+    THROWANYIFNOT
+    DEC
+    POW2
+    s5 s(-1) PUXC
+    AND
+    0 NEQINT
+  }>
+  $VilitigoCounter$_fun_getCityCount PROCREF:<{
+    257 PUSHINT
+    s3 PUSH
+    s0 s2 XCHG
+    __tact_dict_get_int_cell INLINECALLDICT
+    $CityCount$_load_opt INLINECALLDICT
+  }>
+  $VilitigoCounter$_fun_cityCountsSize PROCREF:<{
+    DUP
+  }>
+  $VilitigoCounter$_fun_starLevel PROCREF:<{
+    267 PUSHINT
+    s4 PUSH
+    s0 s2 XCHG
+    __tact_dict_get_slice_cell INLINECALLDICT
+    $UserData$_load_opt INLINECALLDICT
+    DUP
+    ISNULL
+    IFJMP:<{
+      DROP
+      0 PUSHINT
+    }>
+    DUP
+    $UserData$_not_null INLINECALLDICT
+    $UserData$_get_isLegendary INLINECALLDICT
+    IFJMP:<{
+      DROP
+      3 PUSHINT
+    }>
+    DUP
+    $UserData$_not_null INLINECALLDICT
+    $UserData$_get_isRare INLINECALLDICT
+    IFJMP:<{
+      DROP
+      2 PUSHINT
+    }>
+    $UserData$_not_null INLINECALLDICT
+    $UserData$_get_hasConstellation INLINECALLDICT
+    IFJMP:<{
+      1 PUSHINT
+    }>
+    0 PUSHINT
+  }>
+  $VilitigoCounter$_fun_balance PROCREF:<{
+        BALANCE FIRST
+  }>
+  $MessageParameters$_constructor_bounce_to_value_mode_body PROCINLINE:<{
+    s3 s3 XCHG2
+    s0 s4 XCHG
+  }>
+  $VilitigoCounter$_fun_notify PROCINLINE:<{
+    __tact_context_get_sender INLINECALLDICT
+    FALSE
+    0 PUSHINT
+    s0 s3 XCHG2
+    66 PUSHINT
+    SWAP
+    $MessageParameters$_constructor_bounce_to_value_mode_body INLINECALLDICT
+        NEWC
+        b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+        1 STI               // store `bounce`
+        b{000} STSLICECONST // store bounced = false and src = addr_none
+        STSLICE             // store `to`
+        SWAP
+        STGRAMS             // store `value`
+        106 PUSHINT         // 1 + 4 + 4 + 64 + 32 + 1
+        STZEROES
+        // → Stack state
+        // s0: Builder
+        // s1: `body`
+        // s2: `mode`
+        STDICT
+        ENDC
+        SWAP
+        SENDRAWMSG
+  }>
+  $VilitigoCounter$_fun_requireOwner PROCREF:<{
+    __tact_context_get_sender INLINECALLDICT
+    s8 PUSH
+    SDEQ
+    132 THROWIFNOT
+  }>
+  $VilitigoCounter$_fun_owner PROCREF:<{
+    s7 PUSH
+  }>
+  $UserData$_constructor_wallet_name_country_city_age_hasConstellation_constName_isRare_isLegendary_discoveryNumber_story_pixelColor_mintedAt PROCINLINE:<{
+  }>
+  $SendParameters$_constructor_to_value_mode_bounce_body PROCINLINE:<{
+    s2 s4 XCHG
+    PUSHNULL
+    s4 s3 XCHG2
+    PUSHNULL
+    s0 s3 XCHG
+  }>
+  $DeployOk$_constructor_queryId PROCINLINE:<{
+  }>
+  %totalCount PROC:<{
+    $VilitigoCounter$_contract_load INLINECALLDICT
+    $VilitigoCounter$_fun_totalCount INLINECALLDICT
+    8 1 BLKDROP2
+  }>
+  %photoCount PROC:<{
+    $VilitigoCounter$_contract_load INLINECALLDICT
+    $VilitigoCounter$_fun_photoCount INLINECALLDICT
+    8 1 BLKDROP2
+  }>
+  %getUser PROC:<{
+    $VilitigoCounter$_contract_load INLINECALLDICT
+    8 ROLL
+    $VilitigoCounter$_fun_getUser INLINECALLDICT
+    8 1 BLKDROP2
+    $UserData$_to_opt_external INLINECALLDICT
+  }>
+  %isRegistered PROC:<{
+    $VilitigoCounter$_contract_load INLINECALLDICT
+    8 ROLL
+    $VilitigoCounter$_fun_isRegistered INLINECALLDICT
+    8 1 BLKDROP2
+  }>
+  %hasConstellation PROC:<{
+    $VilitigoCounter$_contract_load INLINECALLDICT
+    8 ROLL
+    $VilitigoCounter$_fun_hasConstellation INLINECALLDICT
+    8 1 BLKDROP2
+  }>
+  %realConstellationsFound PROC:<{
+    $VilitigoCounter$_contract_load INLINECALLDICT
+    $VilitigoCounter$_fun_realConstellationsFound INLINECALLDICT
+    8 1 BLKDROP2
+  }>
+  %realConstellationsMap PROC:<{
+    $VilitigoCounter$_contract_load INLINECALLDICT
+    $VilitigoCounter$_fun_realConstellationsMap INLINECALLDICT
+    8 1 BLKDROP2
+  }>
+  %isConstellationDiscovered PROC:<{
+    $VilitigoCounter$_contract_load INLINECALLDICT
+    8 ROLL
+    $VilitigoCounter$_fun_isConstellationDiscovered INLINECALLDICT
+    8 1 BLKDROP2
+  }>
+  %getCityCount PROC:<{
+    $VilitigoCounter$_contract_load INLINECALLDICT
+    8 ROLL
+    $VilitigoCounter$_fun_getCityCount INLINECALLDICT
+    8 1 BLKDROP2
+    $CityCount$_to_opt_external INLINECALLDICT
+  }>
+  %cityCountsSize PROC:<{
+    $VilitigoCounter$_contract_load INLINECALLDICT
+    $VilitigoCounter$_fun_cityCountsSize INLINECALLDICT
+    8 1 BLKDROP2
+  }>
+  %starLevel PROC:<{
+    $VilitigoCounter$_contract_load INLINECALLDICT
+    8 ROLL
+    $VilitigoCounter$_fun_starLevel INLINECALLDICT
+    8 1 BLKDROP2
+  }>
+  %balance PROC:<{
+    $VilitigoCounter$_contract_load INLINECALLDICT
+    $VilitigoCounter$_fun_balance INLINECALLDICT
+    8 1 BLKDROP2
+  }>
+  %owner PROC:<{
+    $VilitigoCounter$_contract_load INLINECALLDICT
+    $VilitigoCounter$_fun_owner INLINECALLDICT
+    8 1 BLKDROP2
+  }>
+  recv_internal PROC:<{
+    SWAP
+    CTOS
+    2 PUSHINT
+    SDSKIPFIRST
+    1 LDI
+    1 LDI
+    LDMSGADDR
+    OVER
+    s3 s4 XCHG
+    s6 s6 XCHG2
+    4 TUPLE
+    __tact_context SETGLOB
+    s0 s2 XCHG
+    __tact_context_sender SETGLOB
+    $VilitigoCounter$_contract_load INLINECALLDICT
+    s0 s9 XCHG
+    IFJMP:<{
+      9 BLKDROP
+    }>
+    s0 s7 XCHG
+    32 LDUQ 130 THROWIFNOT
+    OVER
+    4169119751 PUSHINT
+    EQUAL
+    IFJMP:<{
+      NIP
+      64 LDU
+      NIP
+      LDREF
+      SWAP
+      CTOS
+      SWAP
+      LDREF
+      SWAP
+      CTOS
+      SWAP
+      LDREF
+      SWAP
+      CTOS
+      SWAP
+      8 LDU
+      DROP
+      __tact_context_get_sender INLINECALLDICT
+      21101 PUSHINT
+      s6 PUSH
+      267 PUSHINT
+      s3 PUSH
+      __tact_dict_get_slice_cell INLINECALLDICT
+      $UserData$_load_opt INLINECALLDICT
+      ISNULL
+      THROWANYIFNOT
+      39696 PUSHINT
+      __tact_context_get INLINECALLDICT
+      $Context$_get_value INLINECALLDICT
+      1000000000 PUSHINT
+      GEQ
+      THROWANYIFNOT
+      267 PUSHINT
+      FALSE
+          B{b5ee9c724101010100020000004cacb9cd} B>boc <s PUSHSLICE
+      FALSE
+      FALSE
+      0 PUSHINT
+          B{b5ee9c724101010100020000004cacb9cd} B>boc <s PUSHSLICE
+          B{b5ee9c7241010101000900000e233933333365613fc6b5d4} B>boc <s PUSHSLICE
+      s2 s8 PUSH2
+      s11 s12 XCPU
+      s11 s15 XCHG
+      s10 s14 XCHG
+      s0 s9 XCHG
+      7 2 BLKSWAP
+      $UserData$_constructor_wallet_name_country_city_age_hasConstellation_constName_isRare_isLegendary_discoveryNumber_story_pixelColor_mintedAt INLINECALLDICT
+      NEWC
+      $UserData$_store_cell INLINECALLDICT
+      s4 s4 s0 XCHG3
+      s3 s(-1) PUXC
+      __tact_dict_set_slice_cell INLINECALLDICT
+      s0 s6 XCHG
+      INC
+      s0 s7 XCHG
+      s0 s8 XCHG
+      s5 s6 XCHG
+      s4 s5 XCHG
+      s3 s4 XCHG
+      s9 s2 XCHG2
+      $VilitigoCounter$_fun_trackCity INLINECALLDICT
+      __tact_context_get INLINECALLDICT
+      $Context$_get_value INLINECALLDICT
+      1000000000 PUSHINT
+      SUB
+      DUP
+      10000000 PUSHINT
+      GREATER
+      IF:<{
+        10000000 PUSHINT
+        SUB
+        2 PUSHINT
+        FALSE
+            B{b5ee9c7241010101001000001c000000004578636573732067617356d2389f} B>boc PUSHREF
+        s4 s12 XCHG
+        $SendParameters$_constructor_to_value_mode_bounce_body INLINECALLDICT
+            NEWC
+            b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+            1 STI               // store `bounce`
+            b{000} STSLICECONST // store bounced = false and src = addr_none
+            STSLICE             // store `to`
+            SWAP
+            STGRAMS             // store `value`
+            105 PUSHINT         // 1 + 4 + 4 + 64 + 32
+            STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
+            // → Stack state
+            // s0: Builder
+            // s1: `data`
+            // s2: `code`
+            // s3: `body`
+            // s4: `mode`
+            // Group 2: Placing the Builder after code and data, then checking those for nullability
+            s2 XCHG0
+            DUP2
+            ISNULL
+            SWAP
+            ISNULL
+            AND
+            // → Stack state
+            // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
+            // s1: `code`
+            // s2: `data`
+            // s3: Builder
+            // s4: `body`
+            // s5: `mode`
+            // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
+            <{
+                DROP2 // drop `data` and `code`, since either of those is null
+                b{0} STSLICECONST
+            }> PUSHCONT
+            // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
+            <{
+                // _ split_depth:(Maybe (## 5))
+                //   special:(Maybe TickTock)
+                //   code:(Maybe ^Cell)
+                //   data:(Maybe ^Cell)
+                //   library:(Maybe ^Cell)
+                // = StateInit;
+                ROT                // place message Builder on top
+                b{10} STSLICECONST // store Maybe = true, Either = false
+                // Start composing inlined StateInit
+                b{00} STSLICECONST // store split_depth and special first
+                STDICT             // store code
+                STDICT             // store data
+                b{0} STSLICECONST  // store library
+            }> PUSHCONT
+            // Group 3: IFELSE that does the branching shown above
+            IFELSE
+            // → Stack state
+            // s0: Builder
+            // s1: null or StateInit
+            // s2: `body`
+            // s3: `mode`
+            // Group 4: Finalizing the message
+            STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
+            ENDC
+            // → Stack state
+            // s0: Cell
+            // s1: `mode`
+            // Group 5: Sending the message, with `mode` on top
+            SWAP
+            SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
+      }>ELSE<{
+        DROP
+        s8 POP
+      }>
+      7 ROLL
+      $VilitigoCounter$_contract_store INLINECALLDICT
+    }>
+    OVER
+    2966455759 PUSHINT
+    EQUAL
+    IFJMP:<{
+      NIP
+      64 LDU
+      NIP
+      LDREF
+      SWAP
+      CTOS
+      SWAP
+      1 LDI
+      1 LDI
+      8 LDU
+      LDREF
+      SWAP
+      CTOS
+      SWAP
+      LDREF
+      DROP
+      CTOS
+      __tact_context_get_sender INLINECALLDICT
+      s7 PUSH
+      267 PUSHINT
+      s2 PUSH
+      __tact_dict_get_slice_cell INLINECALLDICT
+      $UserData$_load_opt INLINECALLDICT
+      23640 PUSHINT
+      OVER
+      ISNULL
+      NOT
+      THROWANYIFNOT
+      39696 PUSHINT
+      __tact_context_get INLINECALLDICT
+      $Context$_get_value INLINECALLDICT
+      1000000000 PUSHINT
+      GEQ
+      THROWANYIFNOT
+      $UserData$_not_null INLINECALLDICT
+      DROP
+      NIP
+      FALSE
+      16 s() PUSH
+      IF:<{
+        s3 PUSH
+        NOT
+      }>ELSE<{
+        FALSE
+      }>
+      IF:<{
+        DROP
+        TRUE
+      }>ELSE<{
+        17 s() PUSH
+        IF:<{
+          s4 PUSH
+          NOT
+        }>ELSE<{
+          FALSE
+        }>
+        IF:<{
+          s3 PUSH
+          NOT
+        }>ELSE<{
+          FALSE
+        }>
+        IF:<{
+          DROP
+          TRUE
+        }>ELSE<{
+          s6 PUSH
+          IFNOT:<{
+            DROP
+            TRUE
+          }>
+        }>
+      }>
+      s0 22 s() XCHG
+      INC
+      s0 22 s() XCHG
+      IF:<{
+        s3 s5 XCHG
+        5 BLKDROP
+        s10 PUSH
+        IF:<{
+          s9 PUSH
+          0 GTINT
+        }>ELSE<{
+          FALSE
+        }>
+        IF:<{
+          s9 PUSH
+          89 LESSINT
+        }>ELSE<{
+          FALSE
+        }>
+        IF:<{
+          s9 PUSH
+          DEC
+          POW2
+          16 s() PUSH
+          OVER
+          AND
+          IFNOT:<{
+            s1 16 s() XCHG
+            OR
+            s0 s14 XCHG
+            INC
+            s0 s14 XCHG
+            s0 s15 XCHG
+          }>ELSE<{
+            DROP
+          }>
+        }>
+        TRUE
+        s0 s12 XCHG
+        IF:<{
+          DROP
+          TRUE
+        }>ELSE<{
+        }>
+        s0 s11 XCHG
+      }>ELSE<{
+        s4 17 s() XCHG
+        s3 16 s() XCHG
+        s2 s15 XCHG
+        s14 s12 XCHG2
+        5 BLKDROP
+      }>
+          NOW
+      s6 s11 XCHG
+      s5 s10 XCHG
+      s4 s9 XCHG
+      s3 s8 XCHG
+      s7 s6 s0 XCHG3
+      s5 s13 XCHG
+      s4 s12 XCHG
+      s13 s3 s12 XCHG3
+      267 PUSHINT
+      s2 s13 XCHG2
+      NEWC
+      $UserData$_store_cell INLINECALLDICT
+      s2 PUSH
+      s3 s4 XCHG
+      SWAP
+      __tact_dict_set_slice_cell INLINECALLDICT
+      __tact_context_get INLINECALLDICT
+      $Context$_get_value INLINECALLDICT
+      1000000000 PUSHINT
+      SUB
+      DUP
+      10000000 PUSHINT
+      GREATER
+      IF:<{
+        10000000 PUSHINT
+        SUB
+        2 PUSHINT
+        FALSE
+            B{b5ee9c7241010101001000001c000000004578636573732067617356d2389f} B>boc PUSHREF
+        s4 s5 XCHG
+        $SendParameters$_constructor_to_value_mode_bounce_body INLINECALLDICT
+            NEWC
+            b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+            1 STI               // store `bounce`
+            b{000} STSLICECONST // store bounced = false and src = addr_none
+            STSLICE             // store `to`
+            SWAP
+            STGRAMS             // store `value`
+            105 PUSHINT         // 1 + 4 + 4 + 64 + 32
+            STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
+            // → Stack state
+            // s0: Builder
+            // s1: `data`
+            // s2: `code`
+            // s3: `body`
+            // s4: `mode`
+            // Group 2: Placing the Builder after code and data, then checking those for nullability
+            s2 XCHG0
+            DUP2
+            ISNULL
+            SWAP
+            ISNULL
+            AND
+            // → Stack state
+            // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
+            // s1: `code`
+            // s2: `data`
+            // s3: Builder
+            // s4: `body`
+            // s5: `mode`
+            // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
+            <{
+                DROP2 // drop `data` and `code`, since either of those is null
+                b{0} STSLICECONST
+            }> PUSHCONT
+            // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
+            <{
+                // _ split_depth:(Maybe (## 5))
+                //   special:(Maybe TickTock)
+                //   code:(Maybe ^Cell)
+                //   data:(Maybe ^Cell)
+                //   library:(Maybe ^Cell)
+                // = StateInit;
+                ROT                // place message Builder on top
+                b{10} STSLICECONST // store Maybe = true, Either = false
+                // Start composing inlined StateInit
+                b{00} STSLICECONST // store split_depth and special first
+                STDICT             // store code
+                STDICT             // store data
+                b{0} STSLICECONST  // store library
+            }> PUSHCONT
+            // Group 3: IFELSE that does the branching shown above
+            IFELSE
+            // → Stack state
+            // s0: Builder
+            // s1: null or StateInit
+            // s2: `body`
+            // s3: `mode`
+            // Group 4: Finalizing the message
+            STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
+            ENDC
+            // → Stack state
+            // s0: Cell
+            // s1: `mode`
+            // Group 5: Sending the message, with `mode` on top
+            SWAP
+            SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
+      }>ELSE<{
+        DROP
+        NIP
+      }>
+      s5 s7 XCHG
+      2 5 BLKSWAP
+      $VilitigoCounter$_contract_store INLINECALLDICT
+    }>
+    OVER
+    2274933188 PUSHINT
+    EQUAL
+    IFJMP:<{
+      NIP
+      64 LDU
+      NIP
+      LDREF
+      SWAP
+      CTOS
+      SWAP
+      LDREF
+      SWAP
+      CTOS
+      SWAP
+      LDREF
+      DROP
+      CTOS
+      LDREF
+      SWAP
+      CTOS
+      SWAP
+      8 LDU
+      LDREF
+      SWAP
+      CTOS
+      SWAP
+      1 LDI
+      1 LDI
+      8 LDU
+      LDREF
+      SWAP
+      CTOS
+      SWAP
+      LDREF
+      DROP
+      CTOS
+      __tact_context_get_sender INLINECALLDICT
+      39696 PUSHINT
+      __tact_context_get INLINECALLDICT
+      $Context$_get_value INLINECALLDICT
+      1000000000 PUSHINT
+      GEQ
+      THROWANYIFNOT
+      s11 PUSH
+      267 PUSHINT
+      s2 PUSH
+      __tact_dict_get_slice_cell INLINECALLDICT
+      $UserData$_load_opt INLINECALLDICT
+      DUP
+      ISNULL
+      FALSE
+          B{b5ee9c724101010100020000004cacb9cd} B>boc <s PUSHSLICE
+      FALSE
+      FALSE
+      0 PUSHINT
+          B{b5ee9c724101010100020000004cacb9cd} B>boc <s PUSHSLICE
+          B{b5ee9c7241010101000900000e233933333365613fc6b5d4} B>boc <s PUSHSLICE
+      s2 s9 PUSH2
+      s10 21 s() XCHG
+      s9 20 s() XCHG
+      19 s() PUSH
+      s0 s9 XCHG
+      s8 19 s() XCHG
+      s0 s7 XCHG
+      s6 19 s() XCHG
+      s0 s5 XCHG
+      s4 19 s() XCHG
+      s0 s3 XCHG
+      s2 19 s() XCHG
+      SWAP
+      s0 19 s() XCHG
+      $UserData$_constructor_wallet_name_country_city_age_hasConstellation_constName_isRare_isLegendary_discoveryNumber_story_pixelColor_mintedAt INLINECALLDICT
+      DROP
+      NIP
+      19 s() PUSH
+      IFNOT:<{
+        11 BLKDROP
+        s0 s9 XCHG
+        $UserData$_not_null INLINECALLDICT
+        DROP
+        NIP
+        s0 19 s() XCHG
+        10 -ROLL
+      }>ELSE<{
+        20 s() POP
+      }>
+      s0 18 s() XCHG
+      IF:<{
+        s0 23 s() XCHG
+        INC
+        s8 24 s() XCHG
+        s0 s7 XCHG
+        s6 22 s() XCHG
+        s5 21 s() XCHG
+        s4 20 s() XCHG
+        s3 19 s() XCHG
+        s2 25 s() XCHG
+        s1 26 s() XCHG
+        s0 16 s() XCHG
+        $VilitigoCounter$_fun_trackCity INLINECALLDICT
+        s0 25 s() XCHG
+        s1 24 s() XCHG
+        s7 23 s() XCHG
+        s6 22 s() XCHG
+        s5 21 s() XCHG
+        s4 20 s() XCHG
+        s3 19 s() XCHG
+        s2 18 s() XCHG
+        s6 s15 XCHG
+      }>ELSE<{
+        16 s() POP
+      }>
+      FALSE
+      s12 PUSH
+      IF:<{
+        16 s() PUSH
+        NOT
+      }>ELSE<{
+        FALSE
+      }>
+      IF:<{
+        DROP
+        TRUE
+      }>ELSE<{
+        s13 PUSH
+        IF:<{
+          OVER
+          NOT
+        }>ELSE<{
+          FALSE
+        }>
+        IF:<{
+          16 s() PUSH
+          NOT
+        }>ELSE<{
+          FALSE
+        }>
+        IF:<{
+          DROP
+          TRUE
+        }>ELSE<{
+          s3 PUSH
+          IFNOT:<{
+            DROP
+            TRUE
+          }>
+        }>
+      }>
+      s0 22 s() XCHG
+      INC
+      s0 22 s() XCHG
+      IF:<{
+        s15 POP
+        2DROP
+        s13 POP
+        s13 POP
+        s6 PUSH
+        IF:<{
+          s5 PUSH
+          0 GTINT
+        }>ELSE<{
+          FALSE
+        }>
+        IF:<{
+          s5 PUSH
+          89 LESSINT
+        }>ELSE<{
+          FALSE
+        }>
+        IF:<{
+          s5 PUSH
+          DEC
+          POW2
+          16 s() PUSH
+          OVER
+          AND
+          IFNOT:<{
+            s1 16 s() XCHG
+            OR
+            s0 s14 XCHG
+            INC
+            s0 s14 XCHG
+            s0 s15 XCHG
+          }>ELSE<{
+            DROP
+          }>
+        }>
+        TRUE
+        s0 s8 XCHG
+        IF:<{
+          s10 POP
+          TRUE
+        }>ELSE<{
+          s0 s10 XCHG
+        }>
+        s3 s12 XCHG
+        s5 s11 XCHG
+        s6 s10 XCHG
+        s3 s8 XCHG
+        s5 s7 XCHG
+        s5 s6 XCHG
+        s0 s3 XCHG
+        s0 s5 XCHG
+      }>ELSE<{
+        s4 s13 XCHG
+        s3 s12 XCHG
+        s2 s11 XCHG
+        s10 s8 XCHG2
+        5 BLKDROP
+      }>
+          NOW
+      s3 s11 XCHG
+      s10 s9 s0 XCHG3
+      s1 s8 XCHG
+      s1 s7 XCHG
+      s1 s6 XCHG
+      s12 s5 s0 XCHG3
+      267 PUSHINT
+      s14 s14 XCHG2
+      NEWC
+      $UserData$_store_cell INLINECALLDICT
+      s3 s3 s0 XCHG3
+      s3 s(-1) PUXC
+      __tact_dict_set_slice_cell INLINECALLDICT
+      __tact_context_get INLINECALLDICT
+      $Context$_get_value INLINECALLDICT
+      1000000000 PUSHINT
+      SUB
+      DUP
+      10000000 PUSHINT
+      GREATER
+      IF:<{
+        10000000 PUSHINT
+        SUB
+        2 PUSHINT
+        FALSE
+            B{b5ee9c7241010101001000001c000000004578636573732067617356d2389f} B>boc PUSHREF
+        s4 s5 XCHG
+        $SendParameters$_constructor_to_value_mode_bounce_body INLINECALLDICT
+            NEWC
+            b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+            1 STI               // store `bounce`
+            b{000} STSLICECONST // store bounced = false and src = addr_none
+            STSLICE             // store `to`
+            SWAP
+            STGRAMS             // store `value`
+            105 PUSHINT         // 1 + 4 + 4 + 64 + 32
+            STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
+            // → Stack state
+            // s0: Builder
+            // s1: `data`
+            // s2: `code`
+            // s3: `body`
+            // s4: `mode`
+            // Group 2: Placing the Builder after code and data, then checking those for nullability
+            s2 XCHG0
+            DUP2
+            ISNULL
+            SWAP
+            ISNULL
+            AND
+            // → Stack state
+            // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
+            // s1: `code`
+            // s2: `data`
+            // s3: Builder
+            // s4: `body`
+            // s5: `mode`
+            // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
+            <{
+                DROP2 // drop `data` and `code`, since either of those is null
+                b{0} STSLICECONST
+            }> PUSHCONT
+            // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
+            <{
+                // _ split_depth:(Maybe (## 5))
+                //   special:(Maybe TickTock)
+                //   code:(Maybe ^Cell)
+                //   data:(Maybe ^Cell)
+                //   library:(Maybe ^Cell)
+                // = StateInit;
+                ROT                // place message Builder on top
+                b{10} STSLICECONST // store Maybe = true, Either = false
+                // Start composing inlined StateInit
+                b{00} STSLICECONST // store split_depth and special first
+                STDICT             // store code
+                STDICT             // store data
+                b{0} STSLICECONST  // store library
+            }> PUSHCONT
+            // Group 3: IFELSE that does the branching shown above
+            IFELSE
+            // → Stack state
+            // s0: Builder
+            // s1: null or StateInit
+            // s2: `body`
+            // s3: `mode`
+            // Group 4: Finalizing the message
+            STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
+            ENDC
+            // → Stack state
+            // s0: Cell
+            // s1: `mode`
+            // Group 5: Sending the message, with `mode` on top
+            SWAP
+            SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
+      }>ELSE<{
+        DROP
+        NIP
+      }>
+      s5 s7 XCHG
+      2 5 BLKSWAP
+      $VilitigoCounter$_contract_store INLINECALLDICT
+    }>
+    OVER
+    170647584 PUSHINT
+    EQUAL
+    IFJMP:<{
+      NIP
+      64 LDU
+      NIP
+      LDREF
+      SWAP
+      CTOS
+      SWAP
+      LDREF
+      SWAP
+      CTOS
+      SWAP
+      LDREF
+      SWAP
+      CTOS
+      SWAP
+      8 LDU
+      DROP
+      __tact_context_get_sender INLINECALLDICT
+      62661 PUSHINT
+      __tact_context_get INLINECALLDICT
+      $Context$_get_value INLINECALLDICT
+      20000000 PUSHINT
+      GEQ
+      THROWANYIFNOT
+      s5 PUSH
+      267 PUSHINT
+      s2 PUSH
+      __tact_dict_get_slice_cell INLINECALLDICT
+      $UserData$_load_opt INLINECALLDICT
+      62540 PUSHINT
+      OVER
+      ISNULL
+      NOT
+      THROWANYIFNOT
+      $UserData$_not_null INLINECALLDICT
+      s8 POP
+      s9 POP
+      s9 POP
+      s6 s12 PUSH2
+      __tact_slice_neq INLINECALLDICT
+      IF:<{
+        s8 20 s() XCHG
+        s7 19 s() XCHG
+        s6 18 s() XCHG
+        s5 17 s() XCHG
+        s4 16 s() XCHG
+        s3 s15 XCHG
+        s2 21 s() XCHG
+        s1 22 s() XCHG
+        s0 18 s() XCHG
+        $VilitigoCounter$_fun_untrackCity INLINECALLDICT
+        s11 PUSH
+        $VilitigoCounter$_fun_trackCity INLINECALLDICT
+        s0 21 s() XCHG
+        s1 20 s() XCHG
+        s7 19 s() XCHG
+        s6 18 s() XCHG
+        s5 17 s() XCHG
+        s4 16 s() XCHG
+        s3 s15 XCHG
+        s2 s14 XCHG
+      }>ELSE<{
+        s6 POP
+      }>
+      s8 s11 XCHG
+      s10 s13 XCHG
+      s9 s12 XCHG
+      s7 s13 XCHG
+      s3 s6 XCHG
+      3 3 BLKSWAP
+      267 PUSHINT
+      s14 s1 s14 XCHG3
+      NEWC
+      $UserData$_store_cell INLINECALLDICT
+      s3 s3 s0 XCHG3
+      s3 s(-1) PUXC
+      __tact_dict_set_slice_cell INLINECALLDICT
+      __tact_context_get INLINECALLDICT
+      $Context$_get_value INLINECALLDICT
+      20000000 PUSHINT
+      SUB
+      DUP
+      5000000 PUSHINT
+      GREATER
+      IF:<{
+        5000000 PUSHINT
+        SUB
+        2 PUSHINT
+        FALSE
+            B{b5ee9c7241010101001000001c000000004578636573732067617356d2389f} B>boc PUSHREF
+        s4 s5 XCHG
+        $SendParameters$_constructor_to_value_mode_bounce_body INLINECALLDICT
+            NEWC
+            b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+            1 STI               // store `bounce`
+            b{000} STSLICECONST // store bounced = false and src = addr_none
+            STSLICE             // store `to`
+            SWAP
+            STGRAMS             // store `value`
+            105 PUSHINT         // 1 + 4 + 4 + 64 + 32
+            STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
+            // → Stack state
+            // s0: Builder
+            // s1: `data`
+            // s2: `code`
+            // s3: `body`
+            // s4: `mode`
+            // Group 2: Placing the Builder after code and data, then checking those for nullability
+            s2 XCHG0
+            DUP2
+            ISNULL
+            SWAP
+            ISNULL
+            AND
+            // → Stack state
+            // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
+            // s1: `code`
+            // s2: `data`
+            // s3: Builder
+            // s4: `body`
+            // s5: `mode`
+            // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
+            <{
+                DROP2 // drop `data` and `code`, since either of those is null
+                b{0} STSLICECONST
+            }> PUSHCONT
+            // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
+            <{
+                // _ split_depth:(Maybe (## 5))
+                //   special:(Maybe TickTock)
+                //   code:(Maybe ^Cell)
+                //   data:(Maybe ^Cell)
+                //   library:(Maybe ^Cell)
+                // = StateInit;
+                ROT                // place message Builder on top
+                b{10} STSLICECONST // store Maybe = true, Either = false
+                // Start composing inlined StateInit
+                b{00} STSLICECONST // store split_depth and special first
+                STDICT             // store code
+                STDICT             // store data
+                b{0} STSLICECONST  // store library
+            }> PUSHCONT
+            // Group 3: IFELSE that does the branching shown above
+            IFELSE
+            // → Stack state
+            // s0: Builder
+            // s1: null or StateInit
+            // s2: `body`
+            // s3: `mode`
+            // Group 4: Finalizing the message
+            STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
+            ENDC
+            // → Stack state
+            // s0: Cell
+            // s1: `mode`
+            // Group 5: Sending the message, with `mode` on top
+            SWAP
+            SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
+      }>ELSE<{
+        DROP
+        NIP
+      }>
+      s5 s7 XCHG
+      2 5 BLKSWAP
+      $VilitigoCounter$_contract_store INLINECALLDICT
+    }>
+    OVER
+    1626189421 PUSHINT
+    EQUAL
+    IFJMP:<{
+      NIP
+      64 LDU
+      NIP
+      LDVARUINT16
+      DROP
+      s6 s7 XCHG
+      s5 s6 XCHG
+      s4 s5 XCHG
+      s3 s4 XCHG
+      s1 s3 s8 XCHG3
+      $VilitigoCounter$_fun_requireOwner INLINECALLDICT
+      3189 PUSHINT
+          BALANCE FIRST
+      100000000 PUSHINT
+      SUB
+      s10 s(-1) PUXC
+      LEQ
+      THROWANYIFNOT
+      2 PUSHINT
+      FALSE
+          B{b5ee9c7241010101001000001c000000005769746864726177616c3d0841cb} B>boc PUSHREF
+      s10 PUSH
+      s0 s4 XCHG
+      s0 s12 XCHG
+      3 -ROLL
+      $SendParameters$_constructor_to_value_mode_bounce_body INLINECALLDICT
+          NEWC
+          b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+          1 STI               // store `bounce`
+          b{000} STSLICECONST // store bounced = false and src = addr_none
+          STSLICE             // store `to`
+          SWAP
+          STGRAMS             // store `value`
+          105 PUSHINT         // 1 + 4 + 4 + 64 + 32
+          STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
+          // → Stack state
+          // s0: Builder
+          // s1: `data`
+          // s2: `code`
+          // s3: `body`
+          // s4: `mode`
+          // Group 2: Placing the Builder after code and data, then checking those for nullability
+          s2 XCHG0
+          DUP2
+          ISNULL
+          SWAP
+          ISNULL
+          AND
+          // → Stack state
+          // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
+          // s1: `code`
+          // s2: `data`
+          // s3: Builder
+          // s4: `body`
+          // s5: `mode`
+          // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
+          <{
+              DROP2 // drop `data` and `code`, since either of those is null
+              b{0} STSLICECONST
+          }> PUSHCONT
+          // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
+          <{
+              // _ split_depth:(Maybe (## 5))
+              //   special:(Maybe TickTock)
+              //   code:(Maybe ^Cell)
+              //   data:(Maybe ^Cell)
+              //   library:(Maybe ^Cell)
+              // = StateInit;
+              ROT                // place message Builder on top
+              b{10} STSLICECONST // store Maybe = true, Either = false
+              // Start composing inlined StateInit
+              b{00} STSLICECONST // store split_depth and special first
+              STDICT             // store code
+              STDICT             // store data
+              b{0} STSLICECONST  // store library
+          }> PUSHCONT
+          // Group 3: IFELSE that does the branching shown above
+          IFELSE
+          // → Stack state
+          // s0: Builder
+          // s1: null or StateInit
+          // s2: `body`
+          // s3: `mode`
+          // Group 4: Finalizing the message
+          STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
+          ENDC
+          // → Stack state
+          // s0: Cell
+          // s1: `mode`
+          // Group 5: Sending the message, with `mode` on top
+          SWAP
+          SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
+      7 ROLL
+      $VilitigoCounter$_contract_store INLINECALLDICT
+    }>
+    SWAP
+    2490013878 PUSHINT
+    EQUAL
+    IFJMP:<{
+      64 LDU
+      DROP
+      $DeployOk$_constructor_queryId INLINECALLDICT
+      NEWC
+      $DeployOk$_store_cell INLINECALLDICT
+      s6 s8 XCHG
+      s5 s7 XCHG
+      s4 s6 XCHG
+      s3 s5 XCHG
+      s4 s3 s0 XCHG3
+      s1 s2 XCHG
+      $VilitigoCounter$_fun_notify INLINECALLDICT
+      $VilitigoCounter$_contract_store INLINECALLDICT
+    }>
+    9 BLKDROP
+    130 THROW
+  }>
+  __tact_selector_hack PROC:<{
+    @atend @ 1 {
+            execute current@ context@ current!
+            {
+                // The core idea of this function is to save gas by avoiding unnecessary dict jump, when recv_internal/recv_external is called
+                // We want to extract recv_internal/recv_external from the dict and select needed function
+                // not by jumping to the needed function by it's index, but by using usual IF statements.
+                }END> b> // Close previous builder, now we have a cell of previous code on top of the stack
+                <{ // Start of the new code builder
+                    SETCP0
+                    // Swap the new code builder with the previous code, now we have previous code on top of the stack
+                    swap
+                    // Transform cell to slice and load first ref from the previous code, now we have the dict on top of the stack
+                    <s ref@
+                    // Extract the recv_internal from the dict
+                    dup 0 swap @procdictkeylen idict@ { "internal shortcut error" abort } ifnot
+                    swap
+                    // Delete the recv_internal from the dict
+                    0 swap @procdictkeylen idict- drop
+                    // Delete the recv_external from the dict (it's okay if it's not there)
+                    -1 swap @procdictkeylen idict- drop
+                    // Delete the __tact_selector_hack from the dict
+                    65535 swap @procdictkeylen idict- drop
+                    // Bring the code builder from the bottom of the stack
+                    // because if recv_external extraction is optional, and the number of elements on the stack is not fixed
+                    depth 1- roll
+                    // Swap with the dict from which we extracted recv_internal and (maybe) recv_external
+                    swap
+                    // Check if the dict is empty
+                    dup null?
+                    // Store a copy of this flag in the bottom of the stack
+                    dup depth 1- -roll
+                    {
+                        // If the dict is empty, just drop it (it will be null if it's empty)
+                        drop
+                    }
+                    {
+                        // If the dict is not empty, prepare continuation to be stored in c3
+                        <{
+                            // Save this dict as first ref in this continuation, it will be pushed in runtime by DICTPUSHCONST
+                            swap @procdictkeylen DICTPUSHCONST
+                            // Jump to the needed function by it's index
+                            DICTIGETJMPZ
+                            // If such key is not found, throw 11 along with the key as an argument
+                            11 THROWARG
+                        }> PUSHCONT
+                        // Store the continuation in c3
+                        c3 POP
+                    } cond
+                    // Function id is on top of the (runtime) stack
+                    DUP IFNOTJMP:<{
+                        // place recv_internal here
+                        DROP swap @addop
+                    }>
+                    // Bring back the flag, indicating if the dict is empty or not from the bottom of the stack
+                    depth 1- roll
+                    {
+                        // If the dict is empty, throw 11
+                        11 THROWARG
+                    }
+                    {
+                        // If the dict is not empty, jump to continuation from c3
+                        c3 PUSH JMPX
+                    } cond
+                }> b>
+            } : }END>c
+            current@ context! current!
+        } does @atend !
+  }>
+}END>c
