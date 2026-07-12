@@ -1122,14 +1122,9 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
 <div class="page" id="page-profile">
   <div class="profile-page">
     <div class="profile-header">
-      <div class="avatar" id="profileAvatar">🌟<div class="avatar-badge" id="profileBadge">⭐</div></div>
-      <div class="profile-name"><span id="profileName">Your name</span> <span id="profileVerifiedCheck" style="display:none;color:#34d399;font-size:16px" title="Synced with the blockchain">✓</span></div>
+      <div class="avatar" id="profileAvatar"><div class="avatar-badge" id="profileBadge">⭐</div></div>
+      <div class="profile-name"><span id="profileName">Your name</span> <span id="profileVerifiedCheck" style="display:none;color:#34d399;font-size:16px" title="Synced with the blockchain">✓</span> <span id="profileJoinNumber" style="display:none;font-size:11px;color:#a78bfa;background:rgba(147,51,234,.15);border:.5px solid rgba(147,51,234,.35);border-radius:20px;padding:2px 8px;vertical-align:middle">#<span id="profileJoinNumberValue"></span></span></div>
       <div class="profile-handle" id="profileHandle">@telegram_user</div>
-      <!-- Added 12.07.2026 — joinNumber was already fetched from chain
-           (window.myJoinNumber, see loadMyConstellationFromChain) but
-           never actually shown anywhere. Hidden until a real number
-           arrives, so a not-yet-counted person doesn't see a stray "#". -->
-      <div id="profileJoinNumber" style="display:none;font-size:12px;color:#a78bfa;margin-top:4px;text-align:center">You're #<span id="profileJoinNumberValue"></span> in the count</div>
     </div>
 
     <label class="form-label">Name</label>
@@ -1459,6 +1454,18 @@ if (tg) {
     const n = [u.first_name, u.last_name].filter(Boolean).join(' ');
     document.getElementById('profileName').textContent = n || 'Your name';
     document.getElementById('profileHandle').textContent = '@' + (u.username || 'you');
+    // Real Telegram profile photo, added 12.07.2026 — available in
+    // initDataUnsafe.user.photo_url since it was opened up to all Mini
+    // Apps (previously attachment-menu bots only). Absent if the person
+    // has no photo or their privacy settings block it — the plain
+    // gradient circle (no fallback emoji, removed the same day to cut
+    // down on redundant stars) is the honest default in that case.
+    const avatarEl = document.getElementById('profileAvatar');
+    if (u.photo_url && avatarEl) {
+      avatarEl.style.backgroundImage = `url('${u.photo_url}')`;
+      avatarEl.style.backgroundSize = 'cover';
+      avatarEl.style.backgroundPosition = 'center';
+    }
     // fieldName intentionally NOT auto-filled from Telegram — profile
     // fields must default to empty and be driven entirely by the
     // blockchain for an already-registered person, or by the person's
@@ -3975,7 +3982,7 @@ async function loadMyConstellationFromChain() {
     if (joinNumber) {
       const jnEl = document.getElementById('profileJoinNumber');
       const jnVal = document.getElementById('profileJoinNumberValue');
-      if (jnEl && jnVal) { jnVal.textContent = fmtExact(joinNumber); jnEl.style.display = 'block'; }
+      if (jnEl && jnVal) { jnVal.textContent = fmtExact(joinNumber); jnEl.style.display = 'inline-block'; }
     }
     window.onChainProfile = onChainProfile;
     // Prefill the form from the real on-chain record — this is the new
