@@ -1362,7 +1362,7 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
 // This IS the current contract, deployed 04.07.2026, includes JoinAndMint
 // AND UpdateProfile (added to let people correct name/country/city/age
 // after their first registration — see UpdateProfile in the .tact file).
-const CONTRACT_ADDRESS = 'EQCt4zv8F2-s0eMAy-SD0Nk5CoH1V9ilzx0K8QqT0xAzyWrd';
+const CONTRACT_ADDRESS = 'EQBDENhE37mNq-3Wkc1oj3OnYIWNHOC0Ov0XjdS2ZvyhY-DW'; // VilitigoCounterV2, deployed 12.07.2026
 const TON_AMOUNT = '1000000000';
 const BOT_USERNAME = 'vitiligo_ton_bot';
 
@@ -2318,32 +2318,24 @@ async function initTonConnect() {
 }
 initTonConnect();
 
-/* ── TACT MESSAGE ENCODING для VilitigoCounterFinal ──
-   JoinAndMint опкод подтверждён сборкой контракта (npx blueprint build → ABI), 03.07.2026.
-   Register/MintConstellation остаются в .tact для совместимости, но фронтенд
-   их больше не вызывает — весь путь идёт через один JoinAndMint. */
-const JOIN_AND_MINT_OPCODE = 2274933188;
-/* ── Cheap count-in path, 07.07.2026 — PLAN CHANGED 08.07.2026 ──
-   ⚠️ DO NOT enable this path by inserting the opcode alone. The contract
-   source (VilitigoCounterFinal.tact, received 08.07) revealed that
-   receive(Register) requires context().value >= ton("1") — the deployed
-   contract demands 1 TON, and the price check lives in the CONTRACT, not
-   here. With the opcode in and REGISTER_AMOUNT still 0.1, every
-   newcomer's payment would hit the require and bounce: fees lost, person
-   not counted. The 0.1 TON count-in therefore needs the contract batch
-   (new Register with a 0.1 min) and a redeploy FIRST; only then insert
-   the fresh opcode from that build's .abi (loadRegister) — never guessed,
-   same way JOIN_AND_MINT_OPCODE was confirmed on 03.07.
-   Payload layout below was verified against the received .tact
-   (queryId u64, then name/country/city as required-String refs, age u8) —
-   it matches; the amount is the only blocker. */
-const REGISTER_OPCODE = 0; // stays 0 until the NEW contract is deployed (see above)
+/* ── TACT MESSAGE ENCODING для VilitigoCounterV2 ──
+   Все опкоды подтверждены 12.07.2026 напрямую из скомпилированного
+   build/VilitigoCounterV2/tact_VilitigoCounterV2.abi — не угаданы,
+   та же дисциплина, что и раньше с JOIN_AND_MINT_OPCODE/UPDATE_PROFILE_OPCODE.
+   Модель разделена (owner decision 09.07): Register (0.1 TON, self или
+   подарок другу через forWhom) — отдельно от MintConstellation (1 TON,
+   БЕЗ полей редкости — контракт сам бросает удачу on-chain, честность
+   12.07). Старый единый JoinAndMint (v1) полностью снят. */
+const REGISTER_OPCODE = 3706870466;
 const REGISTER_AMOUNT = '100000000'; // 0.1 TON in nanotons
 function registerPathReady(){ return REGISTER_OPCODE !== 0; }
-// Opcode for the new UpdateProfile message, confirmed 04.07.2026 directly
-// from the compiled build/VilitigoCounter_VilitigoCounter.ts (loadUpdateProfile),
-// same way JOIN_AND_MINT_OPCODE was confirmed — not guessed.
-const UPDATE_PROFILE_OPCODE = 1706447584;
+const MINT_OPCODE = 216140206;
+const MINT_AMOUNT = TON_AMOUNT; // 1 TON, kind 0 = constellations
+const UPDATE_PROFILE_OPCODE = 170647584;
+// Reserved for later (vouchers land AFTER launch, per 10.07 decision):
+// const BUY_VOUCHER_OPCODE = 2657121460;
+// const REDEEM_VOUCHER_OPCODE = 3272566072;
+// const REFUND_VOUCHER_OPCODE = 2848408200;
 
 function bytesToBase64(bytes) {
   let binary = '';
@@ -2363,38 +2355,25 @@ function storeRequiredString(builder, val) {
   return builder.storeRef(strCell);
 }
 
-// Cell layout verified 03.07.2026 directly against the compiled
-// build/VilitigoCounter_VilitigoCounter.ts (loadJoinAndMint), NOT guessed —
-// a single cell can only hold 4 refs, and this message has 6 String fields
-// (6 refs), so Tact's compiler splits it into a root cell + one
-// continuation cell. Getting this wrong previously threw "Too many
-// references" (root cell) while trying to cram all 6 string refs into one
-// cell. Confirmed real layout:
-//   root cell:   opcode(32) + queryId(64) + name(ref) + country(ref) + ref-to-continuation   [3 refs]
-//   continuation: city(ref) + age(8) + constName(ref) + isRare(bit) + isLegendary(bit)
-//                 + discoveryNumber(8) + story(ref) + pixelColor(ref)                          [4 refs]
-function buildJoinAndMintPayload(name, country, city, age, constName, isRare, isLegendary, discoveryNumber, story, pixelColor) {
+// MintConstellation (V2, 12.07.2026): queryId(64) + kind(8) + constName(ref)
+// + story(ref) + pixelColor(ref) — only 3 String refs, fits in ONE cell
+// (limit is 4), unlike the old v1 JoinAndMint which needed a
+// continuation cell for 6 String fields. Deliberately carries NO rarity
+// fields at all (no isRare/isLegendary/discoveryNumber) — the contract
+// rolls luck itself now (09.07 decision, honesty: the front used to be
+// able to mail itself a legendary). kind=0 is constellations (stage 2 —
+// comets/planets — comes later via SetKindConfig).
+function buildMintConstellationPayload(kind, constName, story, pixelColor) {
   const { beginCell } = window.TonCore || {};
   if (!beginCell) throw new Error('TonCore.beginCell unavailable — payment SDK failed to load');
-
-  let b1 = beginCell();
-  b1 = storeRequiredString(b1, city);
-  b1 = b1.storeUint(age || 0, 8);
-  b1 = storeRequiredString(b1, constName);
-  b1 = b1.storeBit(isRare ? 1 : 0);
-  b1 = b1.storeBit(isLegendary ? 1 : 0);
-  b1 = b1.storeUint(discoveryNumber || 0, 8);
-  b1 = storeRequiredString(b1, story);
-  b1 = storeRequiredString(b1, pixelColor);
-
-  let b0 = beginCell()
-    .storeUint(JOIN_AND_MINT_OPCODE, 32)
-    .storeUint(0, 64); // queryId
-  b0 = storeRequiredString(b0, name);
-  b0 = storeRequiredString(b0, country);
-  b0 = b0.storeRef(b1.endCell());
-
-  return bytesToBase64(b0.endCell().toBoc());
+  let b = beginCell()
+    .storeUint(MINT_OPCODE, 32)
+    .storeUint(0, 64) // queryId
+    .storeUint(kind || 0, 8);
+  b = storeRequiredString(b, constName);
+  b = storeRequiredString(b, story);
+  b = storeRequiredString(b, pixelColor);
+  return bytesToBase64(b.endCell().toBoc());
 }
 
 // UpdateProfile: queryId(64) + name(ref) + country(ref) + city(ref) + age(8 bits).
@@ -2415,12 +2394,20 @@ function buildUpdateProfilePayload(name, country, city, age) {
   return bytesToBase64(b.endCell().toBoc());
 }
 
-function buildRegisterPayload(name, country, city, age) {
+// Register (V2, 12.07.2026): queryId(64) + forWhom(Address, inline, NOT a
+// ref) + name(ref) + country(ref) + city(ref) + age(8). forWhom lets one
+// person count in a friend directly by address ("path A" — vouchers with
+// no address needed come later, see reserved BUY/REDEEM opcodes above).
+// For a normal self count-in, forWhom = the sender's own connected
+// wallet address. Only 3 String refs — single cell, no continuation.
+function buildRegisterPayload(forWhomAddress, name, country, city, age) {
   const { beginCell } = window.TonCore || {};
   if (!beginCell) throw new Error('TonCore.beginCell unavailable — payment SDK failed to load');
+  if (!window.TonCore?.Address) throw new Error('TonCore.Address unavailable');
   let b = beginCell()
     .storeUint(REGISTER_OPCODE, 32)
-    .storeUint(0, 64); // queryId
+    .storeUint(0, 64) // queryId
+    .storeAddress(window.TonCore.Address.parse(forWhomAddress));
   b = storeRequiredString(b, name);
   b = storeRequiredString(b, country);
   b = storeRequiredString(b, city);
@@ -3218,11 +3205,16 @@ document.getElementById('modalRegisterConfirm').addEventListener('click', async 
   if(!connected){ closeModal('modalRegister'); tonConnectUI.openModal(); return; }
   if (!window.TonCore || !window.TonCore.beginCell) { showToast('Payment setup failed to load — please reload the page and try again.'); return; }
   try {
+    const myAddr = tonConnectUI?.account?.address;
+    if (!myAddr) { showToast('Wallet connect is unavailable — check your connection and reload the page.'); return; }
     const name = document.getElementById('fieldName')?.value || '';
     const country = canonCountry(document.getElementById('fieldCountry')?.value || '');
     const city = canonCity(document.getElementById('fieldCity')?.value || '');
     const age = parseInt(document.getElementById('fieldAge')?.value || '0');
-    const payload = buildRegisterPayload(name, country, city, age);
+    // Self count-in: forWhom = your own connected wallet. Counting a
+    // friend instead (forWhom = their address) is a separate flow on the
+    // Invite tab, added after launch per the 10.07 plan.
+    const payload = buildRegisterPayload(myAddr, name, country, city, age);
     sendTon('txRegister', ()=>{
       closeModal('modalRegister');
       markJoinedLocal();
@@ -3259,20 +3251,22 @@ document.getElementById('modalMintConfirm').addEventListener('click', async ()=>
   try {
     if (!currentConst) { updateDebugInfo('STOPPED: currentConst is null'); showToast('Something went wrong with your constellation — try uploading the photo again.'); return; }
     updateDebugInfo('building payload...');
-    const name = document.getElementById('fieldName')?.value || '';
-    const country = canonCountry(document.getElementById('fieldCountry')?.value || '');
-    const city = canonCity(document.getElementById('fieldCity')?.value || '');
-    const age = parseInt(document.getElementById('fieldAge')?.value || '0');
     const constName = currentConst.name.split('·')[0].trim();
-    const isRare = currentConst.rare || false;
-    const isLegendary = currentConst.isRealDiscovery || false;
-    const discoveryNumber = currentConst.discoveryNumber || 0;
     const story = lastStoryText || '';
     const pixelColor = nftPixelColor || '#9333ea';
     if (!window.TonCore || !window.TonCore.beginCell) { updateDebugInfo('STOPPED: window.TonCore missing'); showToast('Payment setup failed to load — please reload the page and try again.'); return; }
-    const payload = buildJoinAndMintPayload(name, country, city, age, constName, isRare, isLegendary, discoveryNumber, story, pixelColor);
+    // NO rarity fields sent from here at all (12.07 decision — honesty):
+    // the old v1 message could carry isRare/isLegendary/discoveryNumber
+    // client-side, meaning the front (or withdraw.js!) could mail itself
+    // a legendary. V2's contract rolls the luck itself; the front finds
+    // out afterward by reading the chain, same as anyone else would.
+    const payload = buildMintConstellationPayload(0, constName, story, pixelColor);
     updateDebugInfo('payload built, calling sendTon...');
-    sendTon('txMint',()=>{
+    // Capture what we knew BEFORE this mint, so the post-tx poll below can
+    // tell "the chain updated" apart from "still showing the old record".
+    const prevTransformCount = window.myTransformCount;
+    const wasFirstMint = !window.__hasConstellationSeen;
+    sendTon('txMint', async ()=>{
     closeModal('modalMint');
     const wasAlreadyJoined = isJoinedLocal();
     markJoinedLocal();
@@ -3286,9 +3280,15 @@ document.getElementById('modalMintConfirm').addEventListener('click', async ()=>
       homeBtn.textContent='✓ You\'re counted!'; homeBtn.classList.add('done'); homeBtn.disabled=true;
     }
     nftCount++;
-    const gold = currentConst.rare;
     mintBtn.textContent='✓ Counted!'; mintBtn.classList.add('done'); mintBtn.disabled=true;
     document.getElementById('profileBadge').textContent='⭐⭐';
+
+    // The contract just rolled the luck on-chain — we don't know the
+    // result yet. Poll getUser a few times (chain finality takes a
+    // couple seconds) until it shows a change from what we knew before,
+    // then reveal the card with the REAL rarity/discovery, not a guess.
+    const outcome = await pollMintOutcome(prevTransformCount, wasFirstMint);
+    const gold = outcome.isRare || outcome.isLegendary;
 
     const grid=document.getElementById('nftGrid');
     const card=document.createElement('div');
@@ -3301,7 +3301,7 @@ document.getElementById('modalMintConfirm').addEventListener('click', async ()=>
     const mc=document.createElement('canvas');
     mc.style.cssText='width:100%;height:100%;display:block';
     const thumbPx = cardThumbSize();
-    paintConstellationScene(mc, thumbPx, thumbPx, {name: currentConst.name.split('·')[0].trim(), rare: gold, constData: currentConst});
+    paintConstellationScene(mc, thumbPx, thumbPx, {name: constName, rare: gold, constData: currentConst});
     media.appendChild(mc);
     if(gold){
       const badge=document.createElement('div'); badge.className='nft-rare-badge'; badge.textContent='★ RARE';
@@ -3311,11 +3311,11 @@ document.getElementById('modalMintConfirm').addEventListener('click', async ()=>
     media.appendChild(giftFab);
     card.appendChild(media);
     const infoBar = document.createElement('div'); infoBar.className='nft-info-bar';
-    infoBar.innerHTML = `<div class="nft-name">${currentConst.name.split('·')[0].trim()}</div>${lastStoryText?`<div class="nft-story">"${lastStoryText}"</div>`:''}`;
+    infoBar.innerHTML = `<div class="nft-name">${constName}</div>${lastStoryText?`<div class="nft-story">"${lastStoryText}"</div>`:''}`;
     card.appendChild(infoBar);
 
 
-    const nftData = {name: currentConst.name.split('·')[0].trim(), story: lastStoryText, rare: gold, constData: currentConst};
+    const nftData = {name: constName, story: lastStoryText, rare: gold, isRealDiscovery: outcome.isLegendary, constData: currentConst};
     myNfts.push(nftData);
     card.addEventListener('click', (e)=>{
       if(e.target === giftFab) { openModal('shareSheet'); return; }
@@ -3332,11 +3332,11 @@ document.getElementById('modalMintConfirm').addEventListener('click', async ()=>
         photoCount++; numPhotosEl.classList.remove('loading');
         numPhotosEl.textContent=fmtExact(photoCount); numPhotosEl.title=fmtExact(photoCount)+' constellations';
         numPhotosEl.classList.add('flash'); setTimeout(()=>numPhotosEl.classList.remove('flash'),600);
-        showToast(gold ? '★ Rare constellation minted!' : '✦ Your constellation is on the canvas');
+        showToast(outcome.isLegendary ? '✨ A legendary constellation, discovered!' : (gold ? '★ Rare constellation minted!' : '✦ Your constellation is on the canvas'));
         if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
       },350);
     },900);
-  }, payload);
+  }, payload, MINT_AMOUNT);
   } catch(e) {
     console.error('[vitiligo.ton] Confirm payment failed:', e);
     updateDebugInfo('EXCEPTION: ' + (e?.message || e));
@@ -3843,7 +3843,13 @@ async function loadMyConstellationFromChain() {
     const rawElements = entry[1]?.elements || entry[1];
     if (Array.isArray(rawElements) && rawElements.length === 0) { dbgUser('not registered on-chain (empty list)'); return; }
     const elements = entry[1]?.elements || entry[1];
-    if (!elements || elements.length < 13) {
+    // VilitigoCounterV2 (12.07.2026) struct order — FROZEN, see the
+    // "getUser tuple order" comment in the .tact source:
+    //  0 wallet, 1 name, 2 country, 3 city, 4 age, 5 joinNumber,
+    //  6 countedBy, 7 hasConstellation, 8 firstConstName, 9 constName,
+    // 10 story, 11 pixelColor, 12 mintedAt, 13 isRare, 14 discMask,
+    // 15 transformCount — 16 fields total, up from 13 in the old contract.
+    if (!elements || elements.length < 16) {
       console.warn('getUser: unexpected stack shape', entry);
       dbgUser('unexpected stack shape, elements=' + (elements ? elements.length : 'none'));
       return;
@@ -3855,6 +3861,11 @@ async function loadMyConstellationFromChain() {
     const getNum = el => el?.number?.number !== undefined ? parseInt(el.number.number, 10) : undefined;
     const getBool = el => { const n = getNum(el); return n !== undefined && n !== 0; };
     const getStr = el => decodeCellString(el?.slice);
+    // discMask is a uint128 — too big for a plain JS number in general,
+    // but we only need "is it zero or not" (has this person ever
+    // unlocked a legendary constellation, on ANY of their mints), so a
+    // string compare against "0" is enough and avoids precision loss.
+    const getBigStr = el => el?.number?.number !== undefined ? String(el.number.number) : '0';
 
     // Added 05.07.2026 — the profile form (name/country/city/age) was
     // never compared against the real on-chain record, only ever shown
@@ -3869,6 +3880,12 @@ async function loadMyConstellationFromChain() {
       city: getStr(elements[3]),
       age: getNum(elements[4])
     };
+    // New in V2: joinNumber ("you are #N") and countedBy (who counted this
+    // person in — self, or a friend via Register/RedeemVoucher). countedBy
+    // stays internal for now (12.07 decision: invite screen shows nobody's
+    // name, so we don't need to decode/display the address here yet).
+    const joinNumber = getNum(elements[5]);
+    window.myJoinNumber = joinNumber;
     window.onChainProfile = onChainProfile;
     // Prefill the form from the real on-chain record — this is the new
     // single source of truth for an already-registered person (replacing
@@ -3900,23 +3917,34 @@ async function loadMyConstellationFromChain() {
     markJoinedLocal();
     if (typeof refreshCountedBanner === 'function') refreshCountedBanner();
 
-    const hasConstellation = getBool(elements[5]);
-    dbgUser('parsed OK, hasConstellation=' + hasConstellation);
+    const hasConstellation = getBool(elements[7]);
+    if (hasConstellation) window.__hasConstellationSeen = true;
+    dbgUser('parsed OK, hasConstellation=' + hasConstellation + ' joinNumber=' + joinNumber);
     if (!hasConstellation) {
       // Counted but no constellation yet — still a person, still a star
       // on the shared sky (звезда = человек). ME now has somewhere to fly.
       if (window.restoreMyStar) window.restoreMyStar(addr, onChainProfile.name || null, '', null, 'normal', isGenesisWallet(addr));
       return;
     }
-    const constName = getStr(elements[6]);
-    const isRare = getBool(elements[7]);
-    // The long-standing handoff bug, fixed 06.07.2026: elements[8] is the
-    // contract's isLegendary bit (a real IAU-constellation discovery), and
-    // the restore path never read it — after a reload a discovered real
-    // constellation demoted itself to a plain mythical one (wrong card
-    // styling, and now also a wrong tier paragraph in its legend).
-    const isLegendary = getBool(elements[8]);
+    // firstConstName (elements[8]) — "born as …", set once by the first
+    // mint and never overwritten again. Not shown on the restore path yet
+    // (the visible card always reflects the CURRENT name/story), but kept
+    // available on window for a future "born as" detail in the card.
+    const firstConstName = getStr(elements[8]);
+    window.myFirstConstName = firstConstName;
+    const constName = getStr(elements[9]);
     const story = getStr(elements[10]);
+    // isRare (elements[13]) is a strict ratchet in V2 — once true, always
+    // true, regardless of later transformations.
+    const isRare = getBool(elements[13]);
+    // discMask (elements[14]) replaces the old single isLegendary bit —
+    // V2 lets one star accumulate SEVERAL legendary discoveries over
+    // repeated mints, tracked as a bitmask (bit i = constellation #(i+1)
+    // among the 88). Non-zero means at least one has been unlocked.
+    const discMask = getBigStr(elements[14]);
+    const isLegendary = discMask !== '0';
+    const transformCount = getNum(elements[15]);
+    window.myTransformCount = transformCount;
     if (!constName) return;
     const nftData = { name: constName, story, rare: isRare || isLegendary, isRealDiscovery: isLegendary, constData: { name: constName, isRealDiscovery: isLegendary, stars: seededStars(constName, 5) } };
     myNfts.push(nftData);
@@ -3926,6 +3954,43 @@ async function loadMyConstellationFromChain() {
   } catch(e) { console.warn('getUser load failed', e); dbgUser('EXCEPTION: ' + (e && e.message)); }
 }
 function beginCellSafe(){ try { return !!(window.TonCore && window.TonCore.beginCell); } catch(e){ return false; } }
+
+// Added 12.07.2026: the contract rolls rarity/legendary luck on-chain now
+// (no more client-computed isRare/isLegendary in the mint payload). Right
+// after a mint transaction confirms, we don't yet know the outcome — this
+// polls getUser a few times (chain finality takes a couple seconds) until
+// it shows a change from what we knew BEFORE this mint, then returns the
+// real isRare/isLegendary so the reveal card is never a guess.
+async function pollMintOutcome(prevTransformCount, wasFirstMint, maxTries, delayMs) {
+  maxTries = maxTries || 6; delayMs = delayMs || 1800;
+  const addr = tonConnectUI?.account?.address;
+  for (let i = 0; i < maxTries; i++) {
+    await new Promise(r => setTimeout(r, delayMs));
+    try {
+      if (!addr || !window.TonCore?.Address) continue;
+      const cell = window.TonCore.beginCell().storeAddress(window.TonCore.Address.parse(addr)).endCell();
+      const data = await tonFetch({ address: CONTRACT_ADDRESS, method: 'getUser', stack: [['tvm.Slice', bytesToBase64(cell.toBoc())]] });
+      if (!data?.ok || data?.result?.exit_code !== 0) continue;
+      const entry = data?.result?.stack?.[0];
+      const elements = entry?.[1]?.elements || entry?.[1];
+      if (!Array.isArray(elements) || elements.length < 16) continue;
+      const getNum = el => el?.number?.number !== undefined ? parseInt(el.number.number, 10) : undefined;
+      const getBool = el => { const n = getNum(el); return n !== undefined && n !== 0; };
+      const getBigStr = el => el?.number?.number !== undefined ? String(el.number.number) : '0';
+      const hasConstellation = getBool(elements[7]);
+      const transformCount = getNum(elements[15]);
+      const changed = wasFirstMint ? hasConstellation : (transformCount !== prevTransformCount);
+      if (!changed) continue; // still showing the pre-mint record, keep polling
+      window.myTransformCount = transformCount;
+      if (hasConstellation) window.__hasConstellationSeen = true;
+      return { isRare: getBool(elements[13]), isLegendary: getBigStr(elements[14]) !== '0' };
+    } catch (e) { /* keep polling — a transient fetch error isn't the final answer */ }
+  }
+  // Gave up after maxTries — honest fallback: show as a normal mint. The
+  // person's real result is still correct on-chain; a page reload (which
+  // runs loadMyConstellationFromChain) will show it accurately.
+  return { isRare: false, isLegendary: false };
+}
 
 // Draws one constellation card into the Profile grid — used specifically
 // for restoring a mint from chain after a reload (see
