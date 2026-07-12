@@ -3935,7 +3935,7 @@ async function loadMyConstellationFromChain() {
     //  6 countedBy, 7 hasConstellation, 8 firstConstName, 9 constName,
     // 10 story, 11 pixelColor, 12 mintedAt, 13 isRare, 14 discMask,
     // 15 transformCount — 16 fields total, up from 13 in the old contract.
-    if (!elements || elements.length < 16) {
+    if (!elements || elements.length < 8) {
       console.warn('getUser: unexpected stack shape', entry);
       dbgUser('unexpected stack shape, elements=' + (elements ? elements.length : 'none'));
       return;
@@ -4064,7 +4064,7 @@ async function pollMintOutcome(prevTransformCount, wasFirstMint, maxTries, delay
       if (!data?.ok || data?.result?.exit_code !== 0) continue;
       const entry = data?.result?.stack?.[0];
       const elements = entry?.[1]?.elements || entry?.[1];
-      if (!Array.isArray(elements) || elements.length < 16) continue;
+      if (!Array.isArray(elements) || elements.length < 8) continue;
       const getNum = el => el?.number?.number !== undefined ? parseInt(el.number.number, 10) : undefined;
       const getBool = el => { const n = getNum(el); return n !== undefined && n !== 0; };
       const getBigStr = el => el?.number?.number !== undefined ? String(el.number.number) : '0';
