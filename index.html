@@ -1125,6 +1125,11 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
       <div class="avatar" id="profileAvatar">🌟<div class="avatar-badge" id="profileBadge">⭐</div></div>
       <div class="profile-name"><span id="profileName">Your name</span> <span id="profileVerifiedCheck" style="display:none;color:#34d399;font-size:16px" title="Synced with the blockchain">✓</span></div>
       <div class="profile-handle" id="profileHandle">@telegram_user</div>
+      <!-- Added 12.07.2026 — joinNumber was already fetched from chain
+           (window.myJoinNumber, see loadMyConstellationFromChain) but
+           never actually shown anywhere. Hidden until a real number
+           arrives, so a not-yet-counted person doesn't see a stray "#". -->
+      <div id="profileJoinNumber" style="display:none;font-size:12px;color:#a78bfa;margin-top:4px;text-align:center">You're #<span id="profileJoinNumberValue"></span> in the count</div>
     </div>
 
     <label class="form-label">Name</label>
@@ -3967,6 +3972,11 @@ async function loadMyConstellationFromChain() {
     // name, so we don't need to decode/display the address here yet).
     const joinNumber = getNum(elements[5]);
     window.myJoinNumber = joinNumber;
+    if (joinNumber) {
+      const jnEl = document.getElementById('profileJoinNumber');
+      const jnVal = document.getElementById('profileJoinNumberValue');
+      if (jnEl && jnVal) { jnVal.textContent = fmtExact(joinNumber); jnEl.style.display = 'block'; }
+    }
     window.onChainProfile = onChainProfile;
     // Prefill the form from the real on-chain record — this is the new
     // single source of truth for an already-registered person (replacing
@@ -4648,7 +4658,8 @@ const RU_TEXT = {
   "Here's your profile":"Вот твой профиль",
   "Looks right? One more step to make it permanent.":"Всё верно? Ещё один шаг — и это навсегда.",
   "Next":"Далее","Edit":"Изменить",
-  "Next: confirm your spot — 0.1 GRAM":"Дальше — подтверждение места, 0.1 GRAM"
+  "Next: confirm your spot — 0.1 GRAM":"Дальше — подтверждение места, 0.1 GRAM",
+  "You're #":"Ты #","in the count":"по счёту"
 };
 
 const RU_HTML = {
