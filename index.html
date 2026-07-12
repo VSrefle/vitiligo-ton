@@ -1143,6 +1143,11 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
     <select class="form-input" id="fieldAge">
       <option value="" disabled selected style="color:#6b7280">Select your age</option>
     </select>
+    <!-- Added 12.07.2026 — softening the profile→payment jump: shown only
+         while ensureProfile() is waiting on this form (pendingAfterProfile
+         armed), so it doesn't nag a returning person just editing their
+         profile via "Update on-chain profile" below. -->
+    <div id="profileNextStepHint" style="display:none;font-size:11px;color:#a78bfa;text-align:center;margin-top:6px;opacity:.85">Next: confirm your spot — 0.1 GRAM</div>
 
     <!-- Only shown once the wallet has minted before — lets someone fix a
          wrong/empty name·country·city·age on-chain via the new
@@ -1209,6 +1214,24 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
   </button>
 </nav>
 
+<!-- MODAL: PROFILE READY (added 12.07.2026) — a deliberate pause between
+     finishing the profile form and seeing a price. Before this,
+     pendingAfterProfile fired the instant the last field lost focus,
+     landing straight on a payment modal — felt like a bait-and-switch.
+     Now there's one calm beat: "here's your profile" before "here's the
+     price". -->
+<div class="modal-backdrop" id="modalProfileReady">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Here's your profile</div>
+    <div style="text-align:center;margin:12px 0 4px;color:#ede8ff;font-size:15px" id="profileReadySummaryName"></div>
+    <div style="text-align:center;margin-bottom:14px;color:rgba(192,132,252,.6);font-size:12.5px" id="profileReadySummaryLoc"></div>
+    <div class="modal-desc">Looks right? One more step to make it permanent.</div>
+    <button class="modal-btn" id="modalProfileReadyNext">Next</button>
+    <button class="modal-btn secondary" id="modalProfileReadyEdit">Edit</button>
+  </div>
+</div>
+
 <!-- MODAL: REGISTER (cheap "count me in", 0.1 TON) — added 07.07.2026.
      Product decision: the mission is to count EVERYONE, and a 1 TON
      entry gate filtered out people who just wanted to honestly say
@@ -1218,9 +1241,9 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
 <div class="modal-backdrop" id="modalRegister">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">Join the count forever</div>
+    <div class="modal-title">Almost there</div>
     <div class="ton-amount">0.1 GRAM</div>
-    <div class="modal-desc">Your place in the number — one real person, recorded on the TON blockchain forever. A constellation can be minted any time later, whenever you feel like it.</div>
+    <div class="modal-desc">Last step: your place in the number — one real person, recorded on the TON blockchain forever. A constellation can be minted any time later, whenever you feel like it.</div>
     <div class="tx-status" id="txRegister"></div>
     <button class="modal-btn" id="modalRegisterConfirm">Confirm — 0.1 GRAM</button>
     <button class="modal-btn secondary" id="modalRegisterClose">Cancel</button>
@@ -1366,19 +1389,18 @@ const CONTRACT_ADDRESS = 'EQBDENhE37mNq-3Wkc1oj3OnYIWNHOC0Ov0XjdS2ZvyhY-DW'; // 
 const TON_AMOUNT = '1000000000';
 const BOT_USERNAME = 'vitiligo_ton_bot';
 
-// Genesis wallet fingerprint, 08.07.2026. The sky's central star is a
-// hardcoded founder placeholder; when the FOUNDER's own wallet restores
-// from chain, his record must move INTO that star, not spawn a second one
-// next to it (live screenshot: "не пойму почему там 2 звезды" — one
-// person, two stars). Only the truncated form of the address is on
-// record (0:81c…e2c4, see handoff), so this matches by prefix+suffix of
-// the raw address — collision odds are negligible, and the worst case is
-// purely visual. TODO(Виктор): replace with the full raw address for an
-// exact match.
+// Genesis wallet fingerprint, 08.07.2026, REWRITTEN 12.07.2026.
+// Was a hardcoded address prefix/suffix — but that fingerprint belonged
+// to the OLD wallet, compromised in the 10.07 incident. A new wallet
+// deployed VilitigoCounterV2, so the hardcoded string would have quietly
+// stopped matching the founder at all (the "two stars" bug returning).
+// Now asks the CONTRACT itself who the owner is (owner() getter — see
+// fetchContractOwnerAddress, called once at startup inside
+// loadInitialChainData) — this self-heals through any future ChangeOwner
+// too, nothing to hardcode ever again.
 function isGenesisWallet(addr){
-  if (!addr) return false;
-  const a = String(addr).toLowerCase();
-  return a.startsWith('0:81c') && a.endsWith('e2c4');
+  if (!addr || !window.__ownerAddressRaw) return false;
+  return String(addr).toLowerCase() === window.__ownerAddressRaw;
 }
 
 // ── POPULATE AGE SELECT ──
@@ -2184,6 +2206,10 @@ async function loadInitialChainData() {
   const pMap   = tonFetch({ address: CONTRACT_ADDRESS, method: 'realConstellationsMap', stack: [] });
   const pTotal = tonFetch({ address: CONTRACT_ADDRESS, method: 'totalCount', stack: [] });
   const pPhoto = tonFetch({ address: CONTRACT_ADDRESS, method: 'photoCount', stack: [] });
+  // Added 12.07.2026 — see isGenesisWallet rewrite: fetched once here,
+  // alongside the other startup reads, so it's ready well before any real
+  // wallet's own record restores and needs to check against it.
+  const pOwner = tonFetch({ address: CONTRACT_ADDRESS, method: 'owner', stack: [] });
 
   // Each response is parsed independently — one failing get-method should
   // degrade only its own number (to an honest 0/empty), not block the rest.
@@ -2194,6 +2220,17 @@ async function loadInitialChainData() {
   catch(e) { console.log('Counter load failed', e); }
   try { const hex = parseScalarResult(await pPhoto, 'photoCount'); if (hex) newPhotoCount = parseInt(hex, 16); }
   catch(e) { console.log('Photo counter load failed', e); }
+  // Not awaited here on purpose — owner() resolving a queue-slot later
+  // must never delay the Home numbers reveal below. It updates
+  // window.__ownerAddressRaw whenever it lands; nothing currently on
+  // Home depends on it, only the later per-wallet restore check.
+  pOwner.then(ownerData => {
+    if (ownerData?.ok && ownerData?.result?.exit_code === 0) {
+      const ownerEntry = ownerData?.result?.stack?.[0];
+      const ownerAddr = decodeCellAddress(ownerEntry?.[1]);
+      if (ownerAddr) window.__ownerAddressRaw = ownerAddr;
+    }
+  }).catch(e => console.log('owner() load failed', e));
 
   // ── Single atomic reveal — everything below happens in one synchronous
   // block, so every number on Home appears in the same paint. Wrapped in
@@ -2630,6 +2667,8 @@ async function ensureProfile(onDone){
     showToast('Please fill your name, country, city and age first ✦');
     pendingAfterProfile = () => ensureProfile(onDone);
     document.querySelector('[data-page="profile"]').click();
+    const hint = document.getElementById('profileNextStepHint');
+    if (hint) hint.style.display = 'block';
     return;
   }
   onDone();
@@ -3611,11 +3650,34 @@ function checkProfileCompletion(){
   refreshFieldHighlights();
   if (typeof refreshOnChainProfileNote === 'function') refreshOnChainProfileNote();
   if (hasProfile() && pendingAfterProfile) {
+    const hint = document.getElementById('profileNextStepHint');
+    if (hint) hint.style.display = 'none';
     const fn = pendingAfterProfile; pendingAfterProfile = null;
     if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-    fn();
+    // Added 12.07.2026: a deliberate pause instead of firing fn()
+    // straight away — see modalProfileReady comment above. The person
+    // sees their own profile summarized back to them before any price
+    // appears, then explicitly taps Next.
+    pendingProfileReadyConfirm = fn;
+    document.getElementById('profileReadySummaryName').textContent = document.getElementById('fieldName').value.trim();
+    const country = document.getElementById('fieldCountry').value.trim();
+    const city = document.getElementById('fieldCity').value.trim();
+    const age = document.getElementById('fieldAge').value;
+    document.getElementById('profileReadySummaryLoc').textContent = [city, country].filter(Boolean).join(', ') + (age ? ' · ' + age : '');
+    openModal('modalProfileReady');
   }
 }
+let pendingProfileReadyConfirm = null;
+document.getElementById('modalProfileReadyNext').addEventListener('click', ()=>{
+  closeModal('modalProfileReady');
+  const fn = pendingProfileReadyConfirm; pendingProfileReadyConfirm = null;
+  if (fn) fn();
+});
+document.getElementById('modalProfileReadyEdit').addEventListener('click', ()=>{
+  closeModal('modalProfileReady');
+  pendingProfileReadyConfirm = null;
+  document.querySelector('[data-page="profile"]').click();
+});
 ['fieldName','fieldCountry','fieldCity','fieldAge'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('change', checkProfileCompletion);
@@ -3757,6 +3819,25 @@ function decodeCellString(cellEntry) {
     console.warn('decodeCellString failed', e);
     if (typeof debugMode !== 'undefined' && debugMode) updateDebugInfo('decodeCellString threw: ' + e.message);
     return '';
+  }
+}
+
+// Added 12.07.2026 — same shape as decodeCellString, but for a getter that
+// returns a plain Address (used for owner(), see fetchContractOwnerAddress
+// below). Returns the RAW "workchain:hex" form (lowercased) to match the
+// format tonConnectUI.account.address already uses everywhere else in this
+// file, so a simple string compare works without any further conversion.
+function decodeCellAddress(cellEntry) {
+  try {
+    const bytes = cellEntry?.bytes;
+    if (!bytes || !window.TonCore?.Cell) return null;
+    const bocBytes = window.TonCore.Buffer ? window.TonCore.Buffer.from(base64ToBytes(bytes)) : base64ToBytes(bytes);
+    const cell = window.TonCore.Cell.fromBoc(bocBytes)[0];
+    const addr = cell.beginParse().loadAddress();
+    return addr ? addr.toRawString().toLowerCase() : null;
+  } catch(e) {
+    console.warn('decodeCellAddress failed', e);
+    return null;
   }
 }
 
