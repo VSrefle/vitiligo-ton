@@ -1109,6 +1109,7 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
       <button class="btn-main" id="shareMore" style="margin-bottom:0"><span>↗</span> Share</button>
     </div>
 
+
     <!-- "People you brought in" removed 03.07.2026: the contract has no
          referral field, so this list could never show anything but "No
          invites yet" — even for someone who successfully brought in ten
@@ -1241,9 +1242,9 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
 <div class="modal-backdrop" id="modalRegister">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">Almost there</div>
-    <div class="ton-amount">0.1 GRAM</div>
-    <div class="modal-desc">Last step: your place in the number — one real person, recorded on the TON blockchain forever. A constellation can be minted any time later, whenever you feel like it.</div>
+    <div class="modal-title" id="registerModalTitle">Almost there</div>
+    <div class="ton-amount" id="registerModalAmount">0.1 GRAM</div>
+    <div class="modal-desc" id="registerModalDesc">Last step: your place in the number — one real person, recorded on the TON blockchain forever. A constellation can be minted any time later, whenever you feel like it.</div>
     <div class="tx-status" id="txRegister"></div>
     <button class="modal-btn" id="modalRegisterConfirm">Confirm — 0.1 GRAM</button>
     <button class="modal-btn secondary" id="modalRegisterClose">Cancel</button>
@@ -2386,10 +2387,16 @@ function registerPathReady(){ return REGISTER_OPCODE !== 0; }
 const MINT_OPCODE = 216140206;
 const MINT_AMOUNT = TON_AMOUNT; // 1 TON, kind 0 = constellations
 const UPDATE_PROFILE_OPCODE = 170647584;
-// Reserved for later (vouchers land AFTER launch, per 10.07 decision):
-// const BUY_VOUCHER_OPCODE = 2657121460;
-// const REDEEM_VOUCHER_OPCODE = 3272566072;
-// const REFUND_VOUCHER_OPCODE = 2848408200;
+// Vouchers ("count a friend in without knowing their address") were
+// implemented 13.07.2026, then DROPPED THE SAME DAY on owner feedback:
+// a truly free-for-the-friend voucher needs a bot backend to relay the
+// redeem transaction and pay its gas — this static frontend has no
+// server, so the only honest option was a self-service redeem where the
+// friend still pays their own tiny gas fee. That contradicted the
+// "on me" promise, so the owner chose to shelve the whole feature rather
+// than ship something that quietly doesn't do what it says. Revisit if a
+// real bot backend gets built. The contract's Buy/Redeem/RefundVoucher
+// opcodes remain ready and unused: 2657121460 / 3272566072 / 2848408200.
 
 function bytesToBase64(bytes) {
   let binary = '';
@@ -4646,9 +4653,9 @@ const RU_TEXT = {
   "Someone you know might belong here too":"Кто-то из твоих знакомых тоже может быть здесь",
   "Know someone with vitiligo?":"Знаешь кого-то с витилиго?",
   "Send them your link. When they join, you both light up the sky a little brighter.":"Отправь свою ссылку. Когда они присоединятся, вы оба зажжёте небо чуть ярче.",
-  "Share":"Зажечь звезду ✦","Share vitiligo.ton":"Позови в vitiligo.ton","tap to copy":"нажми — скопируется","✓ copied":"✓ скопировано",
+  "Share":"Отправить ссылку ✦","Share vitiligo.ton":"Позови в vitiligo.ton","tap to copy":"нажми — скопируется","✓ copied":"✓ скопировано",
   "Friend joins & counts in":"Друг присоединяется и считается",
-  "Their star appears on the canvas — for everyone to see, including you":"Его звезда появляется на холсте — её видят все, включая тебя",
+  "Their star appears on the canvas — for everyone to see, including you":"Его звезда появляется на общем небе — её видят все, включая тебя",
   "Copy link":"Скопировать ссылку","Send to chat":"Отправить в чат","🎁 Gift to friend":"🎁 Подарить другу",
   "People with vitiligo are unique by nature":"Люди с витилиго уникальны от природы",
   "Name":"Имя","Country":"Страна","City":"Город","Age":"Возраст",
@@ -4663,8 +4670,8 @@ const RU_TEXT = {
   "Upload a photo of your vitiligo":"Загрузи фото своего витилиго",
   "The algorithm finds the patches and builds your personal constellation":"Алгоритм найдёт пятна и соберёт твоё личное созвездие",
   "Press \"Count me in ✦\"":"Нажми «Посчитайте меня ✦»",
-    "Your star appears on the canvas":"Твоя звезда появится на холсте",
-  "On the shared canvas you're a single star among everyone else. Tap it any time to reveal your full constellation — its shape, its name, its story.":"На общем холсте ты — одна звезда среди всех. Нажми на неё в любой момент, чтобы раскрыть своё созвездие — его форму, имя и историю.",
+    "Your star appears on the canvas":"Твоя звезда появится на общем небе",
+  "On the shared canvas you're a single star among everyone else. Tap it any time to reveal your full constellation — its shape, its name, its story.":"На общем небе ты — одна звезда среди всех. Нажми на неё в любой момент, чтобы раскрыть своё созвездие — его форму, имя и историю.",
   "Join the count forever":"Присоединись к счёту навсегда",
   "Download":"Скачай",
   "Confirm — 1 GRAM":"Подтвердить — 1 GRAM","Confirm":"Подтвердить","Cancel":"Отмена",
