@@ -1250,15 +1250,20 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
   </div>
 </div>
 
-<!-- MODAL: JOIN + MINT (single 1 TON payment) -->
+<!-- MODAL: MINT CONSTELLATION (1 TON) — split from Register on 12.07.2026
+     (V2 contract: 0.1 TON count-in is a separate step, done earlier).
+     Copy fixed 13.07.2026 — used to say "Join the count forever", a
+     leftover from when this modal ALSO handled registration in one
+     combined payment; confusing for an already-counted person opening
+     this to mint. -->
 <div class="modal-backdrop" id="modalMint">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">Join the count forever</div>
+    <div class="modal-title">Mint your constellation</div>
     <div class="ton-amount">1 GRAM</div>
     <div class="modal-desc">Your vitiligo becomes a unique constellation — forever on the TON blockchain. Your star lights up on the shared canvas of everyone who has vitiligo.</div>
     <div class="tx-status" id="txMint"></div>
-    <div id="debugInfo" style="font-size:10px;font-family:monospace;color:#666;text-align:left;background:rgba(255,255,255,.04);border-radius:8px;padding:8px;margin-bottom:10px;line-height:1.5;word-break:break-all"></div>
+    <div id="debugInfo" style="display:none;font-size:10px;font-family:monospace;color:#666;text-align:left;background:rgba(255,255,255,.04);border-radius:8px;padding:8px;margin-bottom:10px;line-height:1.5;word-break:break-all"></div>
     <button class="modal-btn" id="modalMintConfirm">Confirm — 1 GRAM</button>
     <button class="modal-btn secondary" id="modalMintClose">Cancel</button>
   </div>
@@ -2601,6 +2606,14 @@ function bindDebugGesture(){
     localStorage.setItem('vt_debug', debugMode ? '1' : '0');
     const bar = document.getElementById('persistentDebug');
     if (bar) bar.style.display = debugMode ? 'block' : 'none';
+    // Fixed 13.07.2026 — #debugInfo (inside modalMint) was NEVER gated by
+    // debugMode at all: updateDebugInfo() writes into it unconditionally
+    // on every button press, so EVERY visitor was seeing raw technical
+    // diagnostics on the mint confirmation screen, not just people who'd
+    // toggled this gesture on. Now hidden by default and only revealed
+    // here, matching persistentDebug's behavior.
+    const di = document.getElementById('debugInfo');
+    if (di) di.style.display = debugMode ? 'block' : 'none';
     showToast(debugMode ? 'Debug panel on ✦' : 'Debug panel off');
   }, 700); };
   const cancel = () => clearTimeout(pressTimer);
@@ -2612,7 +2625,10 @@ function bindDebugGesture(){
   logo.addEventListener('mouseleave', cancel);
 }
 bindDebugGesture();
-if (debugMode) { const bar = document.getElementById('persistentDebug'); if (bar) bar.style.display = 'block'; }
+if (debugMode) {
+  const bar = document.getElementById('persistentDebug'); if (bar) bar.style.display = 'block';
+  const di = document.getElementById('debugInfo'); if (di) di.style.display = 'block';
+}
 
 function updateDebugInfo(stage){
   const el = document.getElementById('debugInfo');
@@ -4672,7 +4688,8 @@ const RU_TEXT = {
   "Next":"Далее","Edit":"Изменить",
   "Next: confirm your spot — 0.1 GRAM":"Дальше — подтверждение места, 0.1 GRAM",
   "You're #":"Ты #","in the count":"по счёту",
-  "e.g. \"Appeared on my hand when I was 12\"":"например: «Появилось на руке, когда мне было 12»"
+  "e.g. \"Appeared on my hand when I was 12\"":"например: «Появилось на руке, когда мне было 12»",
+  "Mint your constellation":"Создать созвездие"
 };
 
 const RU_HTML = {
