@@ -1810,6 +1810,48 @@ if (cosmosCV) {
     });
   };
 
+  // addOtherStar, 13.07.2026 — the missing half of "every star is a real
+  // person". restoreMyStar only ever lit YOUR OWN star (from your own
+  // getUser fetch); nothing ever populated anyone ELSE's, so with
+  // totalCount=2 the sky honestly showed just one point of light — a
+  // silent gap between the promise and the product. Called in a loop
+  // from loadAllStarsFromChain for every OTHER registered address. Same
+  // deterministic per-seed position as restoreMyStar, so each person's
+  // star sits in the same spot on every launch, for everyone looking —
+  // not just for them. Dedupes by wallet address.
+  window.addOtherStar = function(addr, constName, story, constData, type, isGenesisPerson) {
+    if (isGenesisPerson) {
+      const gen = cosmosParts.find(p => p.isGenesis);
+      // If the viewer themselves IS the founder, restoreMyStar already
+      // owns this star (isMe=true) — don't overwrite their live session
+      // data with a possibly-stale chain re-read of the same person.
+      if (gen && !gen.isMe) {
+        if (constName) gen.constName = constName;
+        if (story) gen.story = story;
+        if (constData) gen.constData = constData;
+      }
+      return;
+    }
+    const existing = cosmosParts.find(p => p.addr === addr);
+    if (existing) {
+      if (constName) existing.constName = constName;
+      if (story) existing.story = story;
+      if (type) existing.type = type;
+      return;
+    }
+    let sd = 0; const s = String(addr || 'anon');
+    for (let i = 0; i < s.length; i++) sd = (sd * 31 + s.charCodeAt(i)) >>> 0;
+    const rnd = () => { sd = (sd * 1103515245 + 12345) >>> 0; return (sd >>> 8) / 16777216; };
+    const angle = rnd() * Math.PI * 2, dist = 60 + rnd() * 380;
+    cosmosParts.push({
+      x: 1000 + Math.cos(angle) * dist,
+      y: 1000 + Math.sin(angle) * dist,
+      type: type || 'normal', constName, story, constData,
+      addr, isMe: false,
+      ph: rnd() * Math.PI * 2, sp: 0.2 + rnd() * 0.4, sz: 12
+    });
+  };
+
   // Expand button
   const expBtn = document.getElementById('cosmosExp');
   const cosmosUI = document.getElementById('cosmosUI');
@@ -2277,7 +2319,10 @@ async function loadInitialChainData() {
 // .finally (was .then) 07.07.2026: cities must load even if the startup
 // trio's reveal failed for any reason — the map list vanishing is worse
 // than a briefly imperfect Home.
-loadInitialChainData().finally(() => { if (typeof loadCitiesFromChain === 'function') loadCitiesFromChain(); });
+loadInitialChainData().finally(() => {
+  if (typeof loadCitiesFromChain === 'function') loadCitiesFromChain();
+  if (typeof loadAllStarsFromChain === 'function') loadAllStarsFromChain();
+});
 updateMilestone();
 
 // Same undeclared-variable bug as 'connected' below — tickTimer was read/
@@ -4147,6 +4192,79 @@ function renderRestoredNftCard(nftData) {
   card.addEventListener('click', () => openNftDetail(nftData));
   grid.appendChild(card);
   refreshConstCount();
+}
+
+function addressToSliceArg(addrStr) {
+  const cell = window.TonCore.beginCell().storeAddress(window.TonCore.Address.parse(addrStr)).endCell();
+  return bytesToBase64(cell.toBoc());
+}
+
+// Shared getUser field reader — same field order as
+// loadMyConstellationFromChain (see the frozen "getUser tuple order"
+// comment in the contract), duplicated here on purpose rather than
+// refactored into loadMyConstellationFromChain itself: that function is
+// delicate (profile form prefill, joinNumber badge, etc.) and this is a
+// separate, independent read path — a bug here shouldn't risk breaking
+// "your own" profile loading, and vice versa.
+function parseUserTuple(elements) {
+  if (!elements || elements.length < 8) return null;
+  const getNum = el => el?.number?.number !== undefined ? parseInt(el.number.number, 10) : undefined;
+  const getBool = el => { const n = getNum(el); return n !== undefined && n !== 0; };
+  const getStr = el => decodeCellString(el?.slice);
+  return {
+    hasConstellation: getBool(elements[7]),
+    constName: elements.length > 9 ? getStr(elements[9]) : null,
+    story: elements.length > 10 ? getStr(elements[10]) : '',
+    isRare: elements.length > 13 ? getBool(elements[13]) : false,
+    discMask: elements.length > 14 ? (elements[14]?.number?.number !== undefined ? String(elements[14].number.number) : '0') : '0'
+  };
+}
+
+// Added 13.07.2026 — populates the shared sky with every OTHER
+// registered person, not just the viewer. The contract has no bulk
+// export, so this walks registry one joinNumber at a time
+// (getAddressByNumber → getUser), through the same rate-limited tonFetch
+// queue as everything else (~1.15s between calls). Honest scaling note:
+// at a few hundred people this already takes minutes to fully populate,
+// and at real growth (thousands) a client-side loop like this stops
+// being viable at all — this needs a real backend indexer eventually
+// (cache the sky server-side, serve it as one fast read). CAP keeps an
+// accidental huge totalCount from locking up someone's browser tab
+// indefinitely; raise it once an indexer exists.
+const STARS_LOAD_CAP = 300;
+async function loadAllStarsFromChain() {
+  try {
+    if (window.TonCoreExtrasReady) await window.TonCoreExtrasReady;
+    if (!window.TonCore?.Address || !window.TonCore?.beginCell) { if (debugMode) updateDebugInfo('loadAllStars: TonCore not ready, aborting'); return; }
+    const myAddr = (tonConnectUI?.account?.address || '').toLowerCase();
+    const total = typeof count === 'number' ? count : 0;
+    const n = Math.min(total, STARS_LOAD_CAP);
+    if (debugMode) updateDebugInfo(`loadAllStars: starting, total=${total} n=${n} myAddr=${myAddr.slice(0,10)}`);
+    for (let num = 1; num <= n; num++) {
+      try {
+        const addrData = await tonFetch({ address: CONTRACT_ADDRESS, method: 'getAddressByNumber', stack: [['num', num.toString()]] });
+        if (!addrData?.ok || addrData?.result?.exit_code !== 0) { if (debugMode) updateDebugInfo(`loadAllStars #${num}: getAddressByNumber failed, exit=${addrData?.result?.exit_code}`); continue; }
+        const aEntry = addrData?.result?.stack?.[0];
+        if (!aEntry || aEntry[0] === 'null') { if (debugMode) updateDebugInfo(`loadAllStars #${num}: address is null`); continue; }
+        const addr = decodeCellAddress(aEntry[1]);
+        if (!addr) { if (debugMode) updateDebugInfo(`loadAllStars #${num}: decodeCellAddress failed`); continue; }
+        if (myAddr && addr.toLowerCase() === myAddr) { if (debugMode) updateDebugInfo(`loadAllStars #${num}: skipped, is me`); continue; }
+        const userData = await tonFetch({ address: CONTRACT_ADDRESS, method: 'getUser', stack: [['tvm.Slice', addressToSliceArg(addr)]] });
+        if (!userData?.ok || userData?.result?.exit_code !== 0) { if (debugMode) updateDebugInfo(`loadAllStars #${num}: getUser failed, exit=${userData?.result?.exit_code}`); continue; }
+        const uEntry = userData?.result?.stack?.[0];
+        const elements = uEntry?.[1]?.elements || uEntry?.[1];
+        const u = parseUserTuple(elements);
+        if (!u) { if (debugMode) updateDebugInfo(`loadAllStars #${num}: parseUserTuple returned null, elements=${elements ? elements.length : 'none'}`); continue; }
+        const isLegendary = u.discMask !== '0';
+        if (debugMode) updateDebugInfo(`loadAllStars #${num}: addr=${addr.slice(0,10)} hasConst=${u.hasConstellation} genesis=${isGenesisWallet(addr)} → addOtherStar`);
+        if (window.addOtherStar) {
+          window.addOtherStar(addr, u.hasConstellation ? u.constName : null, u.hasConstellation ? u.story : '', null,
+            isLegendary ? 'legendary' : (u.isRare ? 'rare' : 'normal'), isGenesisWallet(addr));
+        }
+      } catch(e) { if (debugMode) updateDebugInfo(`loadAllStars #${num}: EXCEPTION ${e.message}`); }
+    }
+    if (debugMode) updateDebugInfo(`loadAllStars: done, cosmosParts=${typeof cosmosParts !== 'undefined' ? cosmosParts.length : 'n/a'}`);
+  } catch(e) { console.warn('loadAllStarsFromChain failed', e); if (debugMode) updateDebugInfo('loadAllStars: OUTER EXCEPTION ' + e.message); }
 }
 
 async function loadCitiesFromChain() {
