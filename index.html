@@ -3073,7 +3073,9 @@ async function buildConstellation(img){
     // Beyond 88 real constellations — generate mythical via AI
     setStep(3);
     document.getElementById('constName').textContent = '✦ Generating your constellation...';
-    document.getElementById('constDesc').textContent = 'A new constellation is being born...';
+    const cd = document.getElementById('constDesc');
+    cd.style.display = 'block';
+    cd.textContent = 'A new constellation is being born...';
     try {
       const aiResp = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
@@ -3196,8 +3198,11 @@ Make the name and mythology completely original — not based on any real-world 
   constInfo.classList.toggle('rare', gold);
   document.getElementById('constName').classList.toggle('rare', gold);
   document.getElementById('constName').textContent='✦ '+currentConst.name;
-  document.getElementById('constDesc').textContent=
-    `${patches.length>10?`Detected ${Math.min(patches.length,99)}+ vitiligo patches → `:''}mapped to ${tmpl.length} stars.`;
+  // Removed 13.07.2026 — the "Detected N patches → mapped to N stars"
+  // line read too clinical for this screen (owner feedback: don't want
+  // this text at all, not just translated). Hiding the element rather
+  // than leaving empty text, so no stray gap remains where it used to be.
+  document.getElementById('constDesc').style.display = 'none';
 
   if(gold){
     rarityBanner.style.display='flex';
@@ -4666,7 +4671,8 @@ const RU_TEXT = {
   "Looks right? One more step to make it permanent.":"Всё верно? Ещё один шаг — и это навсегда.",
   "Next":"Далее","Edit":"Изменить",
   "Next: confirm your spot — 0.1 GRAM":"Дальше — подтверждение места, 0.1 GRAM",
-  "You're #":"Ты #","in the count":"по счёту"
+  "You're #":"Ты #","in the count":"по счёту",
+  "e.g. \"Appeared on my hand when I was 12\"":"например: «Появилось на руке, когда мне было 12»"
 };
 
 const RU_HTML = {
