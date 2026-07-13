@@ -3469,7 +3469,6 @@ function constellationStory(nftData){
     P.push(isReal
       ? `И это — не просто образ: это одно из восьмидесяти восьми настоящих созвездий земного неба. Каждое из них может быть открыто здесь лишь один раз, одним человеком — и это созвездие открыто. Больше оно не достанется никому.`
       : `Стоит сказать честно, каким оно родилось: это мифическое созвездие — его нет в земных атласах, оно существует только здесь и только у одного человека. Восемьдесят восемь настоящих созвездий — отдельная, общая охота: каждый новый минт даёт шанс открыть одно из них.`);
-    if (nftData.constData?.desc) P.push(`У его образа есть своя легенда: ${nftData.constData.desc}`);
     P.push(pick([
       `Говорят, такие созвездия — маяки: их свет виден тем, кто ещё думает, что он один. Пока оно горит на общем небе, кто-то где-то понимает, что нас можно сосчитать.`,
       `На общем небе оно — один огонь среди всех остальных. Но счёт устроен просто: без этого огня число было бы меньше ровно на одного человека. На настоящего.`,
@@ -3494,7 +3493,6 @@ function constellationStory(nftData){
   P.push(isReal
     ? `And this is more than an image: it is one of the eighty-eight real constellations of Earth's sky. Each of them can be discovered here only once, by one person — and this one has been discovered. It will never belong to anyone else.`
     : `To say it honestly: this constellation is mythical — it appears in no earthly atlas, it exists only here and only for one person. The eighty-eight real constellations are a separate, shared hunt: every new mint is a fresh chance to discover one of them.`);
-  if (nftData.constData?.desc) P.push(`Its image carries a legend of its own: ${nftData.constData.desc}`);
   P.push(pick([
     `They say constellations like this are beacons: their light reaches people who still believe they are alone. While it burns in the shared sky, someone, somewhere, realises we can be counted.`,
     `In the shared sky it is one light among all the others. But the count is simple: without this light, the number would be smaller by exactly one person. A real one.`,
