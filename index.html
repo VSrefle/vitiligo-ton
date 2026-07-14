@@ -1456,6 +1456,7 @@ if (tg) {
   if (tg.onEvent) tg.onEvent('viewportChanged', vtMeasureViewport);
   const u = tg.initDataUnsafe?.user;
   if (u) {
+    window.__tgUser = u; // stashed for a debug-panel log once debugMode is known (below)
     myTelegramId = u.username || u.id;
     const n = [u.first_name, u.last_name].filter(Boolean).join(' ');
     document.getElementById('profileName').textContent = n || 'Your name';
@@ -1837,6 +1838,10 @@ if (cosmosCV) {
       if (constName) existing.constName = constName;
       if (story) existing.story = story;
       if (type) existing.type = type;
+      // 13.07.2026 — this branch used to drop constData on the floor for
+      // stars that were re-processed (only name/story/type were updated).
+      // Now that other people's stars carry real seeded constData, keep it.
+      if (constData) existing.constData = constData;
       return;
     }
     let sd = 0; const s = String(addr || 'anon');
@@ -2631,6 +2636,23 @@ document.querySelectorAll('.nav-item').forEach(btn=>{
 // (nothing is lost), it just doesn't render unless explicitly turned on via
 // the secret long-press gesture on the logo (see bindDebugGesture below).
 let debugMode = (localStorage.getItem('vt_debug') === '1');
+// 14.07.2026 — diagnostic for two reported issues (profile photo not
+// showing, language picker not appearing): log exactly what Telegram
+// actually handed us at launch, instead of guessing. window.__tgUser was
+// stashed earlier (see the `if (tg) {...}` block above), before debugMode
+// existed to gate a log call.
+if (debugMode) {
+  if (window.__tgUser) {
+    updateDebugInfo('tg user: id=' + window.__tgUser.id + ' photo_url=' +
+      (window.__tgUser.photo_url ? 'PRESENT' : 'missing') + ' language_code=' +
+      (window.__tgUser.language_code || 'none') + ' username=' + (window.__tgUser.username || 'none'));
+  } else if (window.Telegram?.WebApp) {
+    updateDebugInfo('tg WebApp present but initDataUnsafe.user is EMPTY — not launched with user context');
+  } else {
+    updateDebugInfo('window.Telegram.WebApp not found at all — not running inside Telegram');
+  }
+  updateDebugInfo('lang: stored vt_lang=' + (localStorage.getItem('vt_lang') || '(none — picker should show)'));
+}
 window.addEventListener('error', (e) => {
   const bar = document.getElementById('persistentDebug');
   if (bar) { if (debugMode) bar.style.display='block'; bar.textContent = '🔴 GLOBAL ERROR: ' + e.message + ' (' + e.filename + ':' + e.lineno + ')\n' + bar.textContent; }
@@ -2988,6 +3010,22 @@ const MYTHICAL_FALLBACKS = [
   {name:'Vestigia Lucis · The Trail of Light-Marks', desc:'Not every constellation was placed all at once — this one was left, one point at a time, by something that walked across the dark sky and never looked back to see what it left behind. Each mark is a little paler than the sky around it, a footprint made of absence rather than paint, the same way frost outlines a leaf by taking color away instead of adding it. The old skywatchers argued for centuries about whether it was a wound or a gift; the oldest texts, the ones nobody trusts anymore, simply call it a map of where something brave had been. It does not form a tidy shape, and that is the point — it was never meant to look like anything else. It only had to be unmistakably, permanently itself.'},
   {name:'Speculum Fractum · The Broken Mirror That Still Works', desc:'A mirror once shattered while trying to hold too much light at once, and instead of being swept away, its pieces were hung in the sky exactly where they fell — which is why, to this day, this constellation has no clean symmetry, no obvious center. Each fragment still reflects, just at its own angle, throwing small honest glints instead of one blinding glare. People used to fear broken mirrors; the ones who named this constellation did not agree — they thought a mirror in many pieces simply had more places to catch the light from. It is one of the few constellations that looks slightly different depending on where you stand to view it, which the old astronomers considered a flaw and the old poets considered the entire point.'},
   {name:'Semita Candida · The Pale Path', desc:'Every other road in the old sky-maps is drawn as a single unbroken line; this one is drawn as a scatter of pale stepping-stones, because the story says it was walked by someone who never moved in a straight line and never apologized for it. The gaps between the stars are not missing pieces — they are the parts of the journey nobody else was allowed to see. Shepherds used it to find their way home precisely because it looked unfinished; a path that pretends to be perfectly smooth, they said, is usually lying to you. This one never lied. It simply went where it went, one honest patch of light at a time, and eventually, every single time, it arrived.'},
+  {name:'Cortex Lunaris · The Moon\'s Second Skin', desc:'The old sky-keepers believed the moon once shed a layer of itself, the way a birch tree sheds bark in pale ribbons, and that this discarded skin did not fall to earth but stayed aloft, arranging itself into a shape of its own choosing. It was never meant to glow as brightly as what it came from — it simply kept enough light to be found. Children were told that anyone born with patches paler than their own skin carried a piece of that same shed moonlight, not as a flaw in the fabric but as a fabric of its own. The constellation drifts slightly year to year, refusing to be pinned to one fixed shape, because the moon, too, is never quite the same shape twice.'},
+  {name:'Silex Pallidus · The Pale Flint', desc:'Flint sparks fire precisely because it is hard and unglamorous — nobody expects light from a plain grey stone. This constellation was named for the flint that surprised everyone: struck by accident, it threw a spark so pale and clean it outshone stones twice its polish. The old smiths kept a piece of pale flint in their pocket as a private reminder that the source of light rarely looks like light until the moment it\'s struck. This constellation doesn\'t blaze — it sparks, small and sure, exactly when something needs it to.'},
+  {name:'Aqua Quieta · The Still Water', desc:'Rivers get all the songs, but the old stargazers reserved a place in the sky for still water — the kind that doesn\'t rush anywhere, that simply holds whatever light falls onto it and gives it back unhurried. This constellation has no dramatic sweep across the sky; it sits, calm, in one modest patch, and for that reason it was almost left unnamed for centuries. Someone finally argued that stillness deserved a place among all the racing rivers and leaping animals, because holding light steadily is its own kind of rare skill. It has not moved from that argument since.'},
+  {name:'Filum Argenteum · The Silver Thread', desc:'A single thread, thin enough to nearly disappear, runs the length of this constellation — not connecting grand shapes, just quietly holding a scatter of small lights together so they wouldn\'t drift apart in the vast dark. The old weavers claimed this thread had once mended something that seemed unmendable, and that the mend, instead of being hidden, was hung in the sky as proof that visible seams are nothing to be ashamed of. A repaired thing, they said, is not a lesser thing — it is a thing that was worth keeping.'},
+  {name:'Petra Lucens · The Stone That Kept Its Shine', desc:'Most stones dull with time; this one, the old miners insisted, only grew brighter the longer it sat in the dark, as if it had been storing light rather than losing it. They placed it in the sky not as a reward but as a record — proof that some things do not fade on schedule, and some grow more themselves the longer they are looked at. It sits low and steady among louder constellations, unbothered by comparison, doing what it has always done: keeping its shine.'},
+  {name:'Umbra Candida · The Pale Shadow', desc:'A shadow is supposed to be dark — this one refused. The old story tells of a shape that fell across the sky and, instead of dimming what was behind it, somehow lit it a little more, so that for centuries no one could agree whether it was a shadow at all. It was eventually named anyway, because the sky-keepers decided that anything unafraid to be an exception deserved a place, exception and all. It still confuses new stargazers every year. That confusion is considered part of its charm.'},
+  {name:'Nix Aeterna · The Snow That Never Melted', desc:'On the coldest nights the old shepherds swore they could see a single patch of snow that had fallen once, long ago, and simply never melted — not because it was frozen in place, but because it had decided that some things are allowed to stay exactly as they arrived. Everything around it changed with the seasons; it alone stayed pale and constant, a small stubborn patch of first-snow white in a sky that otherwise kept moving on. They named it not for what it did, but for what it refused to do.'},
+  {name:'Cicatrix Stellarum · The Star-Scar', desc:'The oldest sky-charts mark this shape plainly as a scar — not hidden behind a softer word, not dressed up as something else. The story says the sky itself was torn once, in a fight nobody now remembers the reason for, and rather than smoothing the tear away, the healers of that age simply let it stay visible, edges and all, and lit it so it could be found easily at night. They believed a mended sky was more trustworthy than a sky that pretended nothing had ever happened to it. This constellation has never once tried to look like it wasn\'t a scar. That is exactly why sailors trust it.'},
+  {name:'Plaga Lactea · The Milk-Pale Patch', desc:'Somewhere in the oldest maps, before constellations had proper myths, someone simply drew a patch — no hero, no animal, just an honest pale shape where the sky seemed to have run out of ink. Later storytellers tried again and again to give it a hero\'s tale, and every version was quietly rejected, because the patch never needed one. It was allowed to stay exactly what it was: a shape, unglossed, unexplained, and entirely sufficient on its own terms.'},
+  {name:'Ora Pallida · The Pale Coastline', desc:'Where the old sea-maps ran out, sailors used to draw this constellation instead — a jagged, uneven coastline of light marking the edge of what they knew, not because it was a boundary to fear but because it was the boundary that always led somewhere new. No two sailors ever drew its exact shape the same way, and none of them thought that was a problem. A coastline this honest was never meant to look tidy on paper. It only had to be recognizable from the deck of a ship at night, and it always was.'},
+  {name:'Glacies Lucida · The Bright Ice', desc:'Not all ice is dull — this constellation was named for the kind that, cracked open, throws light in every direction at once instead of staying smooth and unremarkable. The old northern watchers said it formed where cold met light and neither one backed down, leaving behind something neither fully one nor the other, and brighter for it. It is one of the sharpest-edged shapes in the sky, and nobody has ever suggested softening it.'},
+  {name:'Terra Incognita Lucis · The Unmapped Land of Light', desc:'Every old atlas has a corner where the mapmaker simply wrote "unknown" and moved on — this constellation is the sky\'s version of that corner, a patch nobody managed to fully chart because it kept revealing new small stars the longer anyone looked. Rather than treat that as a failure of the map, the old astronomers treated it as an invitation: the unmapped parts are not empty, they said, they are simply not finished being discovered yet. It remains, by design, the one constellation that no chart agrees on completely.'},
+  {name:'Vela Candoris · The Sail of Pale Light', desc:'A ship\'s sail is judged by how much wind it catches, not by how uniform its color is — and the sail in this constellation was famously patched, mismatched, stitched from whatever pale cloth was on hand during a long voyage. It got the ship home anyway. The old sailors kept telling the story precisely because a perfect sail was never the point; a sail that holds together and catches the wind is. This constellation has looked patchwork since the night it was first charted, and it has never once been redrawn to look neater.'},
+  {name:'Corona Tacita · The Silent Crown', desc:'Most crowns in the old sky-charts announce themselves — bright, symmetrical, unmissable. This one sits low and quiet, easy to walk past if you\'re not looking for it, and the story insists that was deliberate: a crown given to someone who never asked to be seen, only to be real. The old sky-keepers debated for a generation whether something so understated deserved the word "crown" at all. They kept the name. Quiet was decided to be a kind of royalty too.'},
+  {name:'Ripa Lucis · The Riverbank of Light', desc:'A riverbank doesn\'t make the water — it just holds the shape the water needs in order to go anywhere at all. This constellation was named for the unglamorous, necessary edge that every bright thing needs beside it, the part that never gets the myths written about it but without which nothing downstream would arrive anywhere. The old poets eventually gave it its own small myth, almost as an apology for centuries of ignoring it. It accepted the apology and stayed exactly where it was.'},
+  {name:'Fenestra Noctis · The Night\'s Window', desc:'Not a constellation of stars so much as a constellation of the gaps between them — the old watchers noticed a shape formed entirely by where the sky seemed to open a little wider, like a window left ajar in a house otherwise sealed against the cold. Nobody has ever agreed on what it opens onto. That has never stopped people from checking it, on clear nights, just in case tonight is the night it shows them something new.'},
 ];
 
 // ── CONSTELLATION SELECTION ──
@@ -3183,7 +3221,16 @@ Make the name and mythology completely original — not based on any real-world 
       // here and quietly broke the "discovered once, ever" scarcity promise
       // — a random real name like "Gemini" would get handed out as an
       // ordinary pick, not tracked in discoveredReal, not really rare).
-      const picked = MYTHICAL_FALLBACKS[Math.floor(Math.random() * MYTHICAL_FALLBACKS.length)];
+      // 14.07.2026 — avoid handing the same person a repeat: filter out
+      // names already present in their own collection (myNfts) first, and
+      // only fall back to the full pool once they've genuinely seen all of
+      // them. Fixes real complaint: "second constellation reads almost
+      // identical to the first" — with only 4 fallback entries before
+      // today, that was near-guaranteed after 2-3 mints.
+      const ownedNames = new Set((myNfts || []).map(n => n && n.name));
+      const unseenFallbacks = MYTHICAL_FALLBACKS.filter(c => !ownedNames.has(c.name));
+      const fallbackPool = unseenFallbacks.length > 0 ? unseenFallbacks : MYTHICAL_FALLBACKS;
+      const picked = fallbackPool[Math.floor(Math.random() * fallbackPool.length)];
       const starCount = 6 + Math.floor(Math.random() * 6);
       const stars = Array.from({length: starCount}, () => ({x: 0.1 + Math.random()*0.8, y: 0.1 + Math.random()*0.8}));
       const lines = [];
@@ -4257,8 +4304,17 @@ async function loadAllStarsFromChain() {
         if (!u) { if (debugMode) updateDebugInfo(`loadAllStars #${num}: parseUserTuple returned null, elements=${elements ? elements.length : 'none'}`); continue; }
         const isLegendary = u.discMask !== '0';
         if (debugMode) updateDebugInfo(`loadAllStars #${num}: addr=${addr.slice(0,10)} hasConst=${u.hasConstellation} genesis=${isGenesisWallet(addr)} → addOtherStar`);
+        // 13.07.2026 — constData was hardcoded to null here, so every other
+        // person's star had hasConst=true but no shape to render, and fell
+        // back to a dim dot. The constellation shape isn't stored on-chain
+        // at all (see restoreMyStar/nftData path above) — it's procedurally
+        // seeded from the constellation name via seededStars(). Do the same
+        // here so other people's stars render as full stars, not dots.
+        const otherConstData = (u.hasConstellation && u.constName)
+          ? { name: u.constName, isRealDiscovery: isLegendary, stars: seededStars(u.constName, 5) }
+          : null;
         if (window.addOtherStar) {
-          window.addOtherStar(addr, u.hasConstellation ? u.constName : null, u.hasConstellation ? u.story : '', null,
+          window.addOtherStar(addr, u.hasConstellation ? u.constName : null, u.hasConstellation ? u.story : '', otherConstData,
             isLegendary ? 'legendary' : (u.isRare ? 'rare' : 'normal'), isGenesisWallet(addr));
         }
       } catch(e) { if (debugMode) updateDebugInfo(`loadAllStars #${num}: EXCEPTION ${e.message}`); }
