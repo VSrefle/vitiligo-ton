@@ -2135,7 +2135,16 @@ if (cosmosCV) {
         cosmosCtx.globalAlpha = 0.8; cosmosCtx.fillStyle = '#c084fc';
         cosmosCtx.font = `bold ${Math.min(11, sz*0.6)}px system-ui`;
         cosmosCtx.textAlign = 'center';
-        cosmosCtx.fillText((LANG === 'ru' ? 'Я ✦' : 'You ✦'), sx, sy + sz + 10);
+        // 14.07.2026 FIX — this used to reference the top-level `LANG`
+        // variable, which is declared with `let` far below in the same
+        // script (~line 4816). drawCosmosFrame() runs synchronously at
+        // page load, long before that line executes, so referencing LANG
+        // here threw "Cannot access 'LANG' before initialization" and
+        // silently killed the REST of the script — including the language
+        // picker and the Profile language-switch buttons. Reading
+        // localStorage directly here has no such ordering dependency.
+        let __isRu = false; try { __isRu = localStorage.getItem('vt_lang') === 'ru'; } catch(e) {}
+        cosmosCtx.fillText((__isRu ? 'Я ✦' : 'You ✦'), sx, sy + sz + 10);
       } else if (!p.isMe && p.profileName && sz > 8) {
         cosmosCtx.globalAlpha = 0.75; cosmosCtx.fillStyle = col;
         cosmosCtx.font = `bold ${Math.min(11, sz*0.6)}px system-ui`;
