@@ -3780,8 +3780,15 @@ function openNftDetail(nftData, showActions){
   document.getElementById('modalNftTitle').textContent = '✦ ' + nftData.name + (nftData.rare ? ' ★ RARE' : '');
   document.getElementById('modalNftTitle').classList.toggle('rare', nftData.rare);
   document.getElementById('modalNftPreview').classList.toggle('rare', nftData.rare);
-  document.getElementById('modalNftDesc').textContent = pickDesc(nftData.constData);
-  document.getElementById('modalNftDesc').style.display = pickDesc(nftData.constData) ? 'block' : 'none';
+  // 14.07.2026 — modalNftDesc (constData.desc, the fixed per-name lore
+  // paragraph like "Semita Candida"'s road-of-stones text) removed from
+  // this card too. Earlier today only the longer generated
+  // constellationStory() narrative was pulled out per "не надо
+  // разворачиваемый блок" — this shorter fixed text was left behind and
+  // ended up filling the space where the person's OWN written phrase
+  // should be the only thing shown. Explicit instruction: this field is
+  // for what the person actually wrote, not constellation lore.
+  document.getElementById('modalNftDesc').style.display = 'none';
   // 14.07.2026 — city + age shown together as primary, honest content
   // (see the HTML comment above #modalNftCity). Only shown when we
   // actually have the value — never guessed, never someone else's.
@@ -4489,7 +4496,7 @@ async function loadAllStarsFromChain() {
         const u = parseUserTuple(elements);
         if (!u) { if (debugMode) updateDebugInfo(`loadAllStars #${num}: parseUserTuple returned null, elements=${elements ? elements.length : 'none'}`); continue; }
         const isLegendary = u.discMask !== '0';
-        if (debugMode) updateDebugInfo(`loadAllStars #${num}: addr=${addr.slice(0,10)} hasConst=${u.hasConstellation} genesis=${isGenesisWallet(addr)} → addOtherStar`);
+        if (debugMode) updateDebugInfo(`loadAllStars #${num}: addr=${addr.slice(0,10)} hasConst=${u.hasConstellation} genesis=${isGenesisWallet(addr)} name=${u.name} transformCount=${u.transformCount} rawLen=${elements ? elements.length : 'none'} → addOtherStar`);
         // 13.07.2026 — constData was hardcoded to null here, so every other
         // person's star had hasConst=true but no shape to render, and fell
         // back to a dim dot. The constellation shape isn't stored on-chain
