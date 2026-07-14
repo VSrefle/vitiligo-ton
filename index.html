@@ -774,7 +774,10 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
      only job is to answer one question with certainty: is this device
      actually looking at today's deploy, or a cached older one? Bump the
      date/time text every deploy. Tap it to dismiss. -->
-<div id="__buildTag" onclick="this.style.display='none'" style="position:fixed;top:0;left:0;right:0;z-index:999999;background:#7c3aed;color:#fff;font:12px monospace;text-align:center;padding:4px;">BUILD 2026-07-14 12:10 UTC — tap to dismiss</div>
+<div id="__buildTag" style="position:fixed;top:0;left:0;right:0;z-index:999999;background:#7c3aed;color:#fff;font:12px monospace;text-align:center;padding:4px;display:flex;align-items:center;justify-content:center;gap:10px;">
+  <span onclick="this.parentElement.style.display='none'" style="cursor:pointer;">BUILD 2026-07-14 12:20 UTC</span>
+  <span onclick="try{ debugMode=!debugMode; localStorage.setItem('vt_debug',debugMode?'1':'0'); var b=document.getElementById('persistentDebug'); if(b) b.style.display=debugMode?'block':'none'; var d=document.getElementById('debugInfo'); if(d) d.style.display=debugMode?'block':'none'; if(debugMode && typeof updateDebugInfo==='function') updateDebugInfo('debug toggled via BUILD bar button'); }catch(e){ alert('debug toggle error: '+e.message); }" style="cursor:pointer;background:#000;padding:2px 10px;border-radius:6px;font-weight:bold;">🐞 DEBUG</span>
+</div>
 
 <canvas id="starfield"></canvas>
 
