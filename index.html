@@ -1780,7 +1780,7 @@ if (cosmosCV) {
     }
   };
 
-  window.restoreMyStar = function(seedStr, constName, story, constData, type, isFounder, transformCount) {
+  window.restoreMyStar = function(seedStr, constName, story, constData, type, isFounder, transformCount, city, age) {
     // Founder path (08.07.2026): the Genesis star at the centre already
     // IS this person — his chain record moves into it (isMe + the real
     // constellation replacing the placeholder shape) instead of lighting
@@ -1794,6 +1794,8 @@ if (cosmosCV) {
         if (story) gen.story = story;
         if (constData) gen.constData = constData;
         if (transformCount) gen.transformCount = transformCount;
+        if (city) gen.city = city;
+        if (age) gen.age = age;
         return;
       }
     }
@@ -1810,12 +1812,14 @@ if (cosmosCV) {
       if (constData) existing.constData = constData;
       if (type) existing.type = type;
       if (transformCount) existing.transformCount = transformCount;
+      if (city) existing.city = city;
+      if (age) existing.age = age;
       return;
     }
     cosmosParts.push({
       x: 1000 + Math.cos(angle) * dist,
       y: 1000 + Math.sin(angle) * dist,
-      type: type || 'normal', constName, story, constData, transformCount: transformCount || 0,
+      type: type || 'normal', constName, story, constData, transformCount: transformCount || 0, city: city || null, age: age || null,
       isMe: true,
       ph: rnd() * Math.PI * 2, sp: 0.2 + rnd() * 0.4, sz: 12
     });
@@ -1830,7 +1834,7 @@ if (cosmosCV) {
   // deterministic per-seed position as restoreMyStar, so each person's
   // star sits in the same spot on every launch, for everyone looking —
   // not just for them. Dedupes by wallet address.
-  window.addOtherStar = function(addr, constName, story, constData, type, isGenesisPerson, profileName, transformCount) {
+  window.addOtherStar = function(addr, constName, story, constData, type, isGenesisPerson, profileName, transformCount, city, age) {
     if (isGenesisPerson) {
       const gen = cosmosParts.find(p => p.isGenesis);
       // If the viewer themselves IS the founder, restoreMyStar already
@@ -1842,6 +1846,8 @@ if (cosmosCV) {
         if (constData) gen.constData = constData;
         if (profileName) gen.profileName = profileName;
         if (transformCount) gen.transformCount = transformCount;
+        if (city) gen.city = city;
+        if (age) gen.age = age;
       }
       return;
     }
@@ -1856,6 +1862,8 @@ if (cosmosCV) {
       if (constData) existing.constData = constData;
       if (profileName) existing.profileName = profileName;
       if (transformCount) existing.transformCount = transformCount;
+      if (city) existing.city = city;
+      if (age) existing.age = age;
       return;
     }
     let sd = 0; const s = String(addr || 'anon');
@@ -1865,7 +1873,7 @@ if (cosmosCV) {
     cosmosParts.push({
       x: 1000 + Math.cos(angle) * dist,
       y: 1000 + Math.sin(angle) * dist,
-      type: type || 'normal', constName, story, constData, profileName, transformCount: transformCount || 0,
+      type: type || 'normal', constName, story, constData, profileName, transformCount: transformCount || 0, city: city || null, age: age || null,
       addr, isMe: false,
       ph: rnd() * Math.PI * 2, sp: 0.2 + rnd() * 0.4, sz: 12
     });
@@ -1935,7 +1943,9 @@ if (cosmosCV) {
         story: best.story || '',
         rare: best.type === 'rare' || best.type === 'legendary',
         constData: best.constData,
-        owner: best.owner || null
+        owner: best.owner || null,
+        city: best.city || null,
+        age: best.age || null
       }, false);
     }
   }
@@ -3111,6 +3121,21 @@ const MILESTONE_REAL_CHANCE = 0.05; // every 100th mint gets 5% bonus real chanc
 
 // Track which real constellations have been discovered — see loadInitialChainData()
 
+// 14.07.2026 — when a constellation is rebuilt from chain data (someone
+// else's star, or your own after a reload), constData used to be
+// reconstructed as just {name, isRealDiscovery, stars} — dropping the
+// actual written myth text (`desc`) on the floor even though it still
+// exists, verbatim, in one of these three pools. Looked up by name so
+// re-opened cards show the real text instead of nothing.
+function findConstDesc(name) {
+  if (!name) return null;
+  const pools = [REAL_CONSTS, RARE_CONSTS, MYTHICAL_FALLBACKS];
+  for (const pool of pools) {
+    const hit = pool.find(c => c.name === name);
+    if (hit) return hit.desc || null;
+  }
+  return null;
+}
 function selectConstellation(nftCountSoFar) {
   const upcomingMintNumber = nftCountSoFar + 1;
   const isMilestoneMint = upcomingMintNumber % 100 === 0;
@@ -4297,11 +4322,11 @@ async function loadMyConstellationFromChain() {
     const transformCount = getNum(elements[15]);
     window.myTransformCount = transformCount;
     if (!constName) return;
-    const nftData = { name: constName, story, rare: isRare || isLegendary, isRealDiscovery: isLegendary, constData: { name: constName, isRealDiscovery: isLegendary, stars: seededStars(constName, 5) }, firstConstName: firstConstName || null, city: onChainProfile.city ? locCity(onChainProfile.city) : null, age: onChainProfile.age || null };
+    const nftData = { name: constName, story, rare: isRare || isLegendary, isRealDiscovery: isLegendary, constData: { name: constName, isRealDiscovery: isLegendary, stars: seededStars(constName, 5), desc: findConstDesc(constName) }, firstConstName: firstConstName || null, city: onChainProfile.city ? locCity(onChainProfile.city) : null, age: onChainProfile.age || null };
     myNfts.push(nftData);
     renderRestoredNftCard(nftData);
     // ...and back onto the shared sky (08.07.2026) — see restoreMyStar.
-    if (window.restoreMyStar) window.restoreMyStar(addr, constName, story, nftData.constData, isLegendary ? 'legendary' : (isRare ? 'rare' : 'normal'), isGenesisWallet(addr), transformCount);
+    if (window.restoreMyStar) window.restoreMyStar(addr, constName, story, nftData.constData, isLegendary ? 'legendary' : (isRare ? 'rare' : 'normal'), isGenesisWallet(addr), transformCount, nftData.city, nftData.age);
   } catch(e) { console.warn('getUser load failed', e); dbgUser('EXCEPTION: ' + (e && e.message)); }
 }
 function beginCellSafe(){ try { return !!(window.TonCore && window.TonCore.beginCell); } catch(e){ return false; } }
@@ -4395,6 +4420,8 @@ function parseUserTuple(elements) {
   const getStr = el => decodeCellString(el?.slice);
   return {
     name: getStr(elements[1]),
+    city: elements.length > 3 ? getStr(elements[3]) : null,
+    age: elements.length > 4 ? getNum(elements[4]) : null,
     hasConstellation: getBool(elements[7]),
     constName: elements.length > 9 ? getStr(elements[9]) : null,
     story: elements.length > 10 ? getStr(elements[10]) : '',
@@ -4448,11 +4475,12 @@ async function loadAllStarsFromChain() {
         // seeded from the constellation name via seededStars(). Do the same
         // here so other people's stars render as full stars, not dots.
         const otherConstData = (u.hasConstellation && u.constName)
-          ? { name: u.constName, isRealDiscovery: isLegendary, stars: seededStars(u.constName, 5) }
+          ? { name: u.constName, isRealDiscovery: isLegendary, stars: seededStars(u.constName, 5), desc: findConstDesc(u.constName) }
           : null;
         if (window.addOtherStar) {
           window.addOtherStar(addr, u.hasConstellation ? u.constName : null, u.hasConstellation ? u.story : '', otherConstData,
-            isLegendary ? 'legendary' : (u.isRare ? 'rare' : 'normal'), isGenesisWallet(addr), u.name || '', u.transformCount || 0);
+            isLegendary ? 'legendary' : (u.isRare ? 'rare' : 'normal'), isGenesisWallet(addr), u.name || '', u.transformCount || 0,
+            u.city ? locCity(u.city) : null, u.age || null);
         }
       } catch(e) { if (debugMode) updateDebugInfo(`loadAllStars #${num}: EXCEPTION ${e.message}`); }
     }
