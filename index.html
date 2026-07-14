@@ -9,33 +9,32 @@
 <script type="module">
   import { beginCell } from "https://esm.sh/@ton/core@0.56.0";
   window.TonCore = { beginCell };
-  // Cell and Address are only used by optional features (Map city-list,
-  // reloading a previously-minted constellation into Profile). Loaded
-  // separately and defensively so that if this fails for any reason
-  // (CDN hiccup, export mismatch, etc.) it can NEVER take down beginCell —
-  // which every single payment depends on. A previous version imported
-  // both in one statement, which meant a Cell failure would silently break
-  // ALL payments with zero visible error. Never again.
-  // window.TonCoreExtrasReady lets other code explicitly await this
-  // instead of racing it — found 04.07.2026 when the Map's city list
-  // parsed the count correctly but the city name came back empty, because
-  // loadCitiesFromChain() ran before this import had resolved.
-  window.TonCoreExtrasReady = Promise.all([
-    import("https://esm.sh/@ton/core@0.56.0").then(mod => {
-      if (mod.Cell) window.TonCore.Cell = mod.Cell;
-      if (mod.Address) window.TonCore.Address = mod.Address;
-    }),
-    // @ton/core's Cell.fromBoc expects a real Node-style Buffer, not a
-    // plain Uint8Array — passing a Uint8Array throws "Argument must be a
-    // Buffer" even though it's byte-for-byte identical. Found 04.07.2026
-    // while decoding city names for the Map. Loaded from the same
-    // 'buffer' package @ton/core itself depends on, so it's the exact
-    // same Buffer class it checks against internally.
-    import("https://esm.sh/buffer@6.0.3").then(mod => {
-      if (mod.Buffer) window.TonCore.Buffer = mod.Buffer;
-    })
-  ]).catch(e => console.warn('[vitiligo.ton] Cell/Address/Buffer import failed — Map city list and profile reload will stay empty, payments unaffected:', e));
   window.dispatchEvent(new Event('toncore-ready'));
+</script>
+<script type="module">
+  // 14.07.2026 — Address/Cell/Buffer used to load via a dynamic import()
+  // call in the SAME script as beginCell, tracked through
+  // window.TonCoreExtrasReady. Real debug logs from inside Telegram's
+  // in-app WebView showed that dynamic import() genuinely failing (not
+  // just slow) — "TonCore.Address not loaded (CDN?)" appeared even AFTER
+  // awaiting TonCoreExtrasReady, right after a generic "Script error."
+  // with no stack trace. beginCell, by contrast — loaded via a plain
+  // STATIC import — has worked reliably in Telegram this whole time.
+  // Likely cause: dynamic import() has shakier support across WebView
+  // versions than a static module import. Switching Address/Cell/Buffer
+  // to a static import too, but — important — keeping it in its OWN
+  // separate <script type="module"> tag, not merged into beginCell's:
+  // an older version of this file once imported everything in one
+  // statement, and a Cell/Address failure silently broke ALL payments
+  // with zero visible error, because a failed static import fails the
+  // entire containing module script, not just the one broken binding.
+  // Two separate script tags means a failure here still can't touch
+  // beginCell, preserving that isolation while still getting the more
+  // reliable static-import loading path for Address/Cell.
+  import { Cell, Address } from "https://esm.sh/@ton/core@0.56.0";
+  import { Buffer } from "https://esm.sh/buffer@6.0.3";
+  if (window.TonCore) { window.TonCore.Cell = Cell; window.TonCore.Address = Address; window.TonCore.Buffer = Buffer; }
+  window.TonCoreExtrasReady = Promise.resolve();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
