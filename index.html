@@ -776,7 +776,15 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
      date/time text every deploy. Tap it to dismiss. -->
 <div id="__buildTag" style="position:fixed;top:0;left:0;right:0;z-index:999999;background:#7c3aed;color:#fff;font:12px monospace;text-align:center;padding:4px;display:flex;align-items:center;justify-content:center;gap:10px;">
   <span onclick="this.parentElement.style.display='none'" style="cursor:pointer;">BUILD 2026-07-14 12:20 UTC</span>
-  <span onclick="try{ debugMode=!debugMode; localStorage.setItem('vt_debug',debugMode?'1':'0'); var b=document.getElementById('persistentDebug'); if(b) b.style.display=debugMode?'block':'none'; var d=document.getElementById('debugInfo'); if(d) d.style.display=debugMode?'block':'none'; if(debugMode && typeof updateDebugInfo==='function') updateDebugInfo('debug toggled via BUILD bar button'); }catch(e){ alert('debug toggle error: '+e.message); }" style="cursor:pointer;background:#000;padding:2px 10px;border-radius:6px;font-weight:bold;">🐞 DEBUG</span>
+  <span onclick="try{
+    var next = localStorage.getItem('vt_debug') !== '1';
+    localStorage.setItem('vt_debug', next?'1':'0');
+    try { debugMode = next; } catch(e){}
+    var b=document.getElementById('persistentDebug'); if(b) b.style.display = next?'block':'none';
+    var d=document.getElementById('debugInfo'); if(d) d.style.display = next?'block':'none';
+    if (b) b.textContent = (next ? '🐞 Debug ON — reload the page now for full logs from the very start.\n' : '') + b.textContent;
+    if (next) { try { if (typeof updateDebugInfo==='function') updateDebugInfo('debug toggled via BUILD bar button'); } catch(e){} }
+  }catch(e){ alert('debug toggle error: '+e.message); }" style="cursor:pointer;background:#000;padding:2px 10px;border-radius:6px;font-weight:bold;">🐞 DEBUG</span>
 </div>
 
 <canvas id="starfield"></canvas>
@@ -2756,6 +2764,17 @@ if (debugMode) {
 
 function updateDebugInfo(stage){
   const el = document.getElementById('debugInfo');
+  // 14.07.2026 — currentConst is declared further down the script (`let
+  // currentConst`); calling this function very early (e.g. the BUILD-bar
+  // debug button, which works via a raw inline onclick and can fire before
+  // the main script has finished its first synchronous pass) used to throw
+  // "Cannot access 'currentConst' before initialization" and abort the
+  // whole function — silently killing every debug log after it, which is
+  // exactly backwards for a diagnostic tool. try/catch instead of typeof:
+  // typeof does NOT protect against TDZ for a same-scope `let`.
+  let currentConstInfo = 'NULL';
+  try { currentConstInfo = (currentConst ? 'set (' + currentConst.name + ')' : 'NULL'); }
+  catch(e) { currentConstInfo = 'TDZ (main script still initializing)'; }
   const lines = [
     'stage: ' + stage,
     'connected: ' + connected,
@@ -2764,7 +2783,7 @@ function updateDebugInfo(stage){
     'wallet addr: ' + (tonConnectUI?.account?.address ? tonConnectUI.account.address.slice(0,10)+'…' : 'none'),
     'window.TonCore: ' + (window.TonCore ? 'exists' : 'MISSING'),
     'window.TonCore.beginCell: ' + (window.TonCore?.beginCell ? 'exists' : 'MISSING'),
-    'currentConst: ' + (typeof currentConst !== 'undefined' && currentConst ? 'set (' + currentConst.name + ')' : 'NULL'),
+    'currentConst: ' + currentConstInfo,
     'hasProfile(): ' + (typeof hasProfile === 'function' ? hasProfile() : '?'),
     'time: ' + new Date().toLocaleTimeString()
   ];
