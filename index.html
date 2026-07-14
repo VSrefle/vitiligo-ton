@@ -3592,15 +3592,15 @@ function constellationStory(nftData){
     // read as if EVERY mint were one of the 88 real constellations.
     // Now it states plainly which kind this one is.
     P.push(isReal
-      ? `И это — не просто образ: это одно из восьмидесяти восьми настоящих созвездий земного неба. Каждое из них может быть открыто здесь лишь один раз, одним человеком — и это созвездие открыто. Больше оно не достанется никому.`
-      : `Стоит сказать честно, каким оно родилось: это мифическое созвездие — его нет в земных атласах, оно существует только здесь и только у одного человека. Восемьдесят восемь настоящих созвездий — отдельная, общая охота: каждый новый минт даёт шанс открыть одно из них.`);
+      ? `Это не просто узор — а одно из восьмидесяти восьми древних имён неба, спавшее в темноте в ожидании своего часа. Найденное однажды, оно не находится дважды: с этой ночи оно принадлежит только этому небу и только этому человеку — и больше никому, никогда.`
+      : `У этого узора нет древнего имени в земных атласах: он не был найден среди старых огней — он был рождён заново, здесь и сейчас, и существует в точности таким только у одного человека во всей вселенной. Где-то в темноте по-прежнему ждут своего часа восемьдесят восемь древних имён — редких, почти забытых огней. Может быть, следующий узор станет одним из них. Этот стал кем-то другим: первым и единственным экземпляром самого себя.`);
     P.push(pick([
       `Говорят, такие созвездия — маяки: их свет виден тем, кто ещё думает, что он один. Пока оно горит на общем небе, кто-то где-то понимает, что нас можно сосчитать.`,
       `На общем небе оно — один огонь среди всех остальных. Но счёт устроен просто: без этого огня число было бы меньше ровно на одного человека. На настоящего.`,
       `Каждое созвездие здесь — не украшение, а голос: «я есть». Этот голос теперь звучит вместе с остальными — и небо становится на один свет честнее.`
     ]));
     if (nftData.rare) P.push(`И ещё: это созвездие — золотое. Такие выпадают немногим, и его свет на общем небе всегда будет тёплого оттенка.`);
-    P.push(`Этот узор существует во вселенной в единственном экземпляре. Он записан в блокчейне навсегда: его нельзя повторить и нельзя отнять.`);
+    P.push(`Этот узор существует во вселенной в единственном экземпляре — вписанный в саму ткань неба так прочно, что его нельзя ни подделать, ни повторить, ни отнять. Никому. Никогда.`);
     return '<div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#a78bfa;margin-bottom:8px">✦ Легенда этого созвездия</div>' + P.map(p=>`<p style="margin:0 0 10px">${p}</p>`).join('');
   }
   P.push(pick([
@@ -3616,15 +3616,15 @@ function constellationStory(nftData){
     `The brightest star — ${high ? 'the one above all others' : 'the one at the base'} — is called ${starName} here: it was the first to ignite.`
   ]));
   P.push(isReal
-    ? `And this is more than an image: it is one of the eighty-eight real constellations of Earth's sky. Each of them can be discovered here only once, by one person — and this one has been discovered. It will never belong to anyone else.`
-    : `To say it honestly: this constellation is mythical — it appears in no earthly atlas, it exists only here and only for one person. The eighty-eight real constellations are a separate, shared hunt: every new mint is a fresh chance to discover one of them.`);
+    ? `This is more than a pattern — it is one of the eighty-eight ancient names of the sky, waiting in the dark for the one who would prove worthy of it. Found once, it is never found twice: from tonight it belongs to this sky, and to this person alone, forever.`
+    : `This pattern carries no ancient name from any earthly atlas — it was not found among the old lights, it was born new, here, tonight, and it exists in this exact form for exactly one person in the whole universe. Somewhere in the dark, eighty-eight ancient names are still waiting their turn — rare, half-forgotten fires. The next pattern might be one of them. This one became something else instead: the first and only copy of itself.`);
   P.push(pick([
     `They say constellations like this are beacons: their light reaches people who still believe they are alone. While it burns in the shared sky, someone, somewhere, realises we can be counted.`,
     `In the shared sky it is one light among all the others. But the count is simple: without this light, the number would be smaller by exactly one person. A real one.`,
     `Every constellation here is not decoration but a voice: "I exist." That voice now sounds together with the rest — and the sky becomes one light more honest.`
   ]));
   if (nftData.rare) P.push(`One more thing: this constellation is golden. Few ever receive one, and its light in the shared sky will always carry a warm hue.`);
-  P.push(`This exact pattern exists once in the universe. It is written on the blockchain forever: it cannot be repeated, and it cannot be taken away.`);
+  P.push(`This exact pattern exists once in the universe — woven into the fabric of the sky itself, so firmly that it can be forged by no one, repeated by no one, and taken away by no one. Ever.`);
   return '<div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#a78bfa;margin-bottom:8px">✦ The legend of this constellation</div>' + P.map(p=>`<p style="margin:0 0 10px">${p}</p>`).join('');
 }
 function openNftDetail(nftData, showActions){
