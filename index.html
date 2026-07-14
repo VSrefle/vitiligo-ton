@@ -1820,7 +1820,7 @@ if (cosmosCV) {
   // deterministic per-seed position as restoreMyStar, so each person's
   // star sits in the same spot on every launch, for everyone looking —
   // not just for them. Dedupes by wallet address.
-  window.addOtherStar = function(addr, constName, story, constData, type, isGenesisPerson) {
+  window.addOtherStar = function(addr, constName, story, constData, type, isGenesisPerson, profileName) {
     if (isGenesisPerson) {
       const gen = cosmosParts.find(p => p.isGenesis);
       // If the viewer themselves IS the founder, restoreMyStar already
@@ -1830,6 +1830,7 @@ if (cosmosCV) {
         if (constName) gen.constName = constName;
         if (story) gen.story = story;
         if (constData) gen.constData = constData;
+        if (profileName) gen.profileName = profileName;
       }
       return;
     }
@@ -1842,6 +1843,7 @@ if (cosmosCV) {
       // stars that were re-processed (only name/story/type were updated).
       // Now that other people's stars carry real seeded constData, keep it.
       if (constData) existing.constData = constData;
+      if (profileName) existing.profileName = profileName;
       return;
     }
     let sd = 0; const s = String(addr || 'anon');
@@ -1851,7 +1853,7 @@ if (cosmosCV) {
     cosmosParts.push({
       x: 1000 + Math.cos(angle) * dist,
       y: 1000 + Math.sin(angle) * dist,
-      type: type || 'normal', constName, story, constData,
+      type: type || 'normal', constName, story, constData, profileName,
       addr, isMe: false,
       ph: rnd() * Math.PI * 2, sp: 0.2 + rnd() * 0.4, sz: 12
     });
@@ -2070,7 +2072,13 @@ if (cosmosCV) {
       cosmosCtx.fillStyle = g2;
       cosmosCtx.beginPath(); cosmosCtx.arc(sx, sy, sz * 1.9, 0, Math.PI * 2); cosmosCtx.fill();
 
-      const spiky = p.isGenesis || p.isMe || p.type === 'legendary' || p.type === 'rare';
+      // 14.07.2026 — was gated on rarity only (legendary/rare/genesis/me),
+      // so a person with a real, paid, minted "normal" constellation still
+      // rendered as a plain dot — contradicting the actual product intent
+      // ("has a constellation" = bright star, "just counted" = dim dot).
+      // Rarity now only affects colour/size elsewhere; visibility of the
+      // flare itself is gated on actually having constellation data.
+      const spiky = p.isGenesis || p.isMe || p.type === 'legendary' || p.type === 'rare' || !!p.constData;
       if (spiky && sz > 2) {
         // one tapered needle along +x: triangle pair, base at the core,
         // width shrinking to nothing at the tip
@@ -2118,12 +2126,21 @@ if (cosmosCV) {
       cosmosCtx.fillStyle = '#ffffff';
       cosmosCtx.beginPath(); cosmosCtx.arc(sx, sy, Math.max(0.5, sz * 0.12), 0, Math.PI * 2); cosmosCtx.fill();
 
-      // Label
+      // Label — 14.07.2026: "You ✦" stays exclusive to the viewer's own
+      // star; everyone else gets their profile name (getUser field #1,
+      // now actually read — see parseUserTuple/profileName plumbing).
+      // Stars from someone who hasn't set a profile name yet stay
+      // unlabeled rather than showing a placeholder like "Anonymous".
       if (p.isMe && sz > 8) {
         cosmosCtx.globalAlpha = 0.8; cosmosCtx.fillStyle = '#c084fc';
         cosmosCtx.font = `bold ${Math.min(11, sz*0.6)}px system-ui`;
         cosmosCtx.textAlign = 'center';
-        cosmosCtx.fillText('You ✦', sx, sy + sz + 10);
+        cosmosCtx.fillText((LANG === 'ru' ? 'Я ✦' : 'You ✦'), sx, sy + sz + 10);
+      } else if (!p.isMe && p.profileName && sz > 8) {
+        cosmosCtx.globalAlpha = 0.75; cosmosCtx.fillStyle = col;
+        cosmosCtx.font = `bold ${Math.min(11, sz*0.6)}px system-ui`;
+        cosmosCtx.textAlign = 'center';
+        cosmosCtx.fillText(p.profileName + ' ✦', sx, sy + sz + 10);
       }
     });
 
@@ -4259,6 +4276,7 @@ function parseUserTuple(elements) {
   const getBool = el => { const n = getNum(el); return n !== undefined && n !== 0; };
   const getStr = el => decodeCellString(el?.slice);
   return {
+    name: getStr(elements[1]),
     hasConstellation: getBool(elements[7]),
     constName: elements.length > 9 ? getStr(elements[9]) : null,
     story: elements.length > 10 ? getStr(elements[10]) : '',
@@ -4315,7 +4333,7 @@ async function loadAllStarsFromChain() {
           : null;
         if (window.addOtherStar) {
           window.addOtherStar(addr, u.hasConstellation ? u.constName : null, u.hasConstellation ? u.story : '', otherConstData,
-            isLegendary ? 'legendary' : (u.isRare ? 'rare' : 'normal'), isGenesisWallet(addr));
+            isLegendary ? 'legendary' : (u.isRare ? 'rare' : 'normal'), isGenesisWallet(addr), u.name || '');
         }
       } catch(e) { if (debugMode) updateDebugInfo(`loadAllStars #${num}: EXCEPTION ${e.message}`); }
     }
