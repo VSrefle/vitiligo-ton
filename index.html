@@ -3127,11 +3127,19 @@ const MILESTONE_REAL_CHANCE = 0.05; // every 100th mint gets 5% bonus real chanc
 // actual written myth text (`desc`) on the floor even though it still
 // exists, verbatim, in one of these three pools. Looked up by name so
 // re-opened cards show the real text instead of nothing.
+// FIX (same day) — the first version compared against the pool's full
+// `c.name` ("Speculum Fractum · The Broken Mirror That Still Works"),
+// but what's actually sent to the contract at mint time is truncated to
+// the part before "·" (see currentConst.name.split('·')[0].trim() at the
+// mint call site) — so on-chain constName is ALWAYS just "Speculum
+// Fractum", and the exact-match lookup could never succeed for anything,
+// ever. Compare against the same truncated form on both sides.
 function findConstDesc(name) {
   if (!name) return null;
+  const short = String(name).split('·')[0].trim();
   const pools = [REAL_CONSTS, RARE_CONSTS, MYTHICAL_FALLBACKS];
   for (const pool of pools) {
-    const hit = pool.find(c => c.name === name);
+    const hit = pool.find(c => c.name.split('·')[0].trim() === short);
     if (hit) return hit.desc || null;
   }
   return null;
