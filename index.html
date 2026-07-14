@@ -2173,16 +2173,22 @@ if (cosmosCV) {
         let __isRu = false; try { __isRu = localStorage.getItem('vt_lang') === 'ru'; } catch(e) {}
         // 14.07.2026 — upgrade index (×N), requested after live feedback
         // that a second/third mint felt invisible on the shared sky, not
-        // just in the card. transformCount is the contract's real mint
-        // count for this wallet; only shown once it's actually >1 so a
-        // person's very first (and only) constellation stays unlabeled.
-        const upgradeTag = (p.transformCount > 1) ? ' ×' + p.transformCount : '';
+        // just in the card. transformCount is the contract's real counter
+        // (0 on first mint, +1 each time after — see the .tact source:
+        // "birth is not a transformation"). FIX (same day): the badge
+        // condition was `> 1`, requiring a THIRD mint before showing
+        // anything, off by one against the contract's own semantics —
+        // a second mint (transformCount=1) should already count. Shown
+        // number is total mints (transformCount+1) to match the "N
+        // CONSTELLATIONS MINTED" wording used elsewhere in the app,
+        // rather than the raw 0-indexed transform counter.
+        const upgradeTag = (p.transformCount >= 1) ? ' ×' + (p.transformCount + 1) : '';
         cosmosCtx.fillText((__isRu ? 'Я ✦' : 'You ✦') + upgradeTag, sx, sy + sz + 10);
       } else if (!p.isMe && p.profileName && sz > 8) {
         cosmosCtx.globalAlpha = 0.75; cosmosCtx.fillStyle = col;
         cosmosCtx.font = `bold ${Math.min(11, sz*0.6)}px system-ui`;
         cosmosCtx.textAlign = 'center';
-        const upgradeTag = (p.transformCount > 1) ? ' ×' + p.transformCount : '';
+        const upgradeTag = (p.transformCount >= 1) ? ' ×' + (p.transformCount + 1) : '';
         cosmosCtx.fillText(p.profileName + ' ✦' + upgradeTag, sx, sy + sz + 10);
       }
     });
@@ -4489,10 +4495,34 @@ async function loadAllStarsFromChain() {
         const addr = decodeCellAddress(aEntry[1]);
         if (!addr) { if (debugMode) updateDebugInfo(`loadAllStars #${num}: decodeCellAddress failed`); continue; }
         if (myAddr && addr.toLowerCase() === myAddr) { if (debugMode) updateDebugInfo(`loadAllStars #${num}: skipped, is me`); continue; }
-        const userData = await tonFetch({ address: CONTRACT_ADDRESS, method: 'getUser', stack: [['tvm.Slice', addressToSliceArg(addr)]] });
+        let userData = await tonFetch({ address: CONTRACT_ADDRESS, method: 'getUser', stack: [['tvm.Slice', addressToSliceArg(addr)]] });
         if (!userData?.ok || userData?.result?.exit_code !== 0) { if (debugMode) updateDebugInfo(`loadAllStars #${num}: getUser failed, exit=${userData?.result?.exit_code}`); continue; }
-        const uEntry = userData?.result?.stack?.[0];
-        const elements = uEntry?.[1]?.elements || uEntry?.[1];
+        let uEntry = userData?.result?.stack?.[0];
+        let elements = uEntry?.[1]?.elements || uEntry?.[1];
+        // 14.07.2026 — a live debug session caught a getUser response for
+        // another person coming back with only 15 of the expected 16
+        // fields (transformCount, the last one, missing), right after a
+        // generic "Script error." in the log — matching other transient
+        // CDN/network flakiness already found and fixed today, not a
+        // contract or stored-data problem (confirmed against the .tact
+        // source: UserData is written with all 16 fields in exactly one
+        // place, no code path produces a shorter record, and this
+        // specific account registered on the current contract, not an
+        // older one). One quiet retry costs nothing and doesn't touch the
+        // contract at all — cheap insurance against a flaky read.
+        if (Array.isArray(elements) && elements.length > 0 && elements.length < 16) {
+          if (debugMode) updateDebugInfo(`loadAllStars #${num}: short response (${elements.length}/16 fields) — retrying once`);
+          await new Promise(r => setTimeout(r, 400));
+          const retryData = await tonFetch({ address: CONTRACT_ADDRESS, method: 'getUser', stack: [['tvm.Slice', addressToSliceArg(addr)]] });
+          if (retryData?.ok && retryData?.result?.exit_code === 0) {
+            const retryEntry = retryData?.result?.stack?.[0];
+            const retryElements = retryEntry?.[1]?.elements || retryEntry?.[1];
+            if (Array.isArray(retryElements) && retryElements.length > elements.length) {
+              elements = retryElements;
+              if (debugMode) updateDebugInfo(`loadAllStars #${num}: retry got ${elements.length}/16 fields`);
+            }
+          }
+        }
         const u = parseUserTuple(elements);
         if (!u) { if (debugMode) updateDebugInfo(`loadAllStars #${num}: parseUserTuple returned null, elements=${elements ? elements.length : 'none'}`); continue; }
         const isLegendary = u.discMask !== '0';
