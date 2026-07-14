@@ -2662,6 +2662,20 @@ document.querySelectorAll('.nav-item').forEach(btn=>{
 // (nothing is lost), it just doesn't render unless explicitly turned on via
 // the secret long-press gesture on the logo (see bindDebugGesture below).
 let debugMode = (localStorage.getItem('vt_debug') === '1');
+// 14.07.2026 — the long-press gesture below is unreliable inside Telegram's
+// in-app WebView: long-press there often triggers Telegram's own text-
+// selection/context menu instead of our touchstart handler, so the panel
+// could never be reached at all on some devices. Add a URL-based override
+// as a reliable fallback: open the page with ?debug=1 once, and it sticks
+// (same localStorage flag the gesture uses) until turned off the same way
+// with ?debug=0.
+try {
+  const __dbgParam = new URLSearchParams(location.search).get('debug');
+  if (__dbgParam === '1' || __dbgParam === '0') {
+    debugMode = (__dbgParam === '1');
+    localStorage.setItem('vt_debug', debugMode ? '1' : '0');
+  }
+} catch(e) {}
 // 14.07.2026 — diagnostic for two reported issues (profile photo not
 // showing, language picker not appearing): log exactly what Telegram
 // actually handed us at launch, instead of guessing. window.__tgUser was
