@@ -769,6 +769,13 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
 </head>
 <body>
 
+<!-- 14.07.2026 — pure-HTML build marker, deliberately zero JS dependency
+     (no script, no function call, nothing that can silently fail). Its
+     only job is to answer one question with certainty: is this device
+     actually looking at today's deploy, or a cached older one? Bump the
+     date/time text every deploy. Tap it to dismiss. -->
+<div id="__buildTag" onclick="this.style.display='none'" style="position:fixed;top:0;left:0;right:0;z-index:999999;background:#7c3aed;color:#fff;font:12px monospace;text-align:center;padding:4px;">BUILD 2026-07-14 12:10 UTC — tap to dismiss</div>
+
 <canvas id="starfield"></canvas>
 
 <!-- LANGUAGE PICKER — shows before onboarding on the very first launch
