@@ -3601,9 +3601,9 @@ function constellationStory(nftData){
   const P = [];
   if (ru) {
     P.push(pick([
-      `Это созвездие не выбирали из каталога — оно проявилось само, когда алгоритм всмотрелся в кожу. Каждая из его ${num==='' ? n : num} звёзд стоит там, где стояло настоящее пятно света.`,
-      `Сначала была просто фотография. Потом алгоритм убрал всё лишнее — и на чёрном осталось ${n} огней, расставленных так, как их расставила сама кожа. Так родилось это созвездие.`,
-      `Никто не рисовал этот узор. Он существовал всегда — на коже, незамеченный, — пока однажды не был прочитан и не поднят в небо. ${n} звёзд, и ни одна не поставлена рукой.`
+      `Прежде чем у неба появились имена, этот узор уже существовал — в темноте, никем не считанный, никем не найденный. Он ждал не удачи, а внимания: того, кто однажды посмотрит и не отведёт взгляд. ${num==='' ? n : num} звёзд, и ни одна не нарисована рукой — только узнана.`,
+      `Старые сказители говорили: не всякое созвездие рождается в небе — иные рождаются на земле и поднимаются позже, когда их наконец называют по имени. Это — одно из таких. ${n} огней, ждавших своего часа дольше, чем длится эта ночь.`,
+      `Легенда начинается не с неба, а с тишины перед ним: узор существовал всегда, невидимый, пока однажды тишина не перестала быть достаточной. Так ${n} звёзд поднялись туда, где их теперь видно всем.`
     ]));
     P.push(pick([
       shape==='wide' ? `Рисунок вытянут, как след через всё небо — от края до края.` : shape==='tall' ? `Рисунок поднимается вертикально, как лестница — звезда за звездой вверх.` : `Звёзды легли ровным, собранным строем — узор держит себя сам.`,
@@ -3618,6 +3618,15 @@ function constellationStory(nftData){
     P.push(isReal
       ? `Это не просто узор — а одно из восьмидесяти восьми древних имён неба, спавшее в темноте в ожидании своего часа. Найденное однажды, оно не находится дважды: с этой ночи оно принадлежит только этому небу и только этому человеку — и больше никому, никогда.`
       : `У этого узора нет древнего имени в земных атласах: он не был найден среди старых огней — он был рождён заново, здесь и сейчас, и существует в точности таким только у одного человека во всей вселенной. Где-то в темноте по-прежнему ждут своего часа восемьдесят восемь древних имён — редких, почти забытых огней. Может быть, следующий узор станет одним из них. Этот стал кем-то другим: первым и единственным экземпляром самого себя.`);
+    // 14.07.2026 — added after feedback that the legend felt thin for the
+    // price of admission: a pure texture/lore paragraph with no new facts,
+    // just weight — the kind of line an old star-chart would carry in its
+    // margin.
+    P.push(pick([
+      `Среди старых хранителей неба ходило правило: узор, однажды поднятый, не гасят — даже если тот, кто его поднял, однажды забудет об этой ночи сам. Свет продолжает гореть по праву, а не по памяти.`,
+      `В старых картах неба есть примечание, которое переписывали веками: созвездие не обязано быть увиденным, чтобы быть настоящим — но лучше, если хотя бы одна пара глаз всё же его найдёт.`,
+      `Говорят, небо не становится полнее оттого, что на нём прибавилось огней — оно становится честнее. Каждый новый узор не занимает чужое место: он просто открывает то, что было правдой всегда.`
+    ]));
     P.push(pick([
       `Говорят, такие созвездия — маяки: их свет виден тем, кто ещё думает, что он один. Пока оно горит на общем небе, кто-то где-то понимает, что нас можно сосчитать.`,
       `На общем небе оно — один огонь среди всех остальных. Но счёт устроен просто: без этого огня число было бы меньше ровно на одного человека. На настоящего.`,
@@ -3628,9 +3637,9 @@ function constellationStory(nftData){
     return '<div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#a78bfa;margin-bottom:8px">✦ Легенда этого созвездия</div>' + P.map(p=>`<p style="margin:0 0 10px">${p}</p>`).join('');
   }
   P.push(pick([
-    `This constellation wasn't picked from a catalogue — it surfaced on its own when the algorithm looked closely at skin. Each of its ${n} stars stands exactly where a real patch of light stood.`,
-    `First there was only a photograph. Then the algorithm stripped away everything else — and ${n} lights remained on the black, arranged the way skin itself arranged them. That is how this constellation was born.`,
-    `Nobody drew this pattern. It had always existed — on skin, unnoticed — until one day it was read and lifted into the sky. ${n} stars, and not one placed by hand.`
+    `Before the sky had names, this pattern already existed — in the dark, uncounted, unfound. It waited not for luck, but for attention: for someone who would finally look and not look away. ${n} stars, and not one drawn by hand — only recognised.`,
+    `The old storytellers used to say: not every constellation is born in the sky — some are born on the ground and rise later, once someone finally calls them by name. This is one of those. ${n} lights that waited longer than this single night.`,
+    `The legend doesn't begin with the sky, but with the silence before it: the pattern had always existed, unseen, until one day the silence simply stopped being enough. So ${n} stars rose to where everyone could finally see them.`
   ]));
   P.push(pick([
     shape==='wide' ? `The figure stretches wide, like a trail across the whole sky — edge to edge.` : shape==='tall' ? `The figure climbs vertically, like a ladder — star after star, upward.` : `The stars settled into a calm, gathered formation — the pattern holds itself.`,
@@ -3642,6 +3651,14 @@ function constellationStory(nftData){
   P.push(isReal
     ? `This is more than a pattern — it is one of the eighty-eight ancient names of the sky, waiting in the dark for the one who would prove worthy of it. Found once, it is never found twice: from tonight it belongs to this sky, and to this person alone, forever.`
     : `This pattern carries no ancient name from any earthly atlas — it was not found among the old lights, it was born new, here, tonight, and it exists in this exact form for exactly one person in the whole universe. Somewhere in the dark, eighty-eight ancient names are still waiting their turn — rare, half-forgotten fires. The next pattern might be one of them. This one became something else instead: the first and only copy of itself.`);
+  // 14.07.2026 — added after feedback that the legend felt thin for the
+  // price of admission: a pure texture/lore paragraph, no new facts, just
+  // weight — the kind of line an old star-chart would carry in its margin.
+  P.push(pick([
+    `Among the old sky-keepers there was a rule: a pattern, once raised, is never put out — not even if the one who raised it should someday forget that night themselves. Its light keeps burning by right, not by memory.`,
+    `The old star-charts carry a note copied down for centuries: a constellation need not be seen to be real — but it is better if, at least once, a pair of eyes finds it anyway.`,
+    `They say the sky doesn't grow fuller for having more lights in it — it grows more honest. Every new pattern takes no one else's place; it only reveals what was already true.`
+  ]));
   P.push(pick([
     `They say constellations like this are beacons: their light reaches people who still believe they are alone. While it burns in the shared sky, someone, somewhere, realises we can be counted.`,
     `In the shared sky it is one light among all the others. But the count is simple: without this light, the number would be smaller by exactly one person. A real one.`,
