@@ -4499,27 +4499,25 @@ async function loadAllStarsFromChain() {
         if (!userData?.ok || userData?.result?.exit_code !== 0) { if (debugMode) updateDebugInfo(`loadAllStars #${num}: getUser failed, exit=${userData?.result?.exit_code}`); continue; }
         let uEntry = userData?.result?.stack?.[0];
         let elements = uEntry?.[1]?.elements || uEntry?.[1];
-        // 14.07.2026 — a live debug session caught a getUser response for
-        // another person coming back with only 15 of the expected 16
-        // fields (transformCount, the last one, missing), right after a
-        // generic "Script error." in the log — matching other transient
-        // CDN/network flakiness already found and fixed today, not a
-        // contract or stored-data problem (confirmed against the .tact
-        // source: UserData is written with all 16 fields in exactly one
-        // place, no code path produces a shorter record, and this
-        // specific account registered on the current contract, not an
-        // older one). One quiet retry costs nothing and doesn't touch the
-        // contract at all — cheap insurance against a flaky read.
+        // 14.07.2026 — confirmed via a direct tonviewer.com query against
+        // the same address: the contract's stored data is genuinely
+        // complete (all 16 fields, including a real transformCount). The
+        // short 15-field response is a transport-level flake from the
+        // RPC endpoint this app uses, not missing/corrupted on-chain
+        // data — a single retry wasn't always enough to catch it, so this
+        // now tries up to 3 times total with a short growing pause.
         if (Array.isArray(elements) && elements.length > 0 && elements.length < 16) {
-          if (debugMode) updateDebugInfo(`loadAllStars #${num}: short response (${elements.length}/16 fields) — retrying once`);
-          await new Promise(r => setTimeout(r, 400));
-          const retryData = await tonFetch({ address: CONTRACT_ADDRESS, method: 'getUser', stack: [['tvm.Slice', addressToSliceArg(addr)]] });
-          if (retryData?.ok && retryData?.result?.exit_code === 0) {
-            const retryEntry = retryData?.result?.stack?.[0];
-            const retryElements = retryEntry?.[1]?.elements || retryEntry?.[1];
-            if (Array.isArray(retryElements) && retryElements.length > elements.length) {
-              elements = retryElements;
-              if (debugMode) updateDebugInfo(`loadAllStars #${num}: retry got ${elements.length}/16 fields`);
+          for (let attempt = 1; attempt <= 2 && elements.length < 16; attempt++) {
+            if (debugMode) updateDebugInfo(`loadAllStars #${num}: short response (${elements.length}/16 fields) — retry ${attempt}/2`);
+            await new Promise(r => setTimeout(r, 400 * attempt));
+            const retryData = await tonFetch({ address: CONTRACT_ADDRESS, method: 'getUser', stack: [['tvm.Slice', addressToSliceArg(addr)]] });
+            if (retryData?.ok && retryData?.result?.exit_code === 0) {
+              const retryEntry = retryData?.result?.stack?.[0];
+              const retryElements = retryEntry?.[1]?.elements || retryEntry?.[1];
+              if (Array.isArray(retryElements) && retryElements.length > elements.length) {
+                elements = retryElements;
+                if (debugMode) updateDebugInfo(`loadAllStars #${num}: retry ${attempt} got ${elements.length}/16 fields`);
+              }
             }
           }
         }
