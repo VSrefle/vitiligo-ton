@@ -1283,10 +1283,19 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
     </div>
     <div class="modal-nft-title" id="modalNftTitle">✦ Constellation</div>
     <div class="modal-nft-owner" id="modalNftOwner" style="display:none;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#fbbf24;text-align:center;margin-bottom:6px;font-weight:600">✦ Owner: —</div>
+    <!-- 14.07.2026 — card now leads with honest facts only: name (title
+         above), city + age here, personal phrase below. The generated
+         legend (constellationStory()) is removed from this card entirely
+         — live feedback: two different people's cards (different
+         constellation names) read as near-identical, because the legend
+         draws from small phrase pools and collides by chance often enough
+         to feel copy-pasted. The function itself is left in the codebase
+         unused rather than deleted, in case it's wanted back later in a
+         lighter form. -->
+    <div id="modalNftCity" style="display:none;text-align:center;font-size:12px;letter-spacing:.06em;color:rgba(220,200,255,.55);margin:-2px 0 10px"></div>
     <div id="nftInspireStats" style="text-align:center;font-size:12px;color:#a78bfa;margin:2px 0 12px"></div>
-    <div class="modal-nft-desc" id="modalNftDesc" style="font-size:13px;line-height:1.65;color:#c9b8f0;font-style:italic;padding:0 6px;margin-bottom:12px"></div>
-    <div id="nftInspire" style="border:1px solid rgba(147,51,234,.2);background:rgba(147,51,234,.06);border-radius:14px;padding:14px 16px;font-size:13px;line-height:1.7;color:#c9b8f0;margin-bottom:12px"></div>
     <div class="modal-nft-story" id="modalNftStory">No story added yet.</div>
+    <div class="modal-nft-desc" id="modalNftDesc" style="font-size:13px;line-height:1.65;color:#c9b8f0;font-style:italic;padding:0 6px;margin-bottom:12px"></div>
     <!-- Closing moved from a top-right ✕ to a warm bottom button
          07.07.2026: a cross reads like "dismiss an interruption", a
          button reads like finishing a ceremony. Wrapped in a sticky
@@ -1771,7 +1780,7 @@ if (cosmosCV) {
     }
   };
 
-  window.restoreMyStar = function(seedStr, constName, story, constData, type, isFounder) {
+  window.restoreMyStar = function(seedStr, constName, story, constData, type, isFounder, transformCount) {
     // Founder path (08.07.2026): the Genesis star at the centre already
     // IS this person — his chain record moves into it (isMe + the real
     // constellation replacing the placeholder shape) instead of lighting
@@ -1784,6 +1793,7 @@ if (cosmosCV) {
         if (constName) gen.constName = constName;
         if (story) gen.story = story;
         if (constData) gen.constData = constData;
+        if (transformCount) gen.transformCount = transformCount;
         return;
       }
     }
@@ -1799,12 +1809,13 @@ if (cosmosCV) {
       if (story) existing.story = story;
       if (constData) existing.constData = constData;
       if (type) existing.type = type;
+      if (transformCount) existing.transformCount = transformCount;
       return;
     }
     cosmosParts.push({
       x: 1000 + Math.cos(angle) * dist,
       y: 1000 + Math.sin(angle) * dist,
-      type: type || 'normal', constName, story, constData,
+      type: type || 'normal', constName, story, constData, transformCount: transformCount || 0,
       isMe: true,
       ph: rnd() * Math.PI * 2, sp: 0.2 + rnd() * 0.4, sz: 12
     });
@@ -1819,7 +1830,7 @@ if (cosmosCV) {
   // deterministic per-seed position as restoreMyStar, so each person's
   // star sits in the same spot on every launch, for everyone looking —
   // not just for them. Dedupes by wallet address.
-  window.addOtherStar = function(addr, constName, story, constData, type, isGenesisPerson, profileName) {
+  window.addOtherStar = function(addr, constName, story, constData, type, isGenesisPerson, profileName, transformCount) {
     if (isGenesisPerson) {
       const gen = cosmosParts.find(p => p.isGenesis);
       // If the viewer themselves IS the founder, restoreMyStar already
@@ -1830,6 +1841,7 @@ if (cosmosCV) {
         if (story) gen.story = story;
         if (constData) gen.constData = constData;
         if (profileName) gen.profileName = profileName;
+        if (transformCount) gen.transformCount = transformCount;
       }
       return;
     }
@@ -1843,6 +1855,7 @@ if (cosmosCV) {
       // Now that other people's stars carry real seeded constData, keep it.
       if (constData) existing.constData = constData;
       if (profileName) existing.profileName = profileName;
+      if (transformCount) existing.transformCount = transformCount;
       return;
     }
     let sd = 0; const s = String(addr || 'anon');
@@ -1852,7 +1865,7 @@ if (cosmosCV) {
     cosmosParts.push({
       x: 1000 + Math.cos(angle) * dist,
       y: 1000 + Math.sin(angle) * dist,
-      type: type || 'normal', constName, story, constData, profileName,
+      type: type || 'normal', constName, story, constData, profileName, transformCount: transformCount || 0,
       addr, isMe: false,
       ph: rnd() * Math.PI * 2, sp: 0.2 + rnd() * 0.4, sz: 12
     });
@@ -2143,12 +2156,19 @@ if (cosmosCV) {
         // picker and the Profile language-switch buttons. Reading
         // localStorage directly here has no such ordering dependency.
         let __isRu = false; try { __isRu = localStorage.getItem('vt_lang') === 'ru'; } catch(e) {}
-        cosmosCtx.fillText((__isRu ? 'Я ✦' : 'You ✦'), sx, sy + sz + 10);
+        // 14.07.2026 — upgrade index (×N), requested after live feedback
+        // that a second/third mint felt invisible on the shared sky, not
+        // just in the card. transformCount is the contract's real mint
+        // count for this wallet; only shown once it's actually >1 so a
+        // person's very first (and only) constellation stays unlabeled.
+        const upgradeTag = (p.transformCount > 1) ? ' ×' + p.transformCount : '';
+        cosmosCtx.fillText((__isRu ? 'Я ✦' : 'You ✦') + upgradeTag, sx, sy + sz + 10);
       } else if (!p.isMe && p.profileName && sz > 8) {
         cosmosCtx.globalAlpha = 0.75; cosmosCtx.fillStyle = col;
         cosmosCtx.font = `bold ${Math.min(11, sz*0.6)}px system-ui`;
         cosmosCtx.textAlign = 'center';
-        cosmosCtx.fillText(p.profileName + ' ✦', sx, sy + sz + 10);
+        const upgradeTag = (p.transformCount > 1) ? ' ×' + p.transformCount : '';
+        cosmosCtx.fillText(p.profileName + ' ✦' + upgradeTag, sx, sy + sz + 10);
       }
     });
 
@@ -3220,6 +3240,31 @@ async function buildConstellation(img){
     }
   }
 
+  // 14.07.2026 — sanity check requested after live feedback about
+  // discouraging junk uploads. `patches` (bright, low-saturation regions —
+  // what a light vitiligo patch looks like in raw pixel terms) was already
+  // being computed and blended into the reveal-canvas star positions
+  // below, but NOTHING ever checked whether it found anything at all — a
+  // photo of a wall, a screenshot, or a solid colour swatch would sail
+  // through unchallenged and mint exactly like a real photo would. This is
+  // a soft, honest heuristic, not a medical check: it can't tell vitiligo
+  // from a bright wall, and deliberately doesn't try to. It only catches
+  // images with essentially no light/low-saturation regions worth mapping
+  // to stars at all — checked BEFORE payment, so nothing is ever charged
+  // for a rejected photo. threshold kept low on purpose to avoid
+  // frustrating real, legitimate photos taken in imperfect lighting.
+  const MIN_PATCHES = 4;
+  if (patches.length < MIN_PATCHES) {
+    setStep(1);
+    uploadArea.style.display=''; resultWrap.style.display='none';
+    constInfo.style.display='none'; storyWrap.style.display='none';
+    rarityBanner.style.display='none';
+    mintBtn.disabled=true; mintBtn.style.display='none';
+    resetBtn.style.display='none'; fileInput.value='';
+    showToast("We couldn't find enough light patches in that photo — try a clearer, well-lit photo of your skin ✦");
+    return;
+  }
+
   setStep(3);
 
   // Select constellation: first 88 real (in order), then AI-generated mythical
@@ -3536,7 +3581,7 @@ document.getElementById('modalMintConfirm').addEventListener('click', async ()=>
     card.appendChild(infoBar);
 
 
-    const nftData = {name: constName, story: lastStoryText, rare: gold, isRealDiscovery: outcome.isLegendary, constData: currentConst, firstConstName: window.myFirstConstName || null};
+    const nftData = {name: constName, story: lastStoryText, rare: gold, isRealDiscovery: outcome.isLegendary, constData: currentConst, firstConstName: window.myFirstConstName || null, city: document.getElementById('fieldCity')?.value.trim() || null, age: document.getElementById('fieldAge')?.value || null};
     myNfts.push(nftData);
     card.addEventListener('click', (e)=>{
       if(e.target === giftFab) { openModal('shareSheet'); return; }
@@ -3690,6 +3735,15 @@ function openNftDetail(nftData, showActions){
   document.getElementById('modalNftPreview').classList.toggle('rare', nftData.rare);
   document.getElementById('modalNftDesc').textContent = nftData.constData?.desc || '';
   document.getElementById('modalNftDesc').style.display = nftData.constData?.desc ? 'block' : 'none';
+  // 14.07.2026 — city + age shown together as primary, honest content
+  // (see the HTML comment above #modalNftCity). Only shown when we
+  // actually have the value — never guessed, never someone else's.
+  const cityEl = document.getElementById('modalNftCity');
+  if (cityEl) {
+    const parts = [nftData.city, nftData.age ? String(nftData.age) : null].filter(Boolean);
+    if (parts.length) { cityEl.textContent = '✦ ' + parts.join(', '); cityEl.style.display = 'block'; }
+    else { cityEl.style.display = 'none'; }
+  }
   const ownerEl = document.getElementById('modalNftOwner');
   if (nftData.owner) { ownerEl.textContent = '✦ Owner: ' + nftData.owner; ownerEl.style.display = 'block'; }
   else { ownerEl.style.display = 'none'; }
@@ -3700,8 +3754,6 @@ function openNftDetail(nftData, showActions){
   // numbers: it's the template's real star count).
   const statsEl = document.getElementById('nftInspireStats');
   if (statsEl) statsEl.innerHTML = '<span>Stars in this constellation:</span> ' + (nftData.constData?.stars?.length || 0);
-  const inspireEl = document.getElementById('nftInspire');
-  if (inspireEl) inspireEl.innerHTML = constellationStory(nftData);
   /* Ceremony canvas — rebuilt 08.07.2026 again, after a live "размыто,
      размазано" report. Three real causes, all fixed:
      (1) it painted BEFORE openModal, when the hidden modal's width was 0,
@@ -4245,11 +4297,11 @@ async function loadMyConstellationFromChain() {
     const transformCount = getNum(elements[15]);
     window.myTransformCount = transformCount;
     if (!constName) return;
-    const nftData = { name: constName, story, rare: isRare || isLegendary, isRealDiscovery: isLegendary, constData: { name: constName, isRealDiscovery: isLegendary, stars: seededStars(constName, 5) }, firstConstName: firstConstName || null };
+    const nftData = { name: constName, story, rare: isRare || isLegendary, isRealDiscovery: isLegendary, constData: { name: constName, isRealDiscovery: isLegendary, stars: seededStars(constName, 5) }, firstConstName: firstConstName || null, city: onChainProfile.city ? locCity(onChainProfile.city) : null, age: onChainProfile.age || null };
     myNfts.push(nftData);
     renderRestoredNftCard(nftData);
     // ...and back onto the shared sky (08.07.2026) — see restoreMyStar.
-    if (window.restoreMyStar) window.restoreMyStar(addr, constName, story, nftData.constData, isLegendary ? 'legendary' : (isRare ? 'rare' : 'normal'), isGenesisWallet(addr));
+    if (window.restoreMyStar) window.restoreMyStar(addr, constName, story, nftData.constData, isLegendary ? 'legendary' : (isRare ? 'rare' : 'normal'), isGenesisWallet(addr), transformCount);
   } catch(e) { console.warn('getUser load failed', e); dbgUser('EXCEPTION: ' + (e && e.message)); }
 }
 function beginCellSafe(){ try { return !!(window.TonCore && window.TonCore.beginCell); } catch(e){ return false; } }
@@ -4347,7 +4399,8 @@ function parseUserTuple(elements) {
     constName: elements.length > 9 ? getStr(elements[9]) : null,
     story: elements.length > 10 ? getStr(elements[10]) : '',
     isRare: elements.length > 13 ? getBool(elements[13]) : false,
-    discMask: elements.length > 14 ? (elements[14]?.number?.number !== undefined ? String(elements[14].number.number) : '0') : '0'
+    discMask: elements.length > 14 ? (elements[14]?.number?.number !== undefined ? String(elements[14].number.number) : '0') : '0',
+    transformCount: elements.length > 15 ? (getNum(elements[15]) || 0) : 0
   };
 }
 
@@ -4399,7 +4452,7 @@ async function loadAllStarsFromChain() {
           : null;
         if (window.addOtherStar) {
           window.addOtherStar(addr, u.hasConstellation ? u.constName : null, u.hasConstellation ? u.story : '', otherConstData,
-            isLegendary ? 'legendary' : (u.isRare ? 'rare' : 'normal'), isGenesisWallet(addr), u.name || '');
+            isLegendary ? 'legendary' : (u.isRare ? 'rare' : 'normal'), isGenesisWallet(addr), u.name || '', u.transformCount || 0);
         }
       } catch(e) { if (debugMode) updateDebugInfo(`loadAllStars #${num}: EXCEPTION ${e.message}`); }
     }
@@ -4939,6 +4992,7 @@ const RU_TEXT = {
   "Please fill in name, country, city and age ✦":"Заполни имя, страну, город и возраст ✦",
   "Please fill your name, country, city and age first ✦":"Сначала заполни имя, страну, город и возраст ✦",
   "Upload a photo of your vitiligo to join the count ✦":"Загрузи фото витилиго, чтобы попасть в счёт ✦",
+  "We couldn't find enough light patches in that photo — try a clearer, well-lit photo of your skin ✦":"Мы не нашли на этом фото достаточно светлых участков — попробуй другое фото, при хорошем освещении ✦",
   "On-chain profile updated ✦":"Профиль в блокчейне обновлён ✦",
   "No story added yet.":"История пока не добавлена.","Stars in this constellation:":"Звёзд в созвездии:","✦ Owner: ":"✦ Владелец: ",
   "Wallet connect is unavailable — check your connection and reload the page.":"Подключение кошелька недоступно — проверь связь и перезагрузи страницу.",
