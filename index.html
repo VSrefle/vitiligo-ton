@@ -1400,6 +1400,17 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
 // AND UpdateProfile (added to let people correct name/country/city/age
 // after their first registration — see UpdateProfile in the .tact file).
 const CONTRACT_ADDRESS = 'EQBDENhE37mNq-3Wkc1oj3OnYIWNHOC0Ov0XjdS2ZvyhY-DW'; // VilitigoCounterV2, deployed 12.07.2026
+// 14.07.2026 — optional toncenter.com API key. Get a free one from the
+// @toncenter bot on Telegram (t.me/toncenter). Empty string = same
+// unauthenticated 1 req/sec tier as before, nothing breaks either way.
+// Added after a live debug session found getUser occasionally returning
+// a truncated 15/16-field response for another user's data — confirmed
+// via a direct tonviewer.com query that the on-chain data itself is
+// complete, so the truncation is on this endpoint's side, not ours. A
+// keyed request is routed with priority and has, in practice, been more
+// reliable for other projects hitting the same kind of intermittent
+// short response.
+const TONCENTER_API_KEY = '835374e59380f1875f36a1fe496998f4754326840f25049fa2d4cc3596c2af15';
 const TON_AMOUNT = '1000000000';
 const BOT_USERNAME = 'vitiligo_ton_bot';
 
@@ -2265,7 +2276,10 @@ function tonFetch(body) {
       try {
         const res = await fetch('https://toncenter.com/api/v2/runGetMethod', {
           method: 'POST',
-          headers: {'Content-Type':'application/json'},
+          headers: {
+            'Content-Type':'application/json',
+            ...(TONCENTER_API_KEY ? {'X-Api-Key': TONCENTER_API_KEY} : {})
+          },
           body: JSON.stringify(body)
         });
         const data = await res.json();
