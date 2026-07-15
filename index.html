@@ -1352,6 +1352,10 @@ try{
          unused rather than deleted, in case it's wanted back later in a
          lighter form. -->
     <div id="modalNftCity" style="display:none;text-align:center;font-size:12px;letter-spacing:.06em;color:rgba(220,200,255,.55);margin:-2px 0 10px"></div>
+    <!-- 14.07.2026 — written companion to the ×N badge on the map label:
+         the badge is easy to miss/not understand out of context, this
+         spells it out as an actual sentence inside the card itself. -->
+    <div id="modalNftUpgrades" style="display:none;text-align:center;font-size:12px;color:#6ee7b7;margin:-4px 0 10px"></div>
     <div id="nftInspireStats" style="text-align:center;font-size:12px;color:#a78bfa;margin:2px 0 12px"></div>
     <div class="modal-nft-story" id="modalNftStory">No story added yet.</div>
     <div class="modal-nft-desc" id="modalNftDesc" style="font-size:13px;line-height:1.65;color:#c9b8f0;font-style:italic;padding:0 6px;margin-bottom:12px"></div>
@@ -2020,7 +2024,8 @@ if (cosmosCV) {
         constData: best.constData,
         owner: best.owner || null,
         city: best.city || null,
-        age: best.age || null
+        age: best.age || null,
+        transformCount: best.transformCount || 0
       }, false);
     }
   }
@@ -3239,6 +3244,22 @@ const MILESTONE_REAL_CHANCE = 0.05; // every 100th mint gets 5% bonus real chanc
 // (real translations, not machine output — see the injection script used
 // to add them). This picks the right one for the current language,
 // falling back to English if a Russian version is somehow missing.
+// 14.07.2026 — short excerpt for the minimal map-tap card (see
+// openNftDetail). Simple heuristic split on sentence-ending punctuation,
+// not full NLP — good enough for these hand-written texts, none of which
+// use mid-sentence abbreviations that would confuse it. Trimmed to one
+// sentence (not two) after feedback that grabbing two often cut off
+// mid-thought, since sentence #2 in these texts usually continues an
+// idea rather than standing alone — a single opening line reads more
+// like an honest teaser. An ellipsis is appended whenever the excerpt is
+// actually shorter than the full text, so it's visibly a fragment, not
+// the whole legend.
+function firstSentences(text, n) {
+  if (!text) return '';
+  const parts = text.match(/[^.!?]+[.!?]+(\s+|$)/g);
+  if (!parts || parts.length <= n) return text.trim();
+  return parts.slice(0, n).join('').trim() + ' …';
+}
 function pickDesc(obj) {
   if (!obj) return '';
   const ru = (typeof LANG !== 'undefined' && LANG === 'ru');
@@ -3749,7 +3770,7 @@ document.getElementById('modalMintConfirm').addEventListener('click', async ()=>
     card.appendChild(infoBar);
 
 
-    const nftData = {name: constName, story: lastStoryText, rare: gold, isRealDiscovery: outcome.isLegendary, constData: currentConst, firstConstName: window.myFirstConstName || null, city: document.getElementById('fieldCity')?.value.trim() || null, age: document.getElementById('fieldAge')?.value || null};
+    const nftData = {name: constName, story: lastStoryText, rare: gold, isRealDiscovery: outcome.isLegendary, constData: currentConst, firstConstName: window.myFirstConstName || null, city: document.getElementById('fieldCity')?.value.trim() || null, age: document.getElementById('fieldAge')?.value || null, transformCount: window.myTransformCount || 0};
     myNfts.push(nftData);
     card.addEventListener('click', (e)=>{
       if(e.target === giftFab) { openModal('shareSheet'); return; }
@@ -3903,18 +3924,21 @@ function openNftDetail(nftData, showActions){
   document.getElementById('modalNftPreview').classList.toggle('rare', nftData.rare);
   // 14.07.2026 — split by context, per explicit direction: the star card
   // opened by tapping a point on the shared map (showActions === false)
-  // stays minimal — name, city, age, upgrade count — nothing generated.
-  // The card opened from YOUR OWN constellation in the "Constellation"
-  // tab (showActions !== false, the default) is what 1 GRAM actually
-  // paid for, and gets the full fixed lore paragraph back (constData.desc
-  // — unique per constellation name, now bilingual via pickDesc/descRu).
-  // Removing it from BOTH contexts earlier today over-corrected: the
-  // instruction was about the star-tap card being cluttered with
-  // someone else's constellation lore standing in for their own words,
-  // not about deleting the lore from the place people paid to read it.
+  // stays minimal — name, city, age, upgrade count. The card opened from
+  // YOUR OWN constellation in the "Constellation" tab (showActions !==
+  // false, the default) is what 1 GRAM actually paid for, and gets the
+  // full fixed lore paragraph (constData.desc — unique per constellation
+  // name, bilingual via pickDesc/descRu).
+  // FIX (same day) — Help explicitly promises "tap any star... and read
+  // its legend," but the minimal map-tap card showed no legend text at
+  // all, breaking that promise. Map-tap now gets a one-to-two-sentence
+  // excerpt of the same lore instead of the full paragraph — enough to
+  // honor what Help says, short enough to stay out of the way of the
+  // name/city/age/upgrade-count the card is otherwise built around.
   const showLore = (showActions !== false);
   const descEl = document.getElementById('modalNftDesc');
-  const loreText = showLore ? pickDesc(nftData.constData) : '';
+  const fullLore = pickDesc(nftData.constData);
+  const loreText = showLore ? fullLore : firstSentences(fullLore, 1);
   descEl.textContent = loreText;
   descEl.style.display = loreText ? 'block' : 'none';
   // 14.07.2026 — city + age shown together as primary, honest content
@@ -3925,6 +3949,21 @@ function openNftDetail(nftData, showActions){
     const parts = [nftData.city, nftData.age ? String(nftData.age) : null].filter(Boolean);
     if (parts.length) { cityEl.textContent = '✦ ' + parts.join(', '); cityEl.style.display = 'block'; }
     else { cityEl.style.display = 'none'; }
+  }
+  // Written companion to the ×N map badge — see the HTML comment above
+  // #modalNftUpgrades. Only shown once there's actually been at least
+  // one transformation, same threshold as the badge.
+  const upgEl = document.getElementById('modalNftUpgrades');
+  if (upgEl) {
+    const tc = nftData.transformCount || 0;
+    if (tc >= 1) {
+      const ru = (typeof LANG !== 'undefined' && LANG === 'ru');
+      const ruWord = (tc % 10 === 1 && tc % 100 !== 11) ? 'раз' : ((tc % 10 >= 2 && tc % 10 <= 4 && !(tc % 100 >= 12 && tc % 100 <= 14)) ? 'раза' : 'раз');
+      upgEl.textContent = ru ? `✦ Это созвездие уже улучшали ${tc} ${ruWord}` : `✦ This constellation has been upgraded ${tc} time${tc > 1 ? 's' : ''}`;
+      upgEl.style.display = 'block';
+    } else {
+      upgEl.style.display = 'none';
+    }
   }
   const ownerEl = document.getElementById('modalNftOwner');
   if (nftData.owner) { ownerEl.textContent = '✦ Owner: ' + nftData.owner; ownerEl.style.display = 'block'; }
@@ -4477,7 +4516,7 @@ async function loadMyConstellationFromChain() {
     const isLegendary = discMask !== '0';
     window.myTransformCount = transformCount;
     if (!constName) return;
-    const nftData = { name: constName, story, rare: isRare || isLegendary, isRealDiscovery: isLegendary, constData: { name: constName, isRealDiscovery: isLegendary, stars: seededStars(constName, 5), desc: findConstDesc(constName) }, firstConstName: firstConstName || null, city: onChainProfile.city ? locCity(onChainProfile.city) : null, age: onChainProfile.age || null };
+    const nftData = { name: constName, story, rare: isRare || isLegendary, isRealDiscovery: isLegendary, constData: { name: constName, isRealDiscovery: isLegendary, stars: seededStars(constName, 5), desc: findConstDesc(constName) }, firstConstName: firstConstName || null, city: onChainProfile.city ? locCity(onChainProfile.city) : null, age: onChainProfile.age || null, transformCount };
     myNfts.push(nftData);
     renderRestoredNftCard(nftData);
     // ...and back onto the shared sky (08.07.2026) — see restoreMyStar.
