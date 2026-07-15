@@ -4470,13 +4470,11 @@ async function loadMyConstellationFromChain() {
     // isRare (elements[13]) is a strict ratchet in V2 — once true, always
     // true, regardless of later transformations.
     const isRare = getBool(elements[13]);
-    // discMask (elements[14]) replaces the old single isLegendary bit —
-    // V2 lets one star accumulate SEVERAL legendary discoveries over
-    // repeated mints, tracked as a bitmask (bit i = constellation #(i+1)
-    // among the 88). Non-zero means at least one has been unlocked.
-    const discMask = getBigStr(elements[14]);
+    // discMask/transformCount (elements[14]/[15]) — see
+    // unpackDiscMaskAndTransformCount for why these can't just be read as
+    // two flat array positions.
+    const { discMask, transformCount } = unpackDiscMaskAndTransformCount(elements);
     const isLegendary = discMask !== '0';
-    const transformCount = getNum(elements[15]);
     window.myTransformCount = transformCount;
     if (!constName) return;
     const nftData = { name: constName, story, rare: isRare || isLegendary, isRealDiscovery: isLegendary, constData: { name: constName, isRealDiscovery: isLegendary, stars: seededStars(constName, 5), desc: findConstDesc(constName) }, firstConstName: firstConstName || null, city: onChainProfile.city ? locCity(onChainProfile.city) : null, age: onChainProfile.age || null };
@@ -4509,14 +4507,13 @@ async function pollMintOutcome(prevTransformCount, wasFirstMint, maxTries, delay
       if (!Array.isArray(elements) || elements.length < 8) continue;
       const getNum = el => el?.number?.number !== undefined ? parseInt(el.number.number, 10) : undefined;
       const getBool = el => { const n = getNum(el); return n !== undefined && n !== 0; };
-      const getBigStr = el => el?.number?.number !== undefined ? String(el.number.number) : '0';
       const hasConstellation = getBool(elements[7]);
-      const transformCount = getNum(elements[15]);
+      const { discMask, transformCount } = unpackDiscMaskAndTransformCount(elements);
       const changed = wasFirstMint ? hasConstellation : (transformCount !== prevTransformCount);
       if (!changed) continue; // still showing the pre-mint record, keep polling
       window.myTransformCount = transformCount;
       if (hasConstellation) window.__hasConstellationSeen = true;
-      return { isRare: getBool(elements[13]), isLegendary: getBigStr(elements[14]) !== '0' };
+      return { isRare: getBool(elements[13]), isLegendary: discMask !== '0' };
     } catch (e) { /* keep polling — a transient fetch error isn't the final answer */ }
   }
   // Gave up after maxTries — honest fallback: show as a normal mint. The
@@ -4570,11 +4567,41 @@ function addressToSliceArg(addrStr) {
 // delicate (profile form prefill, joinNumber badge, etc.) and this is a
 // separate, independent read path — a bug here shouldn't risk breaking
 // "your own" profile loading, and vice versa.
+// 14.07.2026 — root cause finally found via a live debug session,
+// comparing this app's parsing against a raw tonviewer.com query of the
+// same address: TVM/Tact get-methods returning more than ~15 flat stack
+// items pack the tail into a NESTED tvm.stackEntryTuple instead of
+// continuing as flat top-level array entries. UserData has 16 logical
+// fields, so discMask (14) and transformCount (15) — the last two —
+// routinely arrive bundled together inside element 14, as
+// {tuple:{elements:[discMask, transformCount]}}, rather than as two
+// separate flat elements 14 and 15. This was never a network flake or
+// missing/corrupted chain data (both were seriously considered and
+// ruled out earlier today) — every "short response" was actually a
+// complete, correctly-shaped answer that this code was reading in the
+// wrong place. Handles both the nested and (hypothetical/legacy) flat
+// shape so it keeps working if TVM's packing threshold or Tact's
+// compiled layout ever changes.
+function unpackDiscMaskAndTransformCount(elements) {
+  const numOf = el => el?.number?.number !== undefined ? el.number.number : undefined;
+  if (!elements) return { discMask: '0', transformCount: 0 };
+  const el14 = elements[14];
+  if (el14 && el14['@type'] === 'tvm.stackEntryTuple') {
+    const inner = el14.tuple?.elements || [];
+    const dm = numOf(inner[0]);
+    const tc = numOf(inner[1]);
+    return { discMask: dm !== undefined ? String(dm) : '0', transformCount: tc !== undefined ? parseInt(tc, 10) : 0 };
+  }
+  const dmFlat = numOf(el14);
+  const tcFlat = numOf(elements[15]);
+  return { discMask: dmFlat !== undefined ? String(dmFlat) : '0', transformCount: tcFlat !== undefined ? parseInt(tcFlat, 10) : 0 };
+}
 function parseUserTuple(elements) {
   if (!elements || elements.length < 8) return null;
   const getNum = el => el?.number?.number !== undefined ? parseInt(el.number.number, 10) : undefined;
   const getBool = el => { const n = getNum(el); return n !== undefined && n !== 0; };
   const getStr = el => decodeCellString(el?.slice);
+  const { discMask, transformCount } = unpackDiscMaskAndTransformCount(elements);
   return {
     name: getStr(elements[1]),
     city: elements.length > 3 ? getStr(elements[3]) : null,
@@ -4583,8 +4610,8 @@ function parseUserTuple(elements) {
     constName: elements.length > 9 ? getStr(elements[9]) : null,
     story: elements.length > 10 ? getStr(elements[10]) : '',
     isRare: elements.length > 13 ? getBool(elements[13]) : false,
-    discMask: elements.length > 14 ? (elements[14]?.number?.number !== undefined ? String(elements[14].number.number) : '0') : '0',
-    transformCount: elements.length > 15 ? (getNum(elements[15]) || 0) : 0
+    discMask,
+    transformCount
   };
 }
 
@@ -4617,46 +4644,14 @@ async function loadAllStarsFromChain() {
         const addr = decodeCellAddress(aEntry[1]);
         if (!addr) { if (debugMode) updateDebugInfo(`loadAllStars #${num}: decodeCellAddress failed`); continue; }
         if (myAddr && addr.toLowerCase() === myAddr) { if (debugMode) updateDebugInfo(`loadAllStars #${num}: skipped, is me`); continue; }
-        let userData = await tonFetch({ address: CONTRACT_ADDRESS, method: 'getUser', stack: [['tvm.Slice', addressToSliceArg(addr)]] });
+        const userData = await tonFetch({ address: CONTRACT_ADDRESS, method: 'getUser', stack: [['tvm.Slice', addressToSliceArg(addr)]] });
         if (!userData?.ok || userData?.result?.exit_code !== 0) { if (debugMode) updateDebugInfo(`loadAllStars #${num}: getUser failed, exit=${userData?.result?.exit_code}`); continue; }
-        let uEntry = userData?.result?.stack?.[0];
-        let elements = uEntry?.[1]?.elements || uEntry?.[1];
-        // 14.07.2026 — confirmed via a direct tonviewer.com query against
-        // the same address: the contract's stored data is genuinely
-        // complete (all 16 fields, including a real transformCount). The
-        // short 15-field response is a transport-level flake from the
-        // RPC endpoint this app uses, not missing/corrupted on-chain
-        // data — a single retry wasn't always enough to catch it, so this
-        // now tries up to 3 times total with a short growing pause.
-        if (Array.isArray(elements) && elements.length > 0 && elements.length < 16) {
-          for (let attempt = 1; attempt <= 2 && elements.length < 16; attempt++) {
-            if (debugMode) updateDebugInfo(`loadAllStars #${num}: short response (${elements.length}/16 fields) — retry ${attempt}/2`);
-            await new Promise(r => setTimeout(r, 400 * attempt));
-            const retryData = await tonFetch({ address: CONTRACT_ADDRESS, method: 'getUser', stack: [['tvm.Slice', addressToSliceArg(addr)]] });
-            if (retryData?.ok && retryData?.result?.exit_code === 0) {
-              const retryEntry = retryData?.result?.stack?.[0];
-              const retryElements = retryEntry?.[1]?.elements || retryEntry?.[1];
-              if (Array.isArray(retryElements) && retryElements.length > elements.length) {
-                elements = retryElements;
-                if (debugMode) updateDebugInfo(`loadAllStars #${num}: retry ${attempt} got ${elements.length}/16 fields`);
-              }
-            }
-          }
-        }
+        const uEntry = userData?.result?.stack?.[0];
+        const elements = uEntry?.[1]?.elements || uEntry?.[1];
         const u = parseUserTuple(elements);
         if (!u) { if (debugMode) updateDebugInfo(`loadAllStars #${num}: parseUserTuple returned null, elements=${elements ? elements.length : 'none'}`); continue; }
         const isLegendary = u.discMask !== '0';
         if (debugMode) updateDebugInfo(`loadAllStars #${num}: addr=${addr.slice(0,10)} hasConst=${u.hasConstellation} genesis=${isGenesisWallet(addr)} name=${u.name} transformCount=${u.transformCount} rawLen=${elements ? elements.length : 'none'} → addOtherStar`);
-        // 14.07.2026 — dump the actual raw stack JSON when it's short, so
-        // we can finally SEE whether the 16th element is truly absent or
-        // nested a level deeper inside element 14/15 (TVM tuples can pack
-        // extra items into a nested pair once they exceed a certain
-        // width). Every previous "RAW" log in this app was for the
-        // viewer's OWN profile only — this is the first one for another
-        // person's data specifically.
-        if (debugMode && elements && elements.length < 16) {
-          updateDebugInfo(`loadAllStars #${num}: OTHER-USER RAW (${elements.length} el): ` + JSON.stringify(elements));
-        }
         // 13.07.2026 — constData was hardcoded to null here, so every other
         // person's star had hasConst=true but no shape to render, and fell
         // back to a dim dot. The constellation shape isn't stored on-chain
