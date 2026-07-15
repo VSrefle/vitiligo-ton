@@ -763,18 +763,58 @@ html.vt-langpicked #langScreen{display:none}
 // Pre-paint language check — must run before <body> renders so returning
 // visitors never see the language screen flash. try/catch: localStorage
 // can throw in some webviews.
-try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('vt-langpicked')}catch(e){}
+//
+// 14.07.2026 — the manual "Choose your language / Выберите язык" picker
+// screen was removed as a blocking gate. Real reports: people could not
+// get into the bot at all. Root cause risk: that screen's Continue
+// buttons were wired up by the BIG script, near its very end (thousands
+// of lines in) — if anything earlier in that script throws (this file
+// has already hit several such bugs today, each one silently halting
+// everything after it), the language screen's buttons simply never
+// become clickable, and — because it sits at z-index:200 over
+// everything — the person is stuck on it forever with no way through.
+// Deciding the language HERE instead, in this tiny script that runs
+// before the big one even starts and has nothing that can throw, removes
+// that whole failure class. Auto-detected from Telegram's own language
+// setting; still changeable afterward from Profile.
+try{
+  if(!localStorage.getItem('vt_lang')){
+    var tgLang = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user && window.Telegram.WebApp.initDataUnsafe.user.language_code) || '';
+    localStorage.setItem('vt_lang', tgLang.toLowerCase().indexOf('ru') === 0 ? 'ru' : 'en');
+  }
+  document.documentElement.classList.add('vt-langpicked');
+}catch(e){}
 </script>
 </head>
 <body>
 
 <canvas id="starfield"></canvas>
 
-<!-- LANGUAGE PICKER — shows before onboarding on the very first launch
-     (product decision 06.07.2026: language is the ONE thing asked before
-     the three welcome screens; remembered in localStorage, switchable
-     later from Profile). Bilingual by nature — a person who needs it
-     hasn't told us their language yet. -->
+<!-- 14.07.2026 — always-present, low-opacity debug toggle. Fixed corner
+     position, present on every screen including the welcome/onboarding
+     overlays (z-index above even langScreen/welcome's 150-200). Pure
+     inline onclick doing raw localStorage + DOM manipulation, exactly
+     like the pre-paint language script above — deliberately NOT
+     dependent on the big script having finished (or even started)
+     running, since that script has hit several self-inflicted crashes
+     today that would otherwise leave any toggle wired up by it dead.
+     This is also the fix for "the debug panel covers the buttons and I
+     can't get into the app" — the SAME reachable toggle now closes it
+     from any screen, not just by finding the header long-press again. -->
+<div id="__dbgToggle" onclick="try{
+    var next = localStorage.getItem('vt_debug') !== '1';
+    localStorage.setItem('vt_debug', next?'1':'0');
+    try { debugMode = next; } catch(e){}
+    var b=document.getElementById('persistentDebug'); if(b) b.style.display = next?'block':'none';
+    var d=document.getElementById('debugInfo'); if(d) d.style.display = next?'block':'none';
+  }catch(e){ alert('debug toggle error: '+e.message); }"
+  style="position:fixed;top:8px;right:8px;width:38px;height:38px;z-index:999999;opacity:.06;background:#fff;border-radius:10px;"
+  title="debug toggle"></div>
+
+<!-- LANGUAGE PICKER — removed as a blocking first screen 14.07.2026 (see
+     the pre-paint script above for why). Left in the DOM, hidden by the
+     same html.vt-langpicked CSS rule, only in case a manual re-pick UI
+     is wanted again later from somewhere other than Profile. -->
 <div class="welcome" id="langScreen" style="z-index:200">
   <div class="welcome-glow"><div class="welcome-star">✦</div></div>
   <div class="ob-title">Choose your language<br>Выберите язык</div>
@@ -1188,7 +1228,26 @@ try{if(localStorage.getItem('vt_lang'))document.documentElement.classList.add('v
 </div>
 
 <!-- NAV -->
-<div id="persistentDebug" style="position:fixed;left:0;right:0;bottom:64px;z-index:9999;background:rgba(0,0,0,.92);color:#0f0;font-family:monospace;font-size:10px;padding:6px 10px;line-height:1.5;word-break:break-all;display:none;max-height:35vh;overflow-y:auto"></div>
+<div id="persistentDebug" style="position:fixed;left:0;right:0;bottom:64px;z-index:9999;background:rgba(0,0,0,.92);color:#0f0;font-family:monospace;font-size:10px;padding:6px 10px;line-height:1.5;word-break:break-all;display:none;max-height:35vh;overflow-y:auto">
+  <!-- 14.07.2026 — the panel used to be dismissible ONLY via the
+       long-press gesture on the "vitiligo.ton" header, which doesn't
+       exist on the welcome/onboarding screens (they're full-screen
+       overlays with no header). If debug got left on from a previous
+       session, the panel — fixed near the bottom, same place as the
+       welcome screen's action button — could block someone from even
+       entering the app, with no way to close it. This button lives
+       inside the panel itself, so it's there wherever the panel is,
+       no gesture needed, no header needed. Plain inline onclick (like
+       the old BUILD-bar toggle) so it works even if the main script
+       hasn't finished loading yet. -->
+  <div onclick="try{ localStorage.setItem('vt_debug','0'); try{ debugMode=false; }catch(e){} var b=document.getElementById('persistentDebug'); if(b) b.style.display='none'; var d=document.getElementById('debugInfo'); if(d) d.style.display='none'; }catch(e){}" style="position:sticky;top:0;text-align:right;background:#111;padding:4px 8px;margin:-6px -10px 6px;cursor:pointer;color:#fff;font-weight:bold;border-bottom:1px solid #333">✕ Hide debug panel</div>
+  <!-- Log text goes in this separate inner div, not directly in
+       #persistentDebug — updateDebugInfo() and the error handlers below
+       do `bar.textContent = newLine + bar.textContent`, which would wipe
+       out the close button above (a sibling element) if it were written
+       to the outer container directly. -->
+  <div id="persistentDebugLog"></div>
+</div>
 
 <nav class="nav">
   <button class="nav-item active" data-page="home">
@@ -4571,6 +4630,16 @@ async function loadAllStarsFromChain() {
         if (!u) { if (debugMode) updateDebugInfo(`loadAllStars #${num}: parseUserTuple returned null, elements=${elements ? elements.length : 'none'}`); continue; }
         const isLegendary = u.discMask !== '0';
         if (debugMode) updateDebugInfo(`loadAllStars #${num}: addr=${addr.slice(0,10)} hasConst=${u.hasConstellation} genesis=${isGenesisWallet(addr)} name=${u.name} transformCount=${u.transformCount} rawLen=${elements ? elements.length : 'none'} → addOtherStar`);
+        // 14.07.2026 — dump the actual raw stack JSON when it's short, so
+        // we can finally SEE whether the 16th element is truly absent or
+        // nested a level deeper inside element 14/15 (TVM tuples can pack
+        // extra items into a nested pair once they exceed a certain
+        // width). Every previous "RAW" log in this app was for the
+        // viewer's OWN profile only — this is the first one for another
+        // person's data specifically.
+        if (debugMode && elements && elements.length < 16) {
+          updateDebugInfo(`loadAllStars #${num}: OTHER-USER RAW (${elements.length} el): ` + JSON.stringify(elements));
+        }
         // 13.07.2026 — constData was hardcoded to null here, so every other
         // person's star had hasConst=true but no shape to render, and fell
         // back to a dim dot. The constellation shape isn't stored on-chain
