@@ -2463,6 +2463,20 @@ async function loadInitialChainData() {
 // .finally (was .then) 07.07.2026: cities must load even if the startup
 // trio's reveal failed for any reason — the map list vanishing is worse
 // than a briefly imperfect Home.
+// 14.07.2026 — simple "how many times has this app been opened" counter.
+// Requested after @DataChief_bot (the official Telegram Mini App
+// analytics bot) turned out to be dead/unresponsive. countapi.mileshilliard.com
+// is a free, no-signup, no-key counting service — one GET request per
+// page load increments a named counter, no personal data involved.
+// Deliberately fire-and-forget: wrapped so a slow/unreachable/down
+// counter service can NEVER delay or break anything else in the app —
+// worst case, this one optional number just doesn't go up that time.
+// To check the count at any moment, just open this URL in a browser:
+// https://countapi.mileshilliard.com/api/v1/get/vitiligo_ton_app_opens
+try {
+  fetch('https://countapi.mileshilliard.com/api/v1/hit/vitiligo_ton_app_opens').catch(()=>{});
+} catch(e) {}
+
 loadInitialChainData().finally(() => {
   if (typeof loadCitiesFromChain === 'function') loadCitiesFromChain();
   if (typeof loadAllStarsFromChain === 'function') loadAllStarsFromChain();
