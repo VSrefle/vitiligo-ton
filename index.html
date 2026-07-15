@@ -2474,7 +2474,10 @@ async function loadInitialChainData() {
 // To check the count at any moment, just open this URL in a browser:
 // https://countapi.mileshilliard.com/api/v1/get/vitiligo_ton_app_opens
 try {
-  fetch('https://countapi.mileshilliard.com/api/v1/hit/vitiligo_ton_app_opens').catch(()=>{});
+  fetch('https://countapi.mileshilliard.com/api/v1/hit/vitiligo_ton_app_opens')
+    .then(r => r.json())
+    .then(data => { if (debugMode) updateDebugInfo('open counter: hit OK, value=' + data.value); })
+    .catch(e => { if (debugMode) updateDebugInfo('open counter: hit FAILED — ' + e.message); });
 } catch(e) {}
 
 loadInitialChainData().finally(() => {
