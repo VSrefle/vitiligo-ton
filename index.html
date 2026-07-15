@@ -1025,7 +1025,7 @@ try{
          clear this is for trying again (a fresh roll at a rarer
          constellation, another 1 TON), not a sign they aren't counted yet. -->
     <div id="alreadyCountedNote" style="display:none;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#6ee7b7;text-align:center">
-      ✦ A new photo replaces your current constellation with a new one — it doesn't add to a collection. Most re-rolls are mythical, not one of the 88 real ones.
+      ✦ A new photo replaces your current constellation with a new one — it doesn't add to a collection. Every result is unique to you, mythical or real alike.
     </div>
 
     <div class="upload-area" id="uploadArea">
@@ -3627,8 +3627,8 @@ mintBtn.addEventListener('click',()=>{
     : (ru ? 'Создать созвездие' : 'Mint your constellation');
   if (descEl) descEl.textContent = isTransform
     ? (ru
-        ? `«${oldName}» уступит место новому — это не добавление в коллекцию, а замена. Прежнее имя останется в твоей истории («родился как…»), но на небе будет гореть уже новый узор. Скорее всего он снова будет мифическим, не одним из 88 настоящих — те выпадают очень редко.`
-        : `"${oldName}" will step aside for a new one — this replaces it, it doesn't add to a collection. The old name stays in your history ("born as…"), but the sky will show the new pattern instead. It will most likely be mythical again, not one of the 88 real ones — those are rare.`)
+        ? `«${oldName}» уступит место новому — это не добавление в коллекцию, а замена. Прежнее имя останется в твоей истории («родился как…»), но на небе будет гореть уже новый узор — мифический или один из 88 настоящих, каждый по-своему единственный.`
+        : `"${oldName}" will step aside for a new one — this replaces it, it doesn't add to a collection. The old name stays in your history ("born as…"), but the sky will show the new pattern instead — mythical or one of the 88 real ones, each one-of-a-kind either way.`)
     : (ru
         ? 'Твоё витилиго станет уникальным созвездием — навсегда в блокчейне TON. Твоя звезда загорится на общем небе всех, у кого есть витилиго.'
         : 'Your vitiligo becomes a unique constellation — forever on the TON blockchain. Your star lights up on the shared canvas of everyone who has vitiligo.');
@@ -3756,7 +3756,7 @@ document.getElementById('modalMintConfirm').addEventListener('click', async ()=>
     const mc=document.createElement('canvas');
     mc.style.cssText='width:100%;height:100%;display:block';
     const thumbPx = cardThumbSize();
-    paintConstellationScene(mc, thumbPx, thumbPx, {name: constName, rare: gold, constData: currentConst});
+    paintConstellationScene(mc, thumbPx, thumbPx, {name: constName, rare: gold, isRealDiscovery: outcome.isLegendary, constData: currentConst});
     media.appendChild(mc);
     if(gold){
       const badge=document.createElement('div'); badge.className='nft-rare-badge'; badge.textContent='★ RARE';
@@ -4004,38 +4004,58 @@ function openNftDetail(nftData, showActions){
    seeded by the constellation's identity — its sky is always the same),
    same bbox→padded-frame fitting, and a DPR-scaled backing store so it is
    pixel-crisp on phones. cssW/cssH are CSS pixels of the box it fills. */
+// 14.07.2026 — full rewrite after live brainstorming on constellation
+// visuals. Five changes, all requested together:
+//  1. A real third tier for "real discovery" (isRealDiscovery) — used to
+//     render identically to plain "rare", losing that distinction here
+//     even though the shared-sky map already tells them apart by colour.
+//  2. Natural line shape — was a straight index-order chain (0→1→2→…),
+//     which produces arbitrary zig-zags with no relation to how the
+//     points actually sit. Now a minimum-spanning-tree over the points:
+//     every star still connects to the pattern, but always via its
+//     nearest reachable neighbour, so the shape reads like something
+//     that was actually observed rather than dot-to-dot in birth order.
+//  3. Per-star colour — was one flat colour for every star. Real skies
+//     mix cool blue-white stars with occasional warm gold ones; each
+//     star now picks (deterministically, from the constellation's own
+//     seed) from a small per-tier palette instead of all matching.
+//  4. Per-star size/brightness — was uniform except the hero star. Now a
+//     seeded magnitude per star, hero always brightest, the rest varying
+//     so the pattern doesn't read as a row of identical dots.
+//  5. Soft twinkle — was a single static paint. Now an animation loop
+//     with a slow, subtle per-star alpha drift (seeded phase+speed, same
+//     technique already used for the shared-sky stars) instead of a
+//     frozen picture. Loops are tracked on the canvas element itself
+//     (_vtTwinkleRAF) and cancelled before a new one starts, so reopening
+//     a card or repainting the modal preview never stacks up loops.
 function paintConstellationScene(canvas, cssW, cssH, nftData){
+  if (canvas._vtTwinkleRAF) { cancelAnimationFrame(canvas._vtTwinkleRAF); canvas._vtTwinkleRAF = null; }
   const DPR = Math.min(3, window.devicePixelRatio || 1);
   canvas.width = Math.max(1, Math.round(cssW * DPR));
   canvas.height = Math.max(1, Math.round(cssH * DPR));
   const ctx = canvas.getContext('2d');
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   const w = cssW, h = cssH;
-  const gold = nftData.rare;
-  // deterministic rand from the constellation identity
+  // Three visual tiers, not two — see point 1 above. isRealDiscovery
+  // outranks rare; a real find is never visually confused with "just" a
+  // lucky roll.
+  const tier = nftData.isRealDiscovery ? 'legendary' : (nftData.rare ? 'rare' : 'normal');
+  const NEBULA = {
+    legendary: ['rgba(253,246,227,.16)', 'rgba(147,51,234,.16)', 'rgba(233,213,255,.12)'],
+    rare:      ['rgba(245,158,11,.14)', 'rgba(88,28,135,.18)', 'rgba(49,16,99,.2)'],
+    normal:    ['rgba(88,28,135,.18)', 'rgba(49,16,99,.2)', 'rgba(147,51,234,.1)']
+  }[tier];
+  const STAR_PALETTE = {
+    legendary: ['#fff8e7', '#eaf1ff', '#fde9c8', '#ffffff'],
+    rare:      ['#fde68a', '#fff4cc', '#ffd782', '#fef0c7'],
+    normal:    ['#e9d5ff', '#cfc4ef', '#d8c9ff', '#c4a8f5']
+  }[tier];
+  const LINE_COLOR = { legendary: 'rgba(253,246,227,.3)', rare: 'rgba(253,230,138,.28)', normal: 'rgba(196,168,245,.28)' }[tier];
+  // deterministic rand from the constellation identity — unchanged, so a
+  // reopened card always looks like the same constellation, not a
+  // re-roll.
   let sd = 0; const idStr = (nftData.name||'') + (nftData.constData?.stars?.length||0);
   for (let i=0;i<idStr.length;i++) sd = (sd*31 + idStr.charCodeAt(i)) >>> 0;
   const rnd = () => { sd = (sd*1103515245 + 12345) >>> 0; return (sd>>>8)/16777216; };
-  // depth
-  const base = ctx.createLinearGradient(0,0,0,h);
-  base.addColorStop(0,'#060514'); base.addColorStop(.6,'#040b18'); base.addColorStop(1,'#070312');
-  ctx.fillStyle=base; ctx.fillRect(0,0,w,h);
-  // nebulas (gold-tinted for rare)
-  [[.25,.3,.55],[ .78,.7,.5],[.6,.15,.35]].forEach(([x,y,r],i)=>{
-    const g=ctx.createRadialGradient(x*w,y*h,0,x*w,y*h,r*w);
-    g.addColorStop(0, gold && i===0 ? 'rgba(245,158,11,.14)' : ['rgba(88,28,135,.18)','rgba(49,16,99,.2)','rgba(147,51,234,.1)'][i]);
-    g.addColorStop(1,'transparent');
-    ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
-  });
-  // star dust — its own, always the same; count scales with area so a
-  // small card thumbnail isn't drowned in grains
-  const dustN = Math.max(40, Math.round(140 * (w*h) / (320*290)));
-  for (let i=0;i<dustN;i++){
-    ctx.globalAlpha = .04 + rnd()*.16;
-    ctx.fillStyle = rnd() < .85 ? '#cfc4ef' : '#ffe9c4';
-    ctx.fillRect(rnd()*w, rnd()*h, rnd()<.8?1:1.5, 1);
-  }
-  ctx.globalAlpha = 1;
   // fit the pattern: bbox → padded centered frame, aspect preserved
   const raw = nftData.constData?.stars || [];
   let mnx=1,mxx=0,mny=1,mxy=0;
@@ -4045,35 +4065,107 @@ function paintConstellationScene(canvas, cssW, cssH, nftData){
   const k = Math.min(availW/bw, availH/bh);
   const offX = (w - bw*k)/2 - mnx*k, offY = (h - bh*k)/2 - mny*k;
   const pts = raw.map(p=>({x:p.x*k+offX, y:p.y*k+offY}));
-  // star size follows the box so the thumbnail keeps the ceremony's look
   const S = Math.max(2, Math.min(5, w/64));
-  // constellation lines
-  if (pts.length > 1) {
-    ctx.strokeStyle = gold ? 'rgba(253,230,138,.28)' : 'rgba(196,168,245,.28)';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
-    for (let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x, pts[i].y);
-    ctx.stroke();
-  }
-  // stars: halo + white-hot core; diffraction spikes on the brightest
-  pts.forEach((p,i)=>{
-    const sz = i===0 ? S : S*.6;
-    const g = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,sz*6);
-    g.addColorStop(0, gold?'rgba(253,230,138,.6)':'rgba(200,170,255,.55)'); g.addColorStop(1,'transparent');
-    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,sz*6,0,Math.PI*2); ctx.fill();
-    const cg = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,sz);
-    cg.addColorStop(0,'#ffffff'); cg.addColorStop(.5, gold?'#fde68a':'#e9d5ff'); cg.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle=cg; ctx.beginPath(); ctx.arc(p.x,p.y,sz,0,Math.PI*2); ctx.fill();
-    if (i===0) {
-      for (let r=0;r<4;r++){
-        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(r*Math.PI/4);
-        const L = sz*(r%2?3:6);
-        const sg = ctx.createLinearGradient(-L,0,L,0);
-        sg.addColorStop(0,'transparent'); sg.addColorStop(.5,'rgba(255,255,255,.5)'); sg.addColorStop(1,'transparent');
-        ctx.fillStyle=sg; ctx.fillRect(-L,-.6,L*2,1.2); ctx.restore();
+  // Point 2: minimum spanning tree instead of a sequential chain — each
+  // star joins the pattern via its nearest already-connected neighbour.
+  const edges = (() => {
+    const n = pts.length;
+    if (n < 2) return [];
+    const inTree = new Array(n).fill(false);
+    const dist = new Array(n).fill(Infinity);
+    const parent = new Array(n).fill(-1);
+    dist[0] = 0;
+    const out = [];
+    for (let iter = 0; iter < n; iter++) {
+      let u = -1, best = Infinity;
+      for (let i = 0; i < n; i++) if (!inTree[i] && dist[i] < best) { best = dist[i]; u = i; }
+      if (u === -1) break;
+      inTree[u] = true;
+      if (parent[u] !== -1) out.push([parent[u], u]);
+      for (let v = 0; v < n; v++) {
+        if (!inTree[v]) {
+          const d = Math.hypot(pts[u].x-pts[v].x, pts[u].y-pts[v].y);
+          if (d < dist[v]) { dist[v] = d; parent[v] = u; }
+        }
       }
     }
-  });
+    return out;
+  })();
+  // Points 3+4: per-star colour + magnitude, seeded once so it's stable
+  // across repaints/reopens. Hero star (index 0) always stays biggest and
+  // takes the tier's most saturated palette colour.
+  const starColor = pts.map((_, i) => i === 0 ? STAR_PALETTE[0] : STAR_PALETTE[Math.floor(rnd()*STAR_PALETTE.length)]);
+  const starMag = pts.map((_, i) => i === 0 ? 1 : 0.45 + rnd()*0.55);
+  // Point 5: seeded phase+speed per star for a slow, subtle twinkle —
+  // same idea as the shared-sky stars' ph/sp fields, just local to this
+  // canvas instead of the shared cosmosParts array.
+  const starPhase = pts.map(() => rnd()*Math.PI*2);
+  const starSpeed = pts.map(() => 0.5 + rnd()*0.9);
+  const dustSeedBase = sd; // freeze dust layout before animation starts consuming rnd()
+  const dustN = Math.max(40, Math.round(140 * (w*h) / (320*290)));
+  let dustSeed = dustSeedBase;
+  const dustRnd = () => { dustSeed = (dustSeed*1103515245 + 12345) >>> 0; return (dustSeed>>>8)/16777216; };
+  const dust = Array.from({length: dustN}, () => ({ x: dustRnd()*w, y: dustRnd()*h, a: .04+dustRnd()*.16, warm: dustRnd()>=.85, sz: dustRnd()<.8?1:1.5 }));
+
+  function drawFrame(tMs){
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.clearRect(0,0,w,h);
+    const base = ctx.createLinearGradient(0,0,0,h);
+    base.addColorStop(0,'#060514'); base.addColorStop(.6,'#040b18'); base.addColorStop(1,'#070312');
+    ctx.fillStyle=base; ctx.fillRect(0,0,w,h);
+    [[.25,.3,.55],[.78,.7,.5],[.6,.15,.35]].forEach(([x,y,r],i)=>{
+      const g=ctx.createRadialGradient(x*w,y*h,0,x*w,y*h,r*w);
+      g.addColorStop(0, NEBULA[i]); g.addColorStop(1,'transparent');
+      ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+    });
+    dust.forEach(d => {
+      ctx.globalAlpha = d.a;
+      ctx.fillStyle = d.warm ? '#ffe9c4' : '#cfc4ef';
+      ctx.fillRect(d.x, d.y, d.sz, 1);
+    });
+    ctx.globalAlpha = 1;
+    if (edges.length) {
+      ctx.strokeStyle = LINE_COLOR;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      edges.forEach(([a,b]) => { ctx.moveTo(pts[a].x, pts[a].y); ctx.lineTo(pts[b].x, pts[b].y); });
+      ctx.stroke();
+    }
+    const t = tMs / 1000;
+    pts.forEach((p,i)=>{
+      const twinkle = 0.85 + 0.15 * Math.sin(t * starSpeed[i] + starPhase[i]);
+      const sz = S * (i===0 ? 1 : starMag[i]*0.7) * twinkle;
+      const col = starColor[i];
+      const g = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,sz*6);
+      g.addColorStop(0, hexToRgba(col, .55*twinkle)); g.addColorStop(1,'transparent');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,sz*6,0,Math.PI*2); ctx.fill();
+      const cg = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,sz);
+      cg.addColorStop(0,'#ffffff'); cg.addColorStop(.5, col); cg.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=cg; ctx.beginPath(); ctx.arc(p.x,p.y,sz,0,Math.PI*2); ctx.fill();
+      // Diffraction spikes: hero star always; in the legendary tier every
+      // star above 0.7 magnitude gets them too, for a visibly richer sky
+      // on a real discovery.
+      const wantsSpikes = i===0 || (tier==='legendary' && starMag[i] > 0.7);
+      if (wantsSpikes) {
+        for (let r=0;r<4;r++){
+          ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(r*Math.PI/4);
+          const L = sz*(r%2?3:6);
+          const sg = ctx.createLinearGradient(-L,0,L,0);
+          sg.addColorStop(0,'transparent'); sg.addColorStop(.5,`rgba(255,255,255,${.5*twinkle})`); sg.addColorStop(1,'transparent');
+          ctx.fillStyle=sg; ctx.fillRect(-L,-.6,L*2,1.2); ctx.restore();
+        }
+      }
+    });
+  }
+  function hexToRgba(hex, a){
+    const n = parseInt(hex.replace('#',''),16);
+    return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;
+  }
+  function loop(tMs){
+    drawFrame(tMs);
+    canvas._vtTwinkleRAF = requestAnimationFrame(loop);
+  }
+  canvas._vtTwinkleRAF = requestAnimationFrame(loop);
 }
 // The constellation card is FULL-WIDTH since Model A (09.07.2026) — one
 // hero card, not a 2-column grid cell. Painted while its tab can be
@@ -4083,7 +4175,14 @@ function paintConstellationScene(canvas, cssW, cssH, nftData){
 function cardThumbSize(){
   return Math.max(200, Math.min(window.innerWidth, 480) - 36);
 }
-document.getElementById('modalNftGotIt').addEventListener('click',()=>closeModal('modalNftDetail'));
+document.getElementById('modalNftGotIt').addEventListener('click',()=>{
+  closeModal('modalNftDetail');
+  // 14.07.2026 — the twinkle animation loop (see paintConstellationScene)
+  // otherwise keeps running forever in the background once the modal is
+  // just hidden via CSS, burning battery for a picture nobody can see.
+  const c = document.getElementById('modalNftCanvas');
+  if (c && c._vtTwinkleRAF) { cancelAnimationFrame(c._vtTwinkleRAF); c._vtTwinkleRAF = null; }
+});
 
 // Replaces the old drawMySky()/"your personal night sky" canvas section
 // (removed 04.07.2026 — it duplicated the card grid above in a buggier
@@ -5200,7 +5299,7 @@ const RU_TEXT = {
   "Real constellations discovered":"Настоящих созвездий открыто",
   "Each real constellation appears only once across all participants":"Каждое настоящее созвездие появляется лишь один раз на всех участников",
   "Upload":"Фото","Detect":"Поиск","Map stars":"Звёзды","Save":"Минт",
-  "✦ A new photo replaces your current constellation with a new one — it doesn't add to a collection. Most re-rolls are mythical, not one of the 88 real ones.":"✦ Новое фото заменяет твоё текущее созвездие новым — это не пополнение коллекции. Чаще всего результат снова мифический, а не одно из 88 настоящих.",
+  "✦ A new photo replaces your current constellation with a new one — it doesn't add to a collection. Every result is unique to you, mythical or real alike.":"✦ Новое фото заменяет твоё текущее созвездие новым — это не пополнение коллекции. Каждый результат уникален именно для тебя — что мифический, что настоящий.",
   "Tap to upload a photo":"Нажми, чтобы загрузить фото","with your vitiligo":"с твоим витилиго",
   "Your body disappears. Only stars remain.":"Тело исчезает. Остаются только звёзды.",
   "Try another photo":"Другое фото","My constellation":"Моё созвездие",
