@@ -1533,6 +1533,18 @@ if (tg) {
   tg.ready(); tg.expand();
   tg.setHeaderColor('#06030f');
   tg.setBackgroundColor('#06030f');
+  // 15.07.2026 — reported on iPhone: swiping to pan/zoom the star map
+  // made the Mini App itself want to collapse/minimize. This is
+  // Telegram's OWN swipe-to-close gesture, layered above the web content
+  // by the client (most noticeable on iOS) — CSS touch-action:none on the
+  // canvas doesn't reach it, since it isn't a browser scroll/zoom
+  // behavior at all. disableVerticalSwipes() is the official API for
+  // telling the Telegram client not to treat vertical drags as "close
+  // me" while the Mini App is open. Guarded: older Telegram client
+  // versions may not have this method yet.
+  if (typeof tg.disableVerticalSwipes === 'function') {
+    try { tg.disableVerticalSwipes(); } catch(e) {}
+  }
   // Telegram animates expansion; re-measure when it settles (see
   // vtMeasureViewport above) — resize alone doesn't always fire here.
   if (tg.onEvent) tg.onEvent('viewportChanged', vtMeasureViewport);
@@ -2035,12 +2047,20 @@ if (cosmosCV) {
   // Pinch-to-zoom, 08.07.2026 (owner request): two fingers zoom the sky
   // around the point between them AND pan with the midpoint — the world
   // point under the initial midpoint stays glued to it, which is how a
-  // real map feels. One finger keeps dragging exactly as before. The
-  // canvas already has touch-action:none, so no preventDefault needed.
+  // real map feels. One finger keeps dragging exactly as before.
+  // 15.07.2026 — switched from {passive:true} to {passive:false} with
+  // explicit preventDefault() calls, as a second line of defense behind
+  // Telegram.WebApp.disableVerticalSwipes() (see the tg init block
+  // above): a swipe on this canvas was making the whole Mini App try to
+  // collapse on iPhone. touch-action:none alone doesn't reach Telegram's
+  // own swipe-to-close gesture — it isn't a browser scroll/zoom
+  // behavior — so this needs both the official API call AND actually
+  // consuming the touch events ourselves.
   let pinch = null;
   const tDist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
   const tMid = (t, r) => [ (t[0].clientX + t[1].clientX)/2 - r.left, (t[0].clientY + t[1].clientY)/2 - r.top ];
   cosmosCV.addEventListener('touchstart', e => {
+    e.preventDefault();
     const r = cosmosCV.getBoundingClientRect();
     if (e.touches.length >= 2) {
       drag = false; moved = 99; // a pinch is never a tap
@@ -2054,8 +2074,9 @@ if (cosmosCV) {
       lx = e.touches[0].clientX - r.left; ly = e.touches[0].clientY - r.top;
       downX = lx; downY = ly; moved = 0;
     }
-  }, {passive:true});
+  }, {passive:false});
   cosmosCV.addEventListener('touchmove', e => {
+    e.preventDefault();
     const r = cosmosCV.getBoundingClientRect();
     if (pinch && e.touches.length >= 2) {
       const d = tDist(e.touches);
@@ -2068,7 +2089,7 @@ if (cosmosCV) {
     const nx = e.touches[0].clientX - r.left, ny = e.touches[0].clientY - r.top;
     vx -= (nx - lx)/zoom; vy -= (ny - ly)/zoom;
     moved += Math.hypot(nx - lx, ny - ly); lx = nx; ly = ny;
-  }, {passive:true});
+  }, {passive:false});
   cosmosCV.addEventListener('touchend', e => {
     if (e.touches.length < 2) pinch = null;
     if (e.touches.length === 1) {
