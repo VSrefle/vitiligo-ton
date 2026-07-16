@@ -2506,6 +2506,43 @@ try {
     .catch(e => { if (debugMode) updateDebugInfo('open counter: hit FAILED — ' + e.message); });
 } catch(e) {}
 
+// 15.07.2026 — separate UNIQUE-opens counter, keyed off the Telegram
+// user id (stable across devices/reinstalls for the same person, unlike
+// localStorage). Two-step, still fire-and-forget/non-blocking like the
+// total-opens counter above:
+//   1. GET a per-person key ("have we seen this exact user id before?").
+//      A "Key not found" error means no.
+//   2. Only on "no" — HIT that per-person key (so next time step 1 says
+//      yes) AND HIT the shared unique-count key once.
+// A returning person therefore only ever adds to the unique count once,
+// no matter how many times they reopen the app. Skipped gracefully if
+// there's no Telegram user context at all (e.g. the app opened as a bare
+// web link rather than through the bot) — nothing to key on in that case.
+// Check the running total any time at:
+// https://countapi.mileshilliard.com/api/v1/get/vitiligo_ton_unique_opens
+try {
+  const __tgUid = tg?.initDataUnsafe?.user?.id;
+  if (__tgUid) {
+    const __seenKey = 'vitiligo_ton_seen_' + __tgUid;
+    fetch('https://countapi.mileshilliard.com/api/v1/get/' + __seenKey)
+      .then(r => r.json())
+      .then(data => {
+        if (data && data.error) {
+          // never seen this person before — mark them seen, then count them
+          return fetch('https://countapi.mileshilliard.com/api/v1/hit/' + __seenKey)
+            .then(() => fetch('https://countapi.mileshilliard.com/api/v1/hit/vitiligo_ton_unique_opens'))
+            .then(r => r.json())
+            .then(d => { if (debugMode) updateDebugInfo('unique counter: new person, value=' + d.value); });
+        } else if (debugMode) {
+          updateDebugInfo('unique counter: already counted this person before');
+        }
+      })
+      .catch(e => { if (debugMode) updateDebugInfo('unique counter: FAILED — ' + e.message); });
+  } else if (debugMode) {
+    updateDebugInfo('unique counter: skipped — no Telegram user id available');
+  }
+} catch(e) {}
+
 loadInitialChainData().finally(() => {
   if (typeof loadCitiesFromChain === 'function') loadCitiesFromChain();
   if (typeof loadAllStarsFromChain === 'function') loadAllStarsFromChain();
